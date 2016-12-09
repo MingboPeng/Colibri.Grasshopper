@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Windows.Forms;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -36,7 +36,7 @@ namespace DesignExplorer_Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Out", "O", "Yep", GH_ParamAccess.item);
+            pManager.AddTextParameter("Out", "O", "Yep", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -50,6 +50,14 @@ namespace DesignExplorer_Grasshopper
             double a = 0;
             double b = 0;
 
+            //form variable demo
+            string password = null;
+
+            LoginDemo d = new LoginDemo();
+            d.ShowDialog();
+
+            password = d.passwordValue;
+
             //catch inputs from Grasshopper
             DA.GetData(0, ref a);
             DA.GetData(1, ref b);
@@ -60,7 +68,7 @@ namespace DesignExplorer_Grasshopper
 
 
             //set output data
-            DA.SetData(0, z);
+            DA.SetData(0, password);
 
 
         }
