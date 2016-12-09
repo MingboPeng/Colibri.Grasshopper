@@ -27,6 +27,10 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddNumberParameter("Sliders", "S",
+                "Sliders to iterate over.  Sliders must be plugged directly into this input.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Steps", "St", "Number of steps to take on each slider.", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Fly", "F", "Tell Colibri to fly!  Provide a button here.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -34,6 +38,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Inputs", "I",
+                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.item);
         }
 
         /// <summary>
