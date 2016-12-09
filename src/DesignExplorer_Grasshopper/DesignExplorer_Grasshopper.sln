@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesignExplorer_Grasshopper", "DesignExplorer_Grasshopper\DesignExplorer_Grasshopper.csproj", "{26A3A7BC-2B11-4743-800F-B62CE017A451}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug64|Any CPU = Debug64|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{26A3A7BC-2B11-4743-800F-B62CE017A451}.Debug64|Any CPU.ActiveCfg = Debug64|Any CPU
+		{26A3A7BC-2B11-4743-800F-B62CE017A451}.Debug64|Any CPU.Build.0 = Debug64|Any CPU
+		{26A3A7BC-2B11-4743-800F-B62CE017A451}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26A3A7BC-2B11-4743-800F-B62CE017A451}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
