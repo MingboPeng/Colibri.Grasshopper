@@ -82,8 +82,6 @@ namespace Aggregator
             string imgPath = "";
             string keyReady = "";
             string valueReady = "";
-
-
             
 
             //format write in data
@@ -120,22 +118,26 @@ namespace Aggregator
                 
             }
 
-            int width = 500;
-            int height = 500;
-
-            //Size viewSize = new Size(width, height);
-            //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
-            //var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
-            //pic.Save(imagePath);
-
-
-
-
-
+            
+            
             bool run = writeFile;
             imgName += ".png";
             imgPath = folder+"/"+imgName + ".png";
             string writeInData = "";
+            //int width = 500;
+            //int height = 500;
+            List<int> cleanedImgParams = new List<int>();
+            foreach (string item in imgParams) 
+            {
+                string cleanItem = Convert.ToString(item).Replace("[", "").Replace("]", "").Replace(" ", "");
+                //string dataValue = cleanItem.Split(',')[1];
+                cleanedImgParams.Add(Convert.ToInt32(cleanItem.Split(',')[1]));
+            }
+
+            Size viewSize = new Size(cleanedImgParams[0], cleanedImgParams[1]);
+            //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
+            
+            
             if (run)
                {
                 //check csv file
@@ -145,6 +147,11 @@ namespace Aggregator
                     File.WriteAllText(csvPath, keyReady);
                 }
 
+                //save imgs
+                var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
+                pic.Save(imgPath);
+
+                //save csv
                 writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, threeDPath);
                 File.AppendAllText(csvPath, writeInData);
 
