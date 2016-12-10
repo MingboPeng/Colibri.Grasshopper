@@ -123,16 +123,11 @@ namespace Aggregator
             
             
             bool run = writeFile;
-<<<<<<< HEAD
-            imgName += ".png";
-            imgPath = folder+"/"+imgName;
-=======
             string fileName = imgName;
             imgPath = folder+"/"+imgName + ".png";
             imgName += ".png";
             string jsonFilePath = folder + "/" + fileName + ".json";
             string jsonFileName = fileName + ".json";
->>>>>>> origin/master
             string writeInData = "";
             //int width = 500;
             //int height = 500;
