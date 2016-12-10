@@ -65,9 +65,38 @@ namespace Colibri.Grasshopper
 
 
             //catch grasshopper inputs
-            bool _fly = false;
 
+            //run or no?
+            bool _fly = false;
             DA.GetData(2, ref _fly);
+
+
+            //output slider values and names
+            List<double> sliderValues = new List<double>();
+            DA.GetDataList(0, sliderValues);
+            List<string> sliderNames = getConnectedSlidersNames();
+
+
+            //output 'inputs' object
+            Dictionary<string, double> inputs = new Dictionary<string, double>();
+            for (int i = 0; i < sliderValues.Count; i++)
+            {
+                try
+                {
+                    inputs.Add(sliderNames[i], sliderValues[i]);
+                }
+                catch (ArgumentException ex)
+                {
+                    ex.ToString().Contains("key");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error,  "Your sliders must have unique nicknames!  Set them all and try again.");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    
+                }
+            }
+            DA.SetData(0, inputs);
 
 
             if (!_fly)
@@ -77,7 +106,8 @@ namespace Colibri.Grasshopper
                 return;
 
             _run = true;
-            //_sliders = slidersInput;
+
+            
 
             doc.SolutionEnd += OnSolutionEnd;
         }
@@ -316,6 +346,59 @@ namespace Colibri.Grasshopper
             grp.Colour = System.Drawing.Color.IndianRed;
             grp.NickName = "";
             doc.AddObject(grp, false);
+        }
+
+        private List<string> getConnectedSlidersNames()
+        {
+            List<string> names = new List<string>();
+
+            // Find the Guid for connected slides
+            List<System.Guid> guids = new List<System.Guid>(); //empty list for guids
+            GH.Kernel.IGH_Param selSlidersInput = this.Params.Input[0]; //ref for input where sliders are connected to this component
+            IList<GH.Kernel.IGH_Param> sources = selSlidersInput.Sources; //list of things connected on this input
+            bool isAnythingConnected = sources.Any(); //is there actually anything connected?
+
+
+            // Find connected
+            GH.Kernel.IGH_Param trigger = this.Params.Input[1].Sources[0]; //ref for input where a boolean or a button is connected
+            GH.Kernel.Special.GH_BooleanToggle boolTrigger = trigger as GH.Kernel.Special.GH_BooleanToggle;
+
+            if (isAnythingConnected)
+            { //if something's connected,
+                foreach (var source in sources) //for each of these connected things:
+                {
+                    IGH_DocumentObject component = source.Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
+                    GH.Kernel.Special.GH_NumberSlider mySlider = component as GH.Kernel.Special.GH_NumberSlider; //...then cast (?) it as a slider
+                    if (mySlider == null) //of course, if the thing isn't a slider, the cast doesn't work, so we get null. let's filter out the nulls
+                        continue;
+                    guids.Add(mySlider.InstanceGuid); //things left over are sliders and are connected to our input. save this guid.
+                                                      //we now have a list of guids of sliders connected to our input, saved in list var 'mySlider'
+                }
+            }
+
+            // Find all sliders.
+            List<GH.Kernel.Special.GH_NumberSlider> sliders = new List<GH.Kernel.Special.GH_NumberSlider>();
+            foreach (IGH_DocumentObject docObject in doc.Objects)
+            {
+                GH.Kernel.Special.GH_NumberSlider slider = docObject as GH.Kernel.Special.GH_NumberSlider;
+                if (slider != null)
+                {
+                    // check if the slider is in the selected list
+                    if (isAnythingConnected)
+                    {
+                        if (guids.Contains(slider.InstanceGuid)) sliders.Add(slider);
+                    }
+                    else sliders.Add(slider);
+                }
+            }
+
+
+            foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
+            {
+                names.Add(slider.NickName);
+            }
+
+            return names;
         }
 
         /// <summary>
