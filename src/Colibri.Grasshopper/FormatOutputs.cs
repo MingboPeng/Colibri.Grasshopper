@@ -27,8 +27,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("OutputNames", "ON", "Names of Outputs", GH_ParamAccess.list);
-            pManager.AddTextParameter("OutputValues", "OV", "Output Values", GH_ParamAccess.list);
+            pManager.AddTextParameter("OutputNames", "OutputNames", "Names of Outputs", GH_ParamAccess.list);
+            pManager.AddTextParameter("OutputValues", "OutputValues", "Output Values", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Outputs", "O", "Dictionary of Outputs", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Outputs", "Outputs", "Dictionary of Outputs", GH_ParamAccess.list);
         }
 
         /// <summary>
