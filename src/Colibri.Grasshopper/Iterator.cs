@@ -76,7 +76,7 @@ namespace Colibri.Grasshopper
             List<string> sliderNames = getConnectedSlidersNames();
 
             //get slider steps once
-            if (sliderSteps.Count == 0)
+            if (sliderSteps.Count == 0 && _fly)
             {
                 List<int> tempSteps = new List<int>();
                 DA.GetDataList(1, tempSteps);
@@ -259,6 +259,11 @@ namespace Colibri.Grasshopper
                         sw.Stop(); //stop start watch
                         UpdateProgressBar(counter, totalLoops, sw, pbChars);
                         this.Message += "\nFinished at " + DateTime.Now.ToShortTimeString();
+
+                        //wipe out colibri variables
+                        sliderSteps = new List<int>();
+                        sliderStepsPositions = new Dictionary<int, int>();
+
                         break;
                     }
 
