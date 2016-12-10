@@ -55,6 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aggregator.cs" />
     <Compile Include="ImageParameterComponent.cs" />
     <Compile Include="Iterator.cs" />
     <Compile Include="Colibri.GrasshopperInfo.cs" />
