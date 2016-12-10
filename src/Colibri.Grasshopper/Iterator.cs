@@ -47,7 +47,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Inputs", "I",
-                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.item);
+                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace Colibri.Grasshopper
                     
                 }
             }
-            DA.SetData(0, inputs);
+            DA.SetDataList(0, inputs);
 
 
             //don't touch this stuff!  this is what makes the magic happen down below.
@@ -444,7 +444,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return null;
+                return Properties.Resources.Colibri_logobase_1;
             }
         }
 
