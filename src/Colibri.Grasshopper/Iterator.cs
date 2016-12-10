@@ -78,7 +78,9 @@ namespace Colibri.Grasshopper
             //get slider steps once
             if (sliderSteps.Count == 0)
             {
-                DA.GetDataList(1, sliderSteps);
+                List<int> tempSteps = new List<int>();
+                DA.GetDataList(1, tempSteps);
+                sliderSteps.AddRange(tempSteps.Select( x => x-1));
 
                 if (sliderSteps.Count != sliderValues.Count)
                 {
