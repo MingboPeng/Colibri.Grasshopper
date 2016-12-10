@@ -94,13 +94,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-<<<<<<< HEAD
-    <None Include="client_secret.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="packages.config" />
-    <None Include="Resources\Colibri24x24.png" />
-=======
     <None Include="Resources\Colibri_logobase_1.png" />
   </ItemGroup>
   <ItemGroup>
@@ -114,7 +107,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Colibri_logobase_5.png" />
->>>>>>> origin/master
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
