@@ -22,6 +22,8 @@ namespace ImageParameter
         {
         }
 
+        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
@@ -29,9 +31,9 @@ namespace ImageParameter
         {
             //pManager.AddTextParameter("widthInput", "w", "imageWidth", GH_ParamAccess.list);
             //pManager.AddTextParameter("heightInput", "h", "imageHeight", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("widthInput", "width", "imageWidth", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("heightInput", "height", "imageHeight", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("bool", "bool", "bool", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("widthInput", "Width", "imageWidth", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("heightInput", "Height", "imageHeight", GH_ParamAccess.item);
+            //pManager.AddBooleanParameter("bool", "bool", "bool", GH_ParamAccess.item);
             //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
         }
 
@@ -40,7 +42,7 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("imageParameter", "imageParameter", "imageParameter", GH_ParamAccess.list);
+            pManager.AddGenericParameter("imageParameter", "ImgParameter", "imageParameter", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -53,13 +55,13 @@ namespace ImageParameter
             //input variables
             int width = 100;
             int height = 100;
-            bool run = false;
+            bool run = true;
             
 
             //get data
             DA.GetData(0, ref width);
             DA.GetData(1, ref height);
-            DA.GetData(2, ref run);
+            //DA.GetData(2, ref run);
             //operations
             //string widthOutput = Convert.ToString(width);
             //string heightOutput = Convert.ToString(height);
@@ -107,7 +109,7 @@ namespace ImageParameter
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return null;
+                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_3;
             }
         }
 

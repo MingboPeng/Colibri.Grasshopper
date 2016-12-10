@@ -19,22 +19,23 @@ namespace Aggregator
         /// </summary>
         public Aggregator()
           : base("Aggregator", "Aggregator",
-              "Aggregator",
+              "Aggregates design input data, performance metrics, image & json filemanes into a data.csv file for Design Explorer to open.",
               "Colibri", "Colibri")
         {
         }
+
+        public override GH_Exposure Exposure { get {return GH_Exposure.tertiary;} }
 
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("folderPath", "folder", "Folder path", GH_ParamAccess.item);
-            pManager.AddTextParameter("inputsDataSet", "inputs", "Inputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("outputsDataSet", "outputs", "Outputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("imageParams", "imgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
-            pManager.AddTextParameter("SpectaclesElements_3D", "Spectacles3D", "SpectaclesElements_3D", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("writeFile", "writeFile", "Set to yes to run", GH_ParamAccess.item);
+            pManager.AddTextParameter("FolderPath", "Folder", "Folder path", GH_ParamAccess.item);
+            pManager.AddTextParameter("inputsDataSet", "Inputs", "Inputs data", GH_ParamAccess.list);
+            pManager.AddTextParameter("outputsDataSet", "Outputs", "Outputs data", GH_ParamAccess.list);
+            pManager.AddTextParameter("imageParams", "ImgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("writeFile", "WriteFile", "Set to yes to run", GH_ParamAccess.item);
             //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
         }
 
@@ -43,7 +44,10 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("writeInData", "writeInData", "Use panel to check current data", GH_ParamAccess.item);
+            pManager.AddTextParameter("writeInData", "WriteInData", "Use panel to check current data", GH_ParamAccess.item);
+            pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
+                "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -58,7 +62,6 @@ namespace Aggregator
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
             List<string> imgParams = new List<string>();
-            string threeDPath = "10.json";
             bool writeFile = false;
             
             //get data
@@ -66,8 +69,7 @@ namespace Aggregator
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
             DA.GetDataList(3, imgParams);
-            DA.GetData(4, ref threeDPath);
-            DA.GetData(5, ref writeFile);
+            DA.GetData(4, ref writeFile);
 
             //operations
 
@@ -121,8 +123,16 @@ namespace Aggregator
             
             
             bool run = writeFile;
+<<<<<<< HEAD
             imgName += ".png";
             imgPath = folder+"/"+imgName;
+=======
+            string fileName = imgName;
+            imgPath = folder+"/"+imgName + ".png";
+            imgName += ".png";
+            string jsonFilePath = folder + "/" + fileName + ".json";
+            string jsonFileName = fileName + ".json";
+>>>>>>> origin/master
             string writeInData = "";
             //int width = 500;
             //int height = 500;
@@ -152,7 +162,7 @@ namespace Aggregator
                 pic.Save(imgPath);
 
                 //save csv
-                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, threeDPath);
+                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, jsonFileName);
                 File.AppendAllText(csvPath, writeInData);
 
 
@@ -160,7 +170,8 @@ namespace Aggregator
             
             //set output
             DA.SetData(0, writeInData);
-            
+            DA.SetData(1, jsonFilePath);
+
         }
 
         /// <summary>
@@ -173,7 +184,7 @@ namespace Aggregator
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return null;
+                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_4;
             }
         }
 
