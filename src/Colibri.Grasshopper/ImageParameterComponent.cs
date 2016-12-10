@@ -81,10 +81,10 @@ namespace ImageParameter
                 realSize.Height = height;
                 realSize.Width = width;
                 //Rhino.Display.DisplayModeDescription currentDisplay = new Rhino.Display.DisplayModeDescription.GetDisplayMode;
-                System.Drawing.Bitmap screenShot = new System.Drawing.Bitmap();
-                screenShot = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(realSize);
-                string filePath = @"F:\1209.png";
-                System.Drawing.Bitmap.Save(screenShot, filePath);
+                //System.Drawing.Bitmap screenShot = new System.Drawing.Bitmap();
+                //screenShot = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(realSize);
+                //string filePath = @"F:\1209.png";
+                //System.Drawing.Bitmap.Save(screenShot, filePath);
                }
             
 

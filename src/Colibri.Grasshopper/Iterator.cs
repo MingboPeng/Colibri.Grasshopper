@@ -47,7 +47,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Inputs", "I",
-                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.item);
+                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Colibri.Grasshopper
                     
                 }
             }
-            DA.SetData(0, inputs);
+            DA.SetDataList(0, inputs);
 
 
             if (!_fly)
