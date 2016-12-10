@@ -13,7 +13,8 @@ namespace Colibri.Grasshopper
     public class Iterator : GH_Component
     {
         GH_Document doc = null;
-        IGH_Param slidersInput;
+        List<int> sliderSteps = new List<int>();
+        Dictionary<int, int> sliderStepsPositions = new Dictionary<int, int>();
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -36,7 +37,6 @@ namespace Colibri.Grasshopper
         {
             pManager.AddNumberParameter("Sliders", "S",
                 "Sliders to iterate over.  Sliders must be plugged directly into this input.", GH_ParamAccess.list);
-            slidersInput = pManager[0];
             pManager.AddIntegerParameter("Steps", "St", "Number of steps to take on each slider.", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Fly", "F", "Tell Colibri to fly!  Provide a button here.", GH_ParamAccess.item);
         }
@@ -70,11 +70,29 @@ namespace Colibri.Grasshopper
             bool _fly = false;
             DA.GetData(2, ref _fly);
 
-
             //output slider values and names
             List<double> sliderValues = new List<double>();
             DA.GetDataList(0, sliderValues);
             List<string> sliderNames = getConnectedSlidersNames();
+
+            //get slider steps once
+            if (sliderSteps.Count == 0)
+            {
+                List<int> tempSteps = new List<int>();
+                DA.GetDataList(1, tempSteps);
+                sliderSteps.AddRange(tempSteps.Select( x => x-1));
+
+                if (sliderSteps.Count != sliderValues.Count)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the steps input list.");
+                    return;
+                }
+
+                for (int i = 0; i < sliderSteps.Count; i++)
+                {
+                    sliderStepsPositions.Add(i, 0);
+                }
+            }
 
 
             //output 'inputs' object
@@ -99,6 +117,7 @@ namespace Colibri.Grasshopper
             DA.SetDataList(0, inputs);
 
 
+            //don't touch this stuff!  this is what makes the magic happen down below.
             if (!_fly)
                 return;
 
@@ -106,8 +125,6 @@ namespace Colibri.Grasshopper
                 return;
 
             _run = true;
-
-            
 
             doc.SolutionEnd += OnSolutionEnd;
         }
@@ -271,14 +288,32 @@ namespace Colibri.Grasshopper
             GH.Kernel.Special.GH_NumberSlider slider = sliders[index];
             if (slider.TickValue < slider.TickCount)
             {
+                //Figure out which step to fly to...
+
+                //look up the current slider's current sliderStepsPosition and target number
+                int totalNumberOfSteps = sliderSteps[index];
+                int currentSliderStepsPosition = sliderStepsPositions[index];
+                int numTicksToAddPerStep = slider.TickCount/totalNumberOfSteps;
+                
+
+                //find the closest tick
+                int closestTick = numTicksToAddPerStep*currentSliderStepsPosition;
+
                 // Increment the slider.
-                slider.TickValue++;
+                slider.TickValue = closestTick;
+
+                //Increment the current step position
+                sliderStepsPositions[index]++;
+
                 return true;
             }
             else
             {
                 // The current slider is already at the maximum value. Reset it back to zero.
                 slider.TickValue = 0;
+
+                //set our slider steps position back to 0
+                sliderStepsPositions[index] = 0;
 
                 // Move on to the next slider.
                 index++;
