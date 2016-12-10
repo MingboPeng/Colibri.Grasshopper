@@ -33,7 +33,6 @@ namespace Aggregator
             pManager.AddTextParameter("inputsDataSet", "inputs", "Inputs data", GH_ParamAccess.list);
             pManager.AddTextParameter("outputsDataSet", "outputs", "Outputs data", GH_ParamAccess.list);
             pManager.AddTextParameter("imageParams", "imgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
-            pManager.AddTextParameter("SpectaclesElements_3D", "Spectacles3D", "SpectaclesElements_3D", GH_ParamAccess.item);
             pManager.AddBooleanParameter("writeFile", "writeFile", "Set to yes to run", GH_ParamAccess.item);
             //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
         }
@@ -44,6 +43,9 @@ namespace Aggregator
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("writeInData", "writeInData", "Use panel to check current data", GH_ParamAccess.item);
+            pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
+                "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -58,7 +60,6 @@ namespace Aggregator
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
             List<string> imgParams = new List<string>();
-            string threeDPath = "10.json";
             bool writeFile = false;
             
             //get data
@@ -66,8 +67,7 @@ namespace Aggregator
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
             DA.GetDataList(3, imgParams);
-            DA.GetData(4, ref threeDPath);
-            DA.GetData(5, ref writeFile);
+            DA.GetData(4, ref writeFile);
 
             //operations
 
@@ -121,8 +121,9 @@ namespace Aggregator
             
             
             bool run = writeFile;
-            imgName += ".png";
+            //imgName += ".png";
             imgPath = folder+"/"+imgName + ".png";
+            string jsonFileName = folder + "/" + imgName + ".json";
             string writeInData = "";
             //int width = 500;
             //int height = 500;
@@ -152,7 +153,7 @@ namespace Aggregator
                 pic.Save(imgPath);
 
                 //save csv
-                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, threeDPath);
+                writeInData = string.Format("{0},{1}\n", valueReady, imgName);
                 File.AppendAllText(csvPath, writeInData);
 
 
@@ -160,7 +161,8 @@ namespace Aggregator
             
             //set output
             DA.SetData(0, writeInData);
-            
+            DA.SetData(1, jsonFileName);
+
         }
 
         /// <summary>
