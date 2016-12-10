@@ -29,12 +29,9 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            //pManager.AddTextParameter("widthInput", "w", "imageWidth", GH_ParamAccess.list);
-            //pManager.AddTextParameter("heightInput", "h", "imageHeight", GH_ParamAccess.item);
             pManager.AddIntegerParameter("widthInput", "Width", "imageWidth", GH_ParamAccess.item);
             pManager.AddIntegerParameter("heightInput", "Height", "imageHeight", GH_ParamAccess.item);
-            //pManager.AddBooleanParameter("bool", "bool", "bool", GH_ParamAccess.item);
-            //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -55,18 +52,13 @@ namespace ImageParameter
             //input variables
             int width = 100;
             int height = 100;
-            bool run = true;
+            
             
 
             //get data
             DA.GetData(0, ref width);
             DA.GetData(1, ref height);
-            //DA.GetData(2, ref run);
-            //operations
-            //string widthOutput = Convert.ToString(width);
-            //string heightOutput = Convert.ToString(height);
-
-            //string parameterOutput = widthOutput + "_" + heightOutput;
+            
 
             Dictionary<string, int> imageP = new Dictionary<string, int>();
 
@@ -76,18 +68,6 @@ namespace ImageParameter
 
 
 
-            if (run)
-               {
-
-                System.Drawing.Size realSize = new System.Drawing.Size();
-                realSize.Height = height;
-                realSize.Width = width;
-                //Rhino.Display.DisplayModeDescription currentDisplay = new Rhino.Display.DisplayModeDescription.GetDisplayMode;
-                //System.Drawing.Bitmap screenShot = new System.Drawing.Bitmap();
-                //screenShot = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(realSize);
-                //string filePath = @"F:\1209.png";
-                //System.Drawing.Bitmap.Save(screenShot, filePath);
-               }
             
 
 
