@@ -122,7 +122,7 @@ namespace Aggregator
             
             bool run = writeFile;
             imgName += ".png";
-            imgPath = folder+"/"+imgName + ".png";
+            imgPath = folder+"/"+imgName;
             string writeInData = "";
             //int width = 500;
             //int height = 500;
