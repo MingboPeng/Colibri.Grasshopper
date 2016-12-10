@@ -19,21 +19,23 @@ namespace Aggregator
         /// </summary>
         public Aggregator()
           : base("Aggregator", "Aggregator",
-              "Aggregator",
+              "Aggregates design input data, performance metrics, image & json filemanes into a data.csv file for Design Explorer to open.",
               "Colibri", "Colibri")
         {
         }
+
+        public override GH_Exposure Exposure { get {return GH_Exposure.tertiary;} }
 
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("folderPath", "folder", "Folder path", GH_ParamAccess.item);
-            pManager.AddTextParameter("inputsDataSet", "inputs", "Inputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("outputsDataSet", "outputs", "Outputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("imageParams", "imgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("writeFile", "writeFile", "Set to yes to run", GH_ParamAccess.item);
+            pManager.AddTextParameter("FolderPath", "Folder", "Folder path", GH_ParamAccess.item);
+            pManager.AddTextParameter("inputsDataSet", "Inputs", "Inputs data", GH_ParamAccess.list);
+            pManager.AddTextParameter("outputsDataSet", "Outputs", "Outputs data", GH_ParamAccess.list);
+            pManager.AddTextParameter("imageParams", "ImgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("writeFile", "WriteFile", "Set to yes to run", GH_ParamAccess.item);
             //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
         }
 
@@ -42,7 +44,7 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("writeInData", "writeInData", "Use panel to check current data", GH_ParamAccess.item);
+            pManager.AddTextParameter("writeInData", "WriteInData", "Use panel to check current data", GH_ParamAccess.item);
             pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
                 "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
 
