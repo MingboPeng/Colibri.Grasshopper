@@ -123,9 +123,11 @@ namespace Aggregator
             
             
             bool run = writeFile;
-            //imgName += ".png";
+            string fileName = imgName;
             imgPath = folder+"/"+imgName + ".png";
-            string jsonFileName = folder + "/" + imgName + ".json";
+            imgName += ".png";
+            string jsonFilePath = folder + "/" + fileName + ".json";
+            string jsonFileName = fileName + ".json";
             string writeInData = "";
             //int width = 500;
             //int height = 500;
@@ -155,7 +157,7 @@ namespace Aggregator
                 pic.Save(imgPath);
 
                 //save csv
-                writeInData = string.Format("{0},{1}\n", valueReady, imgName);
+                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, jsonFileName);
                 File.AppendAllText(csvPath, writeInData);
 
 
@@ -163,7 +165,7 @@ namespace Aggregator
             
             //set output
             DA.SetData(0, writeInData);
-            DA.SetData(1, jsonFileName);
+            DA.SetData(1, jsonFilePath);
 
         }
 
