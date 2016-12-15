@@ -18,7 +18,7 @@ namespace Colibri.Grasshopper
         public FormatOutputs()
           : base("FormatOutputs", "FormatOutputs",
               "Formats Data Dictionary",
-              "Colibri", "Colibri")
+              "TT Toolbox", "Colibri")
         {
         }
 

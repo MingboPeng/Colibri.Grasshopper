@@ -18,7 +18,7 @@ namespace ImageParameter
         public ImageParameterComponent()
           : base("ImageParameter", "ImageParameter",
               "ImageParameter",
-              "Colibri", "Colibri")
+              "TT Toolbox", "Colibri")
         {
         }
 

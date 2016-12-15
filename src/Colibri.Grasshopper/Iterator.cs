@@ -26,7 +26,7 @@ namespace Colibri.Grasshopper
         public Iterator()
           : base("Iterator", "Iterator",
               "Generates design iterations from a collection of sliders.",
-              "Colibri", "Colibri")
+              "TT Toolbox", "Colibri")
         {
         }
 

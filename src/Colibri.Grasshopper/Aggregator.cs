@@ -20,7 +20,7 @@ namespace Aggregator
         public Aggregator()
           : base("Aggregator", "Aggregator",
               "Aggregates design input data, performance metrics, image & json filemanes into a data.csv file for Design Explorer to open.",
-              "Colibri", "Colibri")
+              "TT Toolbox", "Colibri")
         {
         }
 
