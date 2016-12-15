@@ -14,6 +14,7 @@ namespace Colibri.Grasshopper
     public class Iterator : GH_Component
     {
         GH_Document doc = null;
+        List<string> sliderNames = new List<string>();
         List<int> sliderSteps = new List<int>();
         Dictionary<int, int> sliderStepsPositions = new Dictionary<int, int>();
         List<string> computedValues = new List<string>();
@@ -74,24 +75,43 @@ namespace Colibri.Grasshopper
             bool _fly = false;
             DA.GetData(2, ref _fly);
 
+
             //output slider values and names
             List<double> sliderValues = new List<double>();
             DA.GetDataList(0, sliderValues);
-            List<string> sliderNames = getConnectedSlidersNames();
 
-            //get slider steps once
+            
+            //get slider steps and names once - the first time we are told to fly
             if (sliderSteps.Count == 0 && _fly)
             {
+                //get the connected sliders and populate the list of slider names
+                List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+
+
+                //get the number of steps per slider
                 List<int> tempSteps = new List<int>();
                 DA.GetDataList(1, tempSteps);
-                sliderSteps.AddRange(tempSteps.Select( x => x-1));
+                sliderSteps.AddRange(tempSteps.Select(x => x - 1));
 
+                //check that the number of steps equals the number of sliders
                 if (sliderSteps.Count != sliderValues.Count)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the steps input list.");
                     return;
                 }
+                //check that the number of steps is greater than 1 and less than the number of ticks in the matching slider
+                for (int i = 0; i < connectedSliders.Count; i++)
+                {
+                    if (sliderSteps[i] < 2 || sliderSteps[i] > connectedSliders[i].TickCount +1)
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Steps values must be greater than 1 and less than the number of steps defined in the associated slider.  The first offending slider / step combo is at index: " + i.ToString());
+                        return;
+                    }
+                }
+                sliderSteps.AddRange(tempSteps.Select( x => x-1));
 
+
+                //populate our dictionary of sliders / current step positions
                 for (int i = 0; i < sliderSteps.Count; i++)
                 {
                     sliderStepsPositions.Add(i, 1);
@@ -99,6 +119,12 @@ namespace Colibri.Grasshopper
             }
 
 
+            //get slider names once - the first time the component solves
+            if (sliderSteps.Count == 0 && !_fly)
+            {
+                List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+                sliderNames.AddRange(connectedSliders.Select(x => x.NickName));
+            }
             //output 'inputs' object
             Dictionary<string, double> inputs = new Dictionary<string, double>();
             for (int i = 0; i < sliderValues.Count; i++)
@@ -110,15 +136,19 @@ namespace Colibri.Grasshopper
                 catch (ArgumentException ex)
                 {
                     ex.ToString().Contains("key");
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error,  "Your sliders must have unique nicknames!  Set them all and try again.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your sliders must have unique nicknames!  Set them all and try again.");
                     return;
                 }
                 catch (Exception ex)
                 {
-                    
+
                 }
             }
             DA.SetDataList(0, inputs);
+
+
+
+
 
 
             //don't touch this stuff!  this is what makes the magic happen down below.
@@ -167,7 +197,7 @@ namespace Colibri.Grasshopper
 
 
                 // Find connected
-                GH.Kernel.IGH_Param trigger = this.Params.Input[1].Sources[0]; //ref for input where a boolean or a button is connected
+                GH.Kernel.IGH_Param trigger = this.Params.Input[2].Sources[0]; //ref for input where a boolean or a button is connected
                 GH.Kernel.Special.GH_BooleanToggle boolTrigger = trigger as GH.Kernel.Special.GH_BooleanToggle;
 
                 if (isAnythingConnected)
@@ -274,6 +304,7 @@ namespace Colibri.Grasshopper
                         this.Message += "\nFinished at " + DateTime.Now.ToShortTimeString();
 
                         //wipe out colibri variables
+                        sliderNames = new List<string>();
                         sliderSteps = new List<int>();
                         sliderStepsPositions = new Dictionary<int, int>();
                         computedValues = new List<string>();
@@ -325,7 +356,7 @@ namespace Colibri.Grasshopper
                 //Increment the current step position
                 sliderStepsPositions[index]++;
                 
-                //have we already computed this upcoming combination?  If so, move on to the next one
+                //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 if (computedValues.Contains(GetSliderVals(sliders)))
                 {
                     return MoveToNextPermutation(ref index, sliders);
@@ -400,9 +431,8 @@ namespace Colibri.Grasshopper
         }
         
 
-        private List<string> getConnectedSlidersNames()
+        private List<GH_NumberSlider> getConnectedSliders()
         {
-            List<string> names = new List<string>();
 
             // Find the Guid for connected slides
             List<System.Guid> guids = new List<System.Guid>(); //empty list for guids
@@ -410,11 +440,7 @@ namespace Colibri.Grasshopper
             IList<GH.Kernel.IGH_Param> sources = selSlidersInput.Sources; //list of things connected on this input
             bool isAnythingConnected = sources.Any(); //is there actually anything connected?
 
-
             // Find connected
-            GH.Kernel.IGH_Param trigger = this.Params.Input[1].Sources[0]; //ref for input where a boolean or a button is connected
-            GH.Kernel.Special.GH_BooleanToggle boolTrigger = trigger as GH.Kernel.Special.GH_BooleanToggle;
-
             if (isAnythingConnected)
             { //if something's connected,
                 foreach (var source in sources) //for each of these connected things:
@@ -445,12 +471,12 @@ namespace Colibri.Grasshopper
             }
 
 
-            foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
+            /*foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
             {
                 names.Add(slider.NickName);
-            }
+            }*/
 
-            return names;
+            return sliders;
         }
 
         /// <summary>
