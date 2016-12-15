@@ -217,9 +217,10 @@ namespace Colibri.Grasshopper
                 int dummyCounter = 0;
                 foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
                 {
-                    totalLoops *= (slider.TickCount + 1);
+                    totalLoops *= (sliderSteps[dummyCounter]+1);
                     popupMessage += slider.ImpliedNickName;
                     popupMessage += "\n";
+                    dummyCounter++;
                 }
                 if (System.Windows.Forms.MessageBox.Show(sliders.Count + " slider(s) connected:\n" + popupMessage +
                   "\n" + totalLoops.ToString() + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo) == DialogResult.No)
