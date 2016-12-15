@@ -41,8 +41,8 @@ namespace Colibri.Grasshopper
         {
             pManager.AddNumberParameter("Sliders", "Sliders",
                 "Sliders to iterate over.  Sliders must be plugged directly into this input.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Steps", "Steps", "Number of steps to take on each slider.", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Fly", "Fly", "Tell Colibri to fly!  Provide a button here.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Steps", "Steps", "Number of steps to take on each slider.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Fly?", "Fly?", "Tell Colibri to fly!  Provide a button here, and click it once youare ready for Colibri to fly around your definition.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Inputs", "Inputs",
-                "Colibri inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+                "Colibri's Inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>

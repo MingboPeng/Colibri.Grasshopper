@@ -4,20 +4,20 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace ImageParameter
+namespace Colibri.Grasshopper
 {
-    public class ImageParameterComponent : GH_Component
+    public class ColibriOutputs : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
         /// constructor without any arguments.
         /// Category represents the Tab in which the component will appear, 
         /// Subcategory the panel. If you use non-existing tab or panel names, 
-        /// new tabs/panels will automatically be created.
+        /// ne	w tabs/panels will automatically be created.
         /// </summary>
-        public ImageParameterComponent()
-          : base("ImageParameter", "ImageParameter",
-              "ImageParameter",
+        public ColibriOutputs()
+          : base("Colibri Outputs", "Colibri Outputs",
+              "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right of the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
               "TT Toolbox", "Colibri")
         {
         }
@@ -29,9 +29,8 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("widthInput", "Width", "imageWidth", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("heightInput", "Height", "imageHeight", GH_ParamAccess.item);
-
+            pManager.AddTextParameter("Names", "Names", "Output names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Values", "Values", "Output Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -39,7 +38,7 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("imageParameter", "ImgParameter", "imageParameter", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Outputs", "Outputs", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -49,33 +48,27 @@ namespace ImageParameter
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //input variables
-            int width = 100;
-            int height = 100;
-            
-            
+            //Declare variables
+            List<string> OutputNames = new List<string>();
+            List<string> OutputValues = new List<string>();
 
-            //get data
-            DA.GetData(0, ref width);
-            DA.GetData(1, ref height);
-            
+            //catch inputs from Grasshopper
 
-            Dictionary<string, int> imageP = new Dictionary<string, int>();
+            DA.GetDataList(0, OutputNames);
+            DA.GetDataList(1, OutputValues);
 
-            imageP.Add("Width", width);
-            imageP.Add("Height", height);
+            //dict to populate
+            Dictionary<string, string> myDictionary = new Dictionary<string, string>();
 
-
-
-
-            
+            //loop over headings
+            for (int i = 0; i < OutputNames.Count; i++)
+            {
+                myDictionary.Add(OutputNames[i], OutputValues[i]);
+            }
 
 
-            //set output
-            DA.SetDataList(0, imageP);
-            
-
-
+            //set output data
+            DA.SetDataList(0, myDictionary);
 
         }
 
@@ -89,7 +82,7 @@ namespace ImageParameter
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_3;
+                return Properties.Resources.Colibri_logobase_2;
             }
         }
 
@@ -100,7 +93,7 @@ namespace ImageParameter
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e0}"); }
+            get { return new Guid("{5cac6c29-d015-4489-b592-48ff52e8c33e}"); }
         }
     }
 }
