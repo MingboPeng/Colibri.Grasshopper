@@ -15,6 +15,7 @@ namespace Colibri.Grasshopper
         GH_Document doc = null;
         List<int> sliderSteps = new List<int>();
         Dictionary<int, int> sliderStepsPositions = new Dictionary<int, int>();
+        List<string> computedValues = new List<string>();
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -237,6 +238,8 @@ namespace Colibri.Grasshopper
                 // Start a giant loop in which we'll permutate our way across all slider layouts.
                 while (true)
                 {
+
+
                     int idx = 0;
 
                     // let the user cancel the process
@@ -252,6 +255,14 @@ namespace Colibri.Grasshopper
                         }
                     }
 
+                    //add the current slider values to our list of already computed values
+                    var sliderVals = GetSliderVals(sliders);
+                    if (!computedValues.Contains(sliderVals))
+                    {
+                        computedValues.Add(sliderVals);
+                    }
+
+                    //move to the next set of slider positions
                     if (!MoveToNextPermutation(ref idx, sliders))
                     {
                         // study is over!
@@ -263,7 +274,7 @@ namespace Colibri.Grasshopper
                         //wipe out colibri variables
                         sliderSteps = new List<int>();
                         sliderStepsPositions = new Dictionary<int, int>();
-
+                        computedValues = new List<string>();
                         break;
                     }
 
@@ -284,6 +295,8 @@ namespace Colibri.Grasshopper
                 _running = false;
             }
         }
+
+        
 
         private bool MoveToNextPermutation(ref int index, List<GH.Kernel.Special.GH_NumberSlider> sliders)
         {
@@ -309,6 +322,13 @@ namespace Colibri.Grasshopper
 
                 //Increment the current step position
                 sliderStepsPositions[index]++;
+                
+                //have we already computed this upcoming combination?  If so, move on to the next one
+                if (computedValues.Contains(GetSliderVals(sliders)))
+                {
+                    return MoveToNextPermutation(ref index, sliders);
+                }
+
 
                 return true;
             }
@@ -329,6 +349,16 @@ namespace Colibri.Grasshopper
 
                 return MoveToNextPermutation(ref index, sliders);
             }
+        }
+
+        private string GetSliderVals(List<GH_NumberSlider> sliders)
+        {
+            string sliderVals = "";
+            foreach (GH_NumberSlider slider in sliders)
+            {
+                sliderVals += slider.CurrentValue.ToString() + ",";
+            }
+            return sliderVals;
         }
 
         private void SetBooleanToFalse(GH.Kernel.Special.GH_BooleanToggle boolTrigger)
