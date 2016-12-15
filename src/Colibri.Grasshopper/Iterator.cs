@@ -79,13 +79,15 @@ namespace Colibri.Grasshopper
             //output slider values and names
             List<double> sliderValues = new List<double>();
             DA.GetDataList(0, sliderValues);
+            List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+            sliderNames.AddRange(connectedSliders.Select(x => x.NickName));
 
-            
+
             //get slider steps and names once - the first time we are told to fly
             if (sliderSteps.Count == 0 && _fly)
             {
                 //get the connected sliders and populate the list of slider names
-                List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+                //List<GH_NumberSlider> connectedSliders = getConnectedSliders();
 
 
                 //get the number of steps per slider
@@ -119,12 +121,7 @@ namespace Colibri.Grasshopper
             }
 
 
-            //get slider names once - the first time the component solves
-            if (sliderSteps.Count == 0 && !_fly)
-            {
-                List<GH_NumberSlider> connectedSliders = getConnectedSliders();
-                sliderNames.AddRange(connectedSliders.Select(x => x.NickName));
-            }
+            
             //output 'inputs' object
             Dictionary<string, double> inputs = new Dictionary<string, double>();
             for (int i = 0; i < sliderValues.Count; i++)
