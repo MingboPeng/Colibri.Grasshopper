@@ -7,6 +7,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Windows.Forms;
 using System.Linq;
+using Grasshopper.Kernel.Special;
 
 namespace Colibri.Grasshopper
 {
