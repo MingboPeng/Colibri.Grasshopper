@@ -92,7 +92,7 @@ namespace Colibri.Grasshopper
 
                 for (int i = 0; i < sliderSteps.Count; i++)
                 {
-                    sliderStepsPositions.Add(i, 0);
+                    sliderStepsPositions.Add(i, 1);
                 }
             }
 
@@ -133,12 +133,9 @@ namespace Colibri.Grasshopper
 
 
 
-        //methods below copied in from Ladybug Fly component
+        //methods below copied in from Ladybug's Fly component
         private bool _run = false;
         private bool _running = false;
-        //private List<System.Object> _sliders;
-
-        GH.Kernel.Special.GH_Group grp = new GH.Kernel.Special.GH_Group();
 
 
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
@@ -226,7 +223,7 @@ namespace Colibri.Grasshopper
                   "\n" + totalLoops.ToString() + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo) == DialogResult.No)
                 {
                     SetBooleanToFalse(boolTrigger);
-                    this.Message = "Release Colibri!";
+                    this.Message = "Release the Colibri!";
                     return;
                 }
 
@@ -337,8 +334,7 @@ namespace Colibri.Grasshopper
         private void SetBooleanToFalse(GH.Kernel.Special.GH_BooleanToggle boolTrigger)
         {
             if (boolTrigger == null) return;
-
-            grp.Colour = System.Drawing.Color.IndianRed;
+            
             boolTrigger.Value = false; //set trigger value to false
             boolTrigger.ExpireSolution(true);
         }
@@ -370,26 +366,7 @@ namespace Colibri.Grasshopper
               + "Average Time: " + avergeTime + " Sec.\n"
               + "Est. Total Time: " + expectedTime + " Min.\n";
         }
-
-        private void AddToggle()
-        {
-            var toggle = new GH.Kernel.Special.GH_BooleanToggle();
-            toggle.CreateAttributes();
-            toggle.Value = false;
-            toggle.NickName = "Release the fly...";
-            toggle.Attributes.Pivot = new PointF((float)(this.Attributes.Bounds.Left - 200), (float)(this.Attributes.Bounds.Top + 30));
-            doc.AddObject(toggle, false);
-            this.Params.Input[1].AddSource(toggle);
-            toggle.ExpireSolution(true);
-
-            grp = new GH.Kernel.Special.GH_Group();
-            grp.CreateAttributes();
-            grp.Border = GH.Kernel.Special.GH_GroupBorder.Blob;
-            grp.AddObject(toggle.InstanceGuid);
-            grp.Colour = System.Drawing.Color.IndianRed;
-            grp.NickName = "";
-            doc.AddObject(grp, false);
-        }
+        
 
         private List<string> getConnectedSlidersNames()
         {
