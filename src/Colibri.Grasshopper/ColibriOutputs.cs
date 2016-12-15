@@ -57,6 +57,13 @@ namespace Colibri.Grasshopper
             DA.GetDataList(0, OutputNames);
             DA.GetDataList(1, OutputValues);
 
+            //defense
+            if (OutputNames.Count != OutputValues.Count)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide equal numbers of Names and Values.");
+                return;
+            }
+
             //dict to populate
             Dictionary<string, string> myDictionary = new Dictionary<string, string>();
 

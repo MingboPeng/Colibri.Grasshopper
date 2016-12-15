@@ -29,8 +29,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Width", "Width", "Image width.", GH_ParamAccess.item, 400);
-            pManager.AddIntegerParameter("Height", "Height", "Image Height.", GH_ParamAccess.item, 400);
+            pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);
+            pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 400);
 
         }
 
@@ -53,30 +53,23 @@ namespace Colibri.Grasshopper
             int width = 400;
             int height = 400;
             
-            
-
             //get data
             DA.GetData(0, ref width);
             DA.GetData(1, ref height);
-            
 
-            Dictionary<string, int> imageP = new Dictionary<string, int>();
-
-            imageP.Add("Width", width);
-            imageP.Add("Height", height);
-
-
-
-
-            
-
+            //defense
+            if (width < 50 || height < 50)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Width and Height must be greater than 50 pixels.");
+                return;
+            }
 
             //set output
-            DA.SetDataList(0, imageP);
+            Dictionary<string, int> imageP = new Dictionary<string, int>();
+            imageP.Add("Width", width);
+            imageP.Add("Height", height);
             
-
-
-
+            DA.SetDataList(0, imageP);
         }
 
         /// <summary>
