@@ -70,47 +70,50 @@ namespace Colibri.Grasshopper
 
 
             //catch grasshopper inputs
-
-            //run or no?
+            
+            List<double> sliderValues = new List<double>();
+            List<int> tempSteps = new List<int>();
             bool _fly = false;
+            DA.GetDataList(0, sliderValues);
+            DA.GetDataList(1, tempSteps);
             DA.GetData(2, ref _fly);
 
 
             //output slider values and names
-            List<double> sliderValues = new List<double>();
-            DA.GetDataList(0, sliderValues);
             List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+            sliderNames = new List<string>();
             sliderNames.AddRange(connectedSliders.Select(x => x.NickName));
-
-
-            //get slider steps and names once - the first time we are told to fly
-            if (sliderSteps.Count == 0 && _fly)
+            
+            //run all defense before Colibri is told to fly
+            if (!_fly)
             {
-                //get the connected sliders and populate the list of slider names
-                //List<GH_NumberSlider> connectedSliders = getConnectedSliders();
-
-
-                //get the number of steps per slider
-                List<int> tempSteps = new List<int>();
-                DA.GetDataList(1, tempSteps);
-                sliderSteps.AddRange(tempSteps.Select(x => x - 1));
-
                 //check that the number of steps equals the number of sliders
-                if (sliderSteps.Count != sliderValues.Count)
+                if (tempSteps.Count != sliderValues.Count)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the steps input list.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
                     return;
                 }
                 //check that the number of steps is greater than 1 and less than the number of ticks in the matching slider
                 for (int i = 0; i < connectedSliders.Count; i++)
                 {
-                    if (sliderSteps[i] < 2 || sliderSteps[i] > connectedSliders[i].TickCount +1)
+                    if (tempSteps[i] < 2 || tempSteps[i] > connectedSliders[i].TickCount + 1)
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Steps values must be greater than 1 and less than the number of steps defined in the associated slider.  The first offending slider / step combo is at index: " + i.ToString());
                         return;
                     }
                 }
-                sliderSteps.AddRange(tempSteps.Select( x => x-1));
+            }
+
+
+
+
+            //get slider steps and names once - the first time we are told to fly
+            if (sliderSteps.Count == 0 && _fly)
+            {
+                //get the number of steps per slider
+                sliderSteps.AddRange(tempSteps.Select(x => x - 1));
+
+                
 
 
                 //populate our dictionary of sliders / current step positions
@@ -143,10 +146,7 @@ namespace Colibri.Grasshopper
             }
             DA.SetDataList(0, inputs);
 
-
-
-
-
+            
 
             //don't touch this stuff!  this is what makes the magic happen down below.
             if (!_fly)
@@ -341,7 +341,8 @@ namespace Colibri.Grasshopper
                 //look up the current slider's current sliderStepsPosition and target number
                 int totalNumberOfSteps = sliderSteps[index];
                 int currentSliderStepsPosition = sliderStepsPositions[index];
-                int numTicksToAddPerStep = slider.TickCount/totalNumberOfSteps;
+                double numTicksToAddAsDouble = (double)slider.TickCount/(double)totalNumberOfSteps;
+                int numTicksToAddPerStep = (int)Math.Ceiling(numTicksToAddAsDouble);
                 
 
                 //find the closest tick
