@@ -341,12 +341,20 @@ namespace Colibri.Grasshopper
                 //look up the current slider's current sliderStepsPosition and target number
                 int totalNumberOfSteps = sliderSteps[index];
                 int currentSliderStepsPosition = sliderStepsPositions[index];
+                int sliderMidStep = slider.TickCount / 2;
+                int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
                 double numTicksToAddAsDouble = (double)slider.TickCount/(double)totalNumberOfSteps;
-                int numTicksToAddPerStep = (int)Math.Ceiling(numTicksToAddAsDouble);
-                
 
                 //find the closest tick
-                int closestTick = numTicksToAddPerStep*currentSliderStepsPosition;
+                int closestTick = 0;
+                if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
+                {
+                    closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition); 
+                }
+                else
+                {
+                    closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
+                }
 
                 // Increment the slider.
                 slider.TickValue = closestTick;
