@@ -48,6 +48,9 @@ namespace Aggregator
 
         }
 
+        //variable to keep track of what lines have been written during a colibri flight
+        private List<string> alreadyWrittenLines = new List<string>();
+
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -139,10 +142,18 @@ namespace Aggregator
 
             Size viewSize = new Size(cleanedImgParams[0], cleanedImgParams[1]);
             //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
-            
-            
-            if (run)
-               {
+
+            //if we aren't told to write, clean out the list of already written items
+            if (!run)
+            {
+                alreadyWrittenLines = new List<string>();
+            }
+            //if we are told to run and we haven't written this line yet, do so
+            if (run && !alreadyWrittenLines.Contains(valueReady))
+            {
+                //add this line to our list of already written lines
+                alreadyWrittenLines.Add(valueReady);
+
                 //check csv file
                 if (!File.Exists(csvPath))
                 {
