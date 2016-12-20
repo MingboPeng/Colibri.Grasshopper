@@ -17,7 +17,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public ColibriOutputs()
           : base("Colibri Outputs", "Colibri Outputs",
-              "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right of the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
+              "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
               "TT Toolbox", "Colibri")
         {
         }
@@ -70,7 +70,26 @@ namespace Colibri.Grasshopper
             //loop over headings
             for (int i = 0; i < OutputNames.Count; i++)
             {
-                myDictionary.Add(OutputNames[i], OutputValues[i]);
+                try
+                {
+                    myDictionary.Add(OutputNames[i], OutputValues[i]);
+                }
+                catch (ArgumentException ex)
+                {
+                    if (ex.ToString().Contains("key"))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your Outputs must have unique names!  Set them all and try again.");
+                        return;
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
 
 

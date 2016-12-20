@@ -135,13 +135,19 @@ namespace Colibri.Grasshopper
                 }
                 catch (ArgumentException ex)
                 {
-                    ex.ToString().Contains("key");
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your sliders must have unique nicknames!  Set them all and try again.");
-                    return;
+                    if (ex.ToString().Contains("key"))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your sliders must have unique nicknames!  Set them all and try again.");
+                        return;
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
                 }
                 catch (Exception ex)
                 {
-
+                    throw ex;
                 }
             }
             DA.SetDataList(0, inputs);
