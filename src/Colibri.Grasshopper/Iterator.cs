@@ -43,8 +43,9 @@ namespace Colibri.Grasshopper
         {
             pManager.AddNumberParameter("Sliders", "Sliders",
                 "Sliders to iterate over.  Sliders must be plugged directly into this input.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Steps", "Steps", "Number of steps to take on each slider.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Fly?", "Fly?", "Tell Colibri to fly!  Provide a button here, and click it once youare ready for Colibri to fly around your definition.", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Steps", "Steps", "Number of steps to take on each slider.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\nIf no input data is provided, we'll use every tick on every slider as a step.", GH_ParamAccess.list);
+            pManager[1].Optional = true;
+            pManager.AddBooleanParameter("Fly?", "Fly?", "Tell Colibri to fly!  Provide a button here, and click it once you are ready for Colibri to fly around your definition.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -108,10 +109,23 @@ namespace Colibri.Grasshopper
                 }
             }
 
-            
+            //if no steps input was provided, use the slider's ticks as steps
+            if (tempSteps.Count == 0)
+            {
+                foreach (GH_NumberSlider slider in connectedSliders)
+                {
+                    tempSteps.Add(slider.TickCount);
+                }
+            }
+
+
             //run all defense before Colibri is told to fly
             if (!_fly)
             {
+                //make sure globals are clear
+                sliderSteps = new List<int>();
+                sliderStepsPositions = new Dictionary<int, int>();
+
                 //check that the number of steps equals the number of sliders
                 if (tempSteps.Count != sliderValues.Count)
                 {
@@ -138,17 +152,13 @@ namespace Colibri.Grasshopper
                 //get the number of steps per slider
                 sliderSteps.AddRange(tempSteps.Select(x => x - 1));
 
-                
-
-
                 //populate our dictionary of sliders / current step positions
                 for (int i = 0; i < sliderSteps.Count; i++)
                 {
                     sliderStepsPositions.Add(i, 1);
                 }
             }
-
-
+            
             //listen for slider changes
             foreach (GH_NumberSlider slider in allConnectedSliders)
             {
