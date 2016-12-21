@@ -1,7 +1,8 @@
 <img src="https://raw.githubusercontent.com/bhowes-tt/Colibri.Grasshopper/master/docs/Images/Logo.JPG" width="350">
 
 # Colibri
-A design space exporter for Grasshopper.  
+### A design space exporter for Grasshopper.  
+
 
 Colibri allows you to easily turn your GH definitions into Design Explorer - compatible data sets.  Run Colibri in Grasshopper, upload to Google Drive (or a private server), and voila - your design space in Design Explorer!
 
