@@ -14,6 +14,7 @@ namespace Colibri.Grasshopper
     public class Iterator : GH_Component
     {
         GH_Document doc = null;
+        List<GH_NumberSlider> allConnectedSliders = new List<GH_NumberSlider>();
         List<string> sliderNames = new List<string>();
         List<int> sliderSteps = new List<int>();
         Dictionary<int, int> sliderStepsPositions = new Dictionary<int, int>();
@@ -70,7 +71,6 @@ namespace Colibri.Grasshopper
 
 
             //catch grasshopper inputs
-            
             List<double> sliderValues = new List<double>();
             List<int> tempSteps = new List<int>();
             bool _fly = false;
@@ -79,10 +79,35 @@ namespace Colibri.Grasshopper
             DA.GetData(2, ref _fly);
 
 
-            //output slider values and names
+            //manage sliders
+
+            //get a handle on the connected sliders
             List<GH_NumberSlider> connectedSliders = getConnectedSliders();
+
+            //wipe out any event handlers that might already exist
+            foreach (GH_NumberSlider slider in allConnectedSliders)
+            {
+                slider.ObjectChanged -= Slider_ObjectChanged;
+            }
+
+            //refresh our global list of sliders
+            allConnectedSliders.Clear();
+            allConnectedSliders.AddRange(connectedSliders);
+
+            //slider names
             sliderNames = new List<string>();
-            sliderNames.AddRange(connectedSliders.Select(x => x.NickName));
+            foreach (GH_NumberSlider slider in connectedSliders)
+            {
+                if (slider.NickName != "")
+                {
+                    sliderNames.Add(slider.NickName);
+                }
+                else
+                {
+                    sliderNames.Add(slider.ImpliedNickName);
+                }
+            }
+
             
             //run all defense before Colibri is told to fly
             if (!_fly)
@@ -124,7 +149,13 @@ namespace Colibri.Grasshopper
             }
 
 
-            
+            //listen for slider changes
+            foreach (GH_NumberSlider slider in allConnectedSliders)
+            {
+                slider.ObjectChanged += Slider_ObjectChanged;
+            }
+
+
             //output 'inputs' object
             Dictionary<string, double> inputs = new Dictionary<string, double>();
             for (int i = 0; i < sliderValues.Count; i++)
@@ -166,6 +197,7 @@ namespace Colibri.Grasshopper
             doc.SolutionEnd += OnSolutionEnd;
         }
 
+        
 
 
         //methods below copied in from Ladybug's Fly component
@@ -311,6 +343,8 @@ namespace Colibri.Grasshopper
                         sliderSteps = new List<int>();
                         sliderStepsPositions = new Dictionary<int, int>();
                         computedValues = new List<string>();
+                        e.Document.NewSolution(false);
+                        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
                         break;
                     }
 
@@ -331,8 +365,6 @@ namespace Colibri.Grasshopper
                 _running = false;
             }
         }
-
-        
 
         private bool MoveToNextPermutation(ref int index, List<GH.Kernel.Special.GH_NumberSlider> sliders)
         {
@@ -442,7 +474,6 @@ namespace Colibri.Grasshopper
               + "Est. Total Time: " + expectedTime + " Min.\n";
         }
         
-
         private List<GH_NumberSlider> getConnectedSliders()
         {
 
@@ -490,6 +521,13 @@ namespace Colibri.Grasshopper
 
             return sliders;
         }
+
+
+        private void Slider_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
+        {
+            ExpireSolution(true);
+        }
+
 
         /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
