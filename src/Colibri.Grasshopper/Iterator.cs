@@ -292,6 +292,15 @@ namespace Colibri.Grasshopper
                 {
                     SetBooleanToFalse(boolTrigger);
                     this.Message = "Release the Colibri!";
+
+                    //wipe out colibri variables and compute a new solution
+                    sliderNames = new List<string>();
+                    sliderSteps = new List<int>();
+                    sliderStepsPositions = new Dictionary<int, int>();
+                    computedValues = new List<string>();
+                    e.Document.NewSolution(false);
+                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
                     return;
                 }
 
