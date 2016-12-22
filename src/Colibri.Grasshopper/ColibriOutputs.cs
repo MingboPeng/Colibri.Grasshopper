@@ -6,7 +6,7 @@ using Rhino.Geometry;
 
 namespace Colibri.Grasshopper
 {
-    public class FormatOutputs : GH_Component
+    public class ColibriOutputs : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -15,10 +15,10 @@ namespace Colibri.Grasshopper
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// ne	w tabs/panels will automatically be created.
         /// </summary>
-        public FormatOutputs()
-          : base("FormatOutputs", "FormatOutputs",
-              "Formats Data Dictionary",
-              "Colibri", "Colibri")
+        public ColibriOutputs()
+          : base("Colibri Outputs", "Colibri Outputs",
+              "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
+              "TT Toolbox", "Colibri")
         {
         }
 
@@ -29,8 +29,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("OutputNames", "OutputNames", "Names of Outputs", GH_ParamAccess.list);
-            pManager.AddTextParameter("OutputValues", "OutputValues", "Output Values", GH_ParamAccess.list);
+            pManager.AddTextParameter("Names", "Names", "Output names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Values", "Values", "Output Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Outputs", "Outputs", "Dictionary of Outputs", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Outputs", "Outputs", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -57,13 +57,39 @@ namespace Colibri.Grasshopper
             DA.GetDataList(0, OutputNames);
             DA.GetDataList(1, OutputValues);
 
+            //defense
+            if (OutputNames.Count != OutputValues.Count)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide equal numbers of Names and Values.");
+                return;
+            }
+
             //dict to populate
             Dictionary<string, string> myDictionary = new Dictionary<string, string>();
 
             //loop over headings
             for (int i = 0; i < OutputNames.Count; i++)
             {
-                myDictionary.Add(OutputNames[i], OutputValues[i]);
+                try
+                {
+                    myDictionary.Add(OutputNames[i], OutputValues[i]);
+                }
+                catch (ArgumentException ex)
+                {
+                    if (ex.ToString().Contains("key"))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your Outputs must have unique names!  Set them all and try again.");
+                        return;
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
 
 

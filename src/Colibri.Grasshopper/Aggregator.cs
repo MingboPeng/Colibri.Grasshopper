@@ -19,8 +19,8 @@ namespace Aggregator
         /// </summary>
         public Aggregator()
           : base("Aggregator", "Aggregator",
-              "Aggregates design input data, performance metrics, image & json filemanes into a data.csv file for Design Explorer to open.",
-              "Colibri", "Colibri")
+              "Aggregates design input and output data, image & Spectacles filemanes into a data.csv file that Design Explorer can open.",
+              "TT Toolbox", "Colibri")
         {
         }
 
@@ -31,12 +31,11 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("FolderPath", "Folder", "Folder path", GH_ParamAccess.item);
-            pManager.AddTextParameter("inputsDataSet", "Inputs", "Inputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("outputsDataSet", "Outputs", "Outputs data", GH_ParamAccess.list);
-            pManager.AddTextParameter("imageParams", "ImgParams", "ImageParams like height, width of output images", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("writeFile", "WriteFile", "Set to yes to run", GH_ParamAccess.item);
-            //pManager.AddTextParameter("imgName", "name", "imgName", GH_ParamAccess.item);
+            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Inputs", "Inputs", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
+            pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -44,11 +43,13 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("writeInData", "WriteInData", "Use panel to check current data", GH_ParamAccess.item);
             pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
                 "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
 
         }
+
+        //variable to keep track of what lines have been written during a colibri flight
+        private List<string> alreadyWrittenLines = new List<string>();
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -141,10 +142,18 @@ namespace Aggregator
 
             Size viewSize = new Size(cleanedImgParams[0], cleanedImgParams[1]);
             //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
-            
-            
-            if (run)
-               {
+
+            //if we aren't told to write, clean out the list of already written items
+            if (!run)
+            {
+                alreadyWrittenLines = new List<string>();
+            }
+            //if we are told to run and we haven't written this line yet, do so
+            if (run && !alreadyWrittenLines.Contains(valueReady))
+            {
+                //add this line to our list of already written lines
+                alreadyWrittenLines.Add(valueReady);
+
                 //check csv file
                 if (!File.Exists(csvPath))
                 {
@@ -164,8 +173,8 @@ namespace Aggregator
             }
             
             //set output
-            DA.SetData(0, writeInData);
-            DA.SetData(1, jsonFilePath);
+            //DA.SetData(0, writeInData);
+            DA.SetData(0, jsonFilePath);
 
         }
 

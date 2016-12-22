@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace ImageParameter
+namespace Colibri.Grasshopper
 {
-    public class ImageParameterComponent : GH_Component
+    public class ImageParameters : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -15,10 +15,10 @@ namespace ImageParameter
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public ImageParameterComponent()
-          : base("ImageParameter", "ImageParameter",
-              "ImageParameter",
-              "Colibri", "Colibri")
+        public ImageParameters()
+          : base("Image Parameters", "Image Parameters",
+              "Defines how Colibri generates images.  Right now this just sets the size, but we could expose more options like Ladybug's Capture View component.",
+              "TT Toolbox", "Colibri")
         {
         }
 
@@ -29,8 +29,8 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("widthInput", "Width", "imageWidth", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("heightInput", "Height", "imageHeight", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);
+            pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 400);
 
         }
 
@@ -39,7 +39,7 @@ namespace ImageParameter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("imageParameter", "ImgParameter", "imageParameter", GH_ParamAccess.list);
+            pManager.AddGenericParameter("ImgParams", "ImgParams", "Colibri's image parameters object.  Feed this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -50,33 +50,26 @@ namespace ImageParameter
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //input variables
-            int width = 100;
-            int height = 100;
+            int width = 400;
+            int height = 400;
             
-            
-
             //get data
             DA.GetData(0, ref width);
             DA.GetData(1, ref height);
-            
 
-            Dictionary<string, int> imageP = new Dictionary<string, int>();
-
-            imageP.Add("Width", width);
-            imageP.Add("Height", height);
-
-
-
-
-            
-
+            //defense
+            if (width < 50 || height < 50)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Width and Height must be greater than 50 pixels.");
+                return;
+            }
 
             //set output
-            DA.SetDataList(0, imageP);
+            Dictionary<string, int> imageP = new Dictionary<string, int>();
+            imageP.Add("Width", width);
+            imageP.Add("Height", height);
             
-
-
-
+            DA.SetDataList(0, imageP);
         }
 
         /// <summary>
