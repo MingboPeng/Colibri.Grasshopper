@@ -16,13 +16,14 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
-        public Dictionary<string, Guid> getConnectedSliderOrPanel(IGH_Param SelInputSource)
+        public Dictionary<string, Guid> getConnectedSliderOrPanel(IGH_Param SelInputSource, IGH_Param SelOutputSource)
         {
             Dictionary<string, Guid> selectedInputs = new Dictionary<string, Guid>(); //empty list for Slider and Panel's guids
 
             // Find the Guid for connected Slide or Panel
 
-            IGH_Param selInput = SelInputSource; //ref for input where sliders are connected to this component
+            var selInput = SelInputSource; //ref for input where sliders are connected to this component
+            var selOuput = SelOutputSource;
             IList<IGH_Param> sources = selInput.Sources; //list of things connected on this input
             bool isAnythingConnected = sources.Any(); //is there actually anything connected?
             //int connectedCount = sources.Count;
@@ -40,10 +41,12 @@ namespace Colibri.Grasshopper
                 if (mySlider != null)
                 { 
                     selectedInputs.Add("Slider", mySlider.InstanceGuid);
+                    changeParamNames(mySlider.NickName, selInput,selOuput);
                 }
                 else if (myPanel != null)
                 {
                     selectedInputs.Add("Panel", myPanel.InstanceGuid);
+                    changeParamNames(myPanel.NickName, selInput, selOuput);
                 }
                     
             }
@@ -51,5 +54,11 @@ namespace Colibri.Grasshopper
             return selectedInputs;
         }
 
+        private void changeParamNames(String newName, IGH_Param SelInputSource, IGH_Param SelOutputSource) {
+
+            SelInputSource.NickName = newName + "newInputs";
+            SelOutputSource.NickName = newName + "newOutputs";
+
+        }
     }
 }

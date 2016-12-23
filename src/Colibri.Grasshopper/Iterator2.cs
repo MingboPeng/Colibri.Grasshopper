@@ -57,7 +57,7 @@ namespace Colibri.Grasshopper
             //DA.GetDataList(0, inputs);
 
             var sliderAndPanel = new IteratorGetSliderPanel();
-            var selectedSliderAndPanel = sliderAndPanel.getConnectedSliderOrPanel(this.Params.Input[0]);
+            var selectedSliderAndPanel = sliderAndPanel.getConnectedSliderOrPanel(this.Params.Input[0],this.Params.Output[0]);
 
             DA.SetDataList(0, selectedSliderAndPanel);
 
