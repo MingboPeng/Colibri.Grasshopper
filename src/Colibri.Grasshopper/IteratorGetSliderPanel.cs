@@ -26,27 +26,37 @@ namespace Colibri.Grasshopper
             var selOuput = SelOutputSource;
             IList<IGH_Param> sources = selInput.Sources; //list of things connected on this input
             bool isAnythingConnected = sources.Any(); //is there actually anything connected?
-            //int connectedCount = sources.Count;
+            
 
             // Find connected
             if (isAnythingConnected)
             { 
                 //if something's connected,and get the first connected
                 
-                IGH_DocumentObject component = sources[0].Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
-                GH_NumberSlider mySlider = component as GH_NumberSlider; //...then cast (?) it as a slider
-                GH_Panel myPanel = component as GH_Panel; // try to cast it as a panel as well
-
+                var component = sources[0].Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
+                component.NickName = String.IsNullOrEmpty(component.NickName) ? "Rename" : component.NickName;
+                var mySlider = component as GH_NumberSlider; //...then cast (?) it as a slider
+                var myPanel = component as GH_Panel; // try to cast it as a panel as well
+                var myValueList = component as GH_ValueList;
+                
                 //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
                 if (mySlider != null)
-                { 
+                {
                     selectedInputs.Add("Slider", mySlider.InstanceGuid);
-                    changeParamNames(mySlider.NickName, selInput,selOuput);
+                    changeParamNames(mySlider.NickName, InputType.Slider, selInput, selOuput);
                 }
                 else if (myPanel != null)
                 {
                     selectedInputs.Add("Panel", myPanel.InstanceGuid);
-                    changeParamNames(myPanel.NickName, selInput, selOuput);
+                    changeParamNames(myPanel.NickName, InputType.Panel, selInput, selOuput);
+                }
+                else if (myValueList != null)
+                {
+                    selectedInputs.Add("ValueList", myValueList.InstanceGuid);
+                    changeParamNames(myValueList.NickName, InputType.ValueList, selInput, selOuput);
+                }
+                else {
+                    changeParamNames(null, InputType.Invalid, selInput, selOuput);
                 }
                     
             }
@@ -54,11 +64,15 @@ namespace Colibri.Grasshopper
             return selectedInputs;
         }
 
-        private void changeParamNames(String newName, IGH_Param SelInputSource, IGH_Param SelOutputSource) {
+        private void changeParamNames(string newName, InputType type, IGH_Param SelInputSource, IGH_Param SelOutputSource)
+        {
+            var typeName = Enum.GetName(typeof(InputType), type);
+            SelInputSource.NickName = typeName;
 
-            SelInputSource.NickName = newName + "newInputs";
-            SelOutputSource.NickName = newName + "newOutputs";
+            SelOutputSource.NickName = newName;
 
         }
+
+        public enum InputType { Slider, Panel, ValueList, Invalid }
     }
 }

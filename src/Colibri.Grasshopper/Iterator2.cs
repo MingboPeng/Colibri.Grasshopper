@@ -39,6 +39,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("input", "input", "current item of inputs", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Inputs", "Inputs", "connet to Aggregateor", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,7 +59,27 @@ namespace Colibri.Grasshopper
 
             var sliderAndPanel = new IteratorGetSliderPanel();
             var selectedSliderAndPanel = sliderAndPanel.getConnectedSliderOrPanel(this.Params.Input[0],this.Params.Output[0]);
+            
+            if (selectedSliderAndPanel.Any())
+            {
+                //IGH_Param newParam = Params.Input[2];
+                //newParam.Name = "inputs";
+                //newParam.NickName = "inputs";
+                //newParam.Access = GH_ParamAccess.list;
+                //http://www.grasshopper3d.com/forum/topics/dynamic-outputs-for-component
 
+            //not working
+               // GH_Component.GH_InputParamManager newParamManager = null;
+               // newParamManager.AddGenericParameter("inputs", "inputs", "Slider or Panel", GH_ParamAccess.list);
+               // this.RegisterInputParams(newParamManager);
+                
+
+
+            }
+            
+
+
+            //assign to output
             DA.SetDataList(0, selectedSliderAndPanel);
 
         }
