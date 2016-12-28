@@ -10,13 +10,13 @@ using Colibri.Grasshopper;
 
 namespace Colibri.Grasshopper
 {
-    class IteratorGetSliderPanel
+    class IteratorCheckAndGetInput
     {
    
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
-        public Dictionary<string, Guid> getConnectedSliderOrPanel(IGH_Param SelInputSource, IGH_Param SelOutputSource)
+        public Dictionary<string, Guid> CheckAndGetConnectedInputSource(IGH_Param SelInputSource, IGH_Param SelOutputSource)
         {
             Dictionary<string, Guid> selectedInputs = new Dictionary<string, Guid>(); //empty list for Slider and Panel's guids
 
@@ -64,11 +64,10 @@ namespace Colibri.Grasshopper
             return selectedInputs;
         }
 
-        private void changeParamNames(string newName, InputType type, IGH_Param SelInputSource, IGH_Param SelOutputSource)
+        public void changeParamNames(string newName, InputType type, IGH_Param SelInputSource, IGH_Param SelOutputSource)
         {
             var typeName = Enum.GetName(typeof(InputType), type);
             SelInputSource.NickName = typeName;
-
             SelOutputSource.NickName = newName;
 
         }
