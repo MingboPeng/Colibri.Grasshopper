@@ -33,9 +33,12 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Input", "A", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Fly?", "Fly?", "Tell Colibri to fly!  Provide a button here, and click it once you are ready for Colibri to fly around your definition.", GH_ParamAccess.item,false);
-            
+            pManager[0].Optional = true;
+            pManager[0].MutableNickName = false;
+            pManager[1].MutableNickName = false;
+
         }
 
         /// <summary>
@@ -43,8 +46,10 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("input", "input", "current item of inputs", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Inputs", "Inputs", "connet to Aggregateor", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Value", "Value[N]", "current item of inputs", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Iteration ID", "ID", "connet to Aggregateor", GH_ParamAccess.list);
+            pManager[0].MutableNickName = false;
+            pManager[1].MutableNickName = false;
         }
 
         /// <summary>
@@ -63,29 +68,7 @@ namespace Colibri.Grasshopper
             bool _fly = false;
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref _fly);
 
-
-            //var validInputSource = IteratorParam.CheckAndGetConnectedInputSource(this.Params.Input[0]);
-            //IteratorParam.changeParamNickName(validInputSource, this.Params.Input[0], this.Params.Output[0]);
-
-            //if (validInputSource.Any())
-            //{
-            //    //    IGH_Param newParam = null;
-            //    //    newParam.Name = "inputs";
-            //    //    newParam.NickName = "inputs";
-            //    //    newParam.Access = GH_ParamAccess.list;
-            //    //    this.Params.RegisterOutputParam(newParam, this.Params.Output.Count - 1);
-
-
-            //    //    //http://www.grasshopper3d.com/forum/topics/dynamic-outputs-for-component
-
-            //    //    //    //not working
-            //    //    //    // GH_Component.GH_InputParamManager newParamManager = null;
-            //    //    //    // newParamManager.AddGenericParameter("inputs", "inputs", "Slider or Panel", GH_ParamAccess.list);
-            //    //    //    // this.RegisterInputParams(newParamManager);
-
-
-            //}
-
+            
             //if (!_fly)
             //    return;
 
@@ -99,20 +82,17 @@ namespace Colibri.Grasshopper
                 bool isEmptySource = this.Params.Input[i].SourceCount==0 ? true : false;
                 if (!isFly && !isEmptySource)
                 {
-                    validInputSource = IteratorParam.CheckAndGetConnectedInputSource(this.Params.Input[i]);
-                    IteratorParam.changeParamNickName(validInputSource, this.Params.Input[i], this.Params.Output[i]);
+                    validInputSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
+                    IteratorParam.ChangeParamNickName(validInputSource, this.Params.Input[i], this.Params.Output[i]);
+                    var paramValue = IteratorParam.GetParamValues(validInputSource, this.Params.Input[i]);
+
+                    //assign to output
+                    DA.SetDataList(i, paramValue);
                 }   
-                    
 
             }
 
             
-
-            //CreateParameter(GH_ParameterSide.Input, 1);
-            //assign to output
-            DA.SetDataList(0, validInputSource);
-
-           
             
         }
 
@@ -212,23 +192,26 @@ namespace Colibri.Grasshopper
                 // create inputs
                 var param = this.Params.Input[i];
                 if (param.NickName == String.Empty) {
-                    param.NickName= GH_ComponentParamServer.InventUniqueNickname("BCDEFGHIJKLMNOPQRSTUVWXYZ", Params.Input);
+                    string formatedUniqueNickName = "Input[N]";
+                    param.NickName= formatedUniqueNickName;
                 }
                 param.Name = "Input";
                 param.Description = "Please connect a Slider, Panel, or ValueList";
                 param.Access = GH_ParamAccess.list;
                 param.Optional = true;
+                param.MutableNickName = false;
 
                 var paramOutput = this.Params.Output[i];
                 if (paramOutput.NickName == String.Empty)
                 {
-                    paramOutput.NickName = param.NickName;
+
+                    paramOutput.NickName = param.NickName.Replace("Input","Value");
                     paramOutput.Name = "Item";
                     paramOutput.Description = "This item is one of values from " + param.NickName;
+                    paramOutput.MutableNickName = false;
                 }
             }
-
-          
+            
         }
 
 
@@ -246,7 +229,7 @@ namespace Colibri.Grasshopper
             bool isFly = e.ParameterIndex == this.Params.IndexOfInputParam("Fly?") ? true : false;
             bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
             
-            //System.Windows.Forms.MessageBox.Show(isInputSide + "_" + isFly + "_" + isSecondLastEmptySource);
+           
 
             if (isInputSide && !isFly && !isSecondLastEmptySource)
             {
@@ -254,8 +237,8 @@ namespace Colibri.Grasshopper
                 IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
                 Params.RegisterInputParam(newParam, Params.Input.Count - 1);
                 VariableParameterMaintenance();
-                Params.OnParametersChanged();
-                ExpireSolution(true);
+                this.Params.OnParametersChanged();
+                this.ExpireSolution(true);
 
             }
 
