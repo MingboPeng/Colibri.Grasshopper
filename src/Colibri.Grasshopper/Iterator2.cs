@@ -163,7 +163,7 @@ namespace Colibri.Grasshopper
         public bool CanRemoveParameter(GH_ParameterSide side, int index)
         {
             bool isInputSide = (side == GH_ParameterSide.Input)? true : false;
-            bool isTheFlyButton = (index == this.Params.Input.Count) ? true : false;
+            bool isTheFlyButton = (index == this.Params.IndexOfInputParam("Fly?")) ? true : false;
             bool isTheOnlyInput = (index == 0) ? true : false;
 
 
@@ -235,46 +235,31 @@ namespace Colibri.Grasshopper
         #endregion
 
 
-
-
-
-
         #region ParamInputChanged
-
-        //private void ParamInputChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
-        //{
-        //    //System.Windows.Forms.MessageBox.Show("input changed!");
-        //    //this.cr
-        //    //IGH_Param newParam = null;
-        //    //newParam.Name = "inputs";
-        //    //newParam.NickName = "inputs";
-        //    //newParam.Access = GH_ParamAccess.list;
-        //    //this.Params.RegisterOutputParam(newParam,this.Params.Output.Count-1);
-        //    ExpireSolution(true);
-        //}
 
         private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
             //WIP
 
-            //bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
-            //bool isFly = e.ParameterIndex == this.Params.IndexOfInputParam("Fly?") ? true : false;
-            //bool isEmptySource = e.Parameter.SourceCount == 0 ? true : false;
-
-            //System.Windows.Forms.MessageBox.Show(isInputSide+"_"+ isFly+"_" + isEmptySource);
-
-            //if (isInputSide && !isFly && !isEmptySource)
-            //{
-            //    System.Windows.Forms.MessageBox.Show(e.ParameterIndex.ToString()+"_"+ Params.IndexOfInputParam("Fly?").ToString());
-            //    IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count-1);
-            //    Params.RegisterInputParam(newParam, Params.Input.Count - 1);
-            //    VariableParameterMaintenance();
-            //    //ExpireSolution(true);
-
-            //}
-                
+            bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
+            bool isFly = e.ParameterIndex == this.Params.IndexOfInputParam("Fly?") ? true : false;
+            bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
             
+            //System.Windows.Forms.MessageBox.Show(isInputSide + "_" + isFly + "_" + isSecondLastEmptySource);
+
+            if (isInputSide && !isFly && !isSecondLastEmptySource)
+            {
+                //System.Windows.Forms.MessageBox.Show(e.ParameterIndex.ToString() + "_" + Params.IndexOfInputParam("Fly?").ToString());
+                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
+                Params.RegisterInputParam(newParam, Params.Input.Count - 1);
+                VariableParameterMaintenance();
+                Params.OnParametersChanged();
+                ExpireSolution(true);
+
+            }
+
+
         }
 
         #endregion
