@@ -19,9 +19,9 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
-        public static Dictionary<InputType, IGH_Param> CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
+        public static List<object> CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
         {
-            var validSourceParam = new Dictionary<InputType, IGH_Param>(); //empty list for valid Slider, Panel, or ValueList
+            var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
 
             // Find the Guid for connected Slide or Panel
 
@@ -47,18 +47,18 @@ namespace Colibri.Grasshopper
                 //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
                 if (mySlider != null)
                 {
-                    validSourceParam.Add(InputType.Slider, mySlider);
+                    validSourceParam.Add(mySlider);
                 }
                 else if (myPanel != null)
                 {
-                    validSourceParam.Add(InputType.Panel, myPanel);
+                    validSourceParam.Add(myPanel);
                 }
                 else if (myValueList != null)
                 {
-                    validSourceParam.Add(InputType.ValueList, myValueList);
+                    validSourceParam.Add(myValueList);
                 }
                 else {
-                    validSourceParam.Add(InputType.Unsupported, null);
+                    validSourceParam.Add(InputType.Unsupported);
                 }
                     
             }
@@ -68,104 +68,113 @@ namespace Colibri.Grasshopper
 
         //GH_Param<GH_String>
 
-        public static void ChangeParamNickName(Dictionary<InputType, IGH_Param> ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
+        public static void ChangeParamNickName(List<object> ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
         {
-            var validSourceParam = ValidSourceParam;
-            var inputParam = InputParam;
-            var outputParam = OutputParam;
+            var _validSourceParam = ValidSourceParam.First();
+            var _inputParam = InputParam;
+            var _outputParam = OutputParam;
 
-            
-            var type = validSourceParam.Keys.First();
-            IGH_Param inputSource = null;
-            if (type == InputType.Unsupported) {
+           
+            var _type = ConvertParamTypeFormat(_validSourceParam);
+            IGH_Param _inputSource = null;
 
-                inputSource = inputParam.Sources[0];
-
-            } else {
-
-                inputSource = validSourceParam.Values.First();
-            }
-            
-            
-            inputParam.NickName = type == InputType.Unsupported ? type.ToString(): inputSource.NickName;
-            outputParam.NickName = type == InputType.Unsupported? inputParam.NickName : inputSource.NickName;
-            outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
-
-        }
-
-
-        public static List<string> GetParamValues(Dictionary<InputType, IGH_Param> ValidSourceParam, IGH_Param InputParam)
-        {
-            //object currentItem = default(T);
-            var validSourceParam = ValidSourceParam;
-            var inputParam = InputParam;
-
-            var _values = new List<string>();
-            var type = validSourceParam.Keys.First();
-            IGH_Param inputSource = null;
-            if (type == InputType.Unsupported)
+            if (_type == InputType.Unsupported)
             {
 
-                _values.Add("Unsupported type! Please use Slider, Panel, or ValueList!");
+                _inputSource = _inputParam.Sources[0];
 
             }
             else
             {
-                inputSource = validSourceParam.Values.First();
-                var component = inputSource.Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
-                
-                //is there any way to detect the type instead of cast?????
-                var mySlider = inputSource as GH_NumberSlider; //...then cast (?) it as a slider
-                var myPanel = component as GH_Panel; // try to cast it as a panel as well
-                var myValueList = component as GH_ValueList;
-                var _stringSeparator = new char[] {'\n'};
+                _inputSource = _validSourceParam as IGH_Param;
+            }
 
-                //Slider
-                if (mySlider != null)
-                {
-                    _values.Add(mySlider.CurrentValue.ToString());
+
+            _inputParam.NickName = _type == InputType.Unsupported ? _type.ToString() : _inputSource.NickName;
+            _outputParam.NickName = _type == InputType.Unsupported ? _type.ToString() : _inputSource.NickName;
+            _outputParam.Description = "This item is one of values from " + _type.ToString() + "_" + _inputParam.NickName;
+
+        }
+
+
+        public static List<string> GetParamValues(List<object> ValidSourceParam, IGH_Param InputParam)
+        {
+            
+            var _validSourceParam = ValidSourceParam.First();
+            var inputParam = InputParam;
+
+            var _values = new List<string>();
+            var _type = ConvertParamTypeFormat(_validSourceParam);
+            var inputSource = _validSourceParam;
+           
+
+            //Slider
+            if (_type==InputType.Slider)
+            {
+                var mySlider = inputSource as GH_NumberSlider;
+                _values.Add(mySlider.CurrentValue.ToString());
                     
-                }
-                //Panel
-                else if (myPanel != null)
-                {
-                    var _panelValues = myPanel.UserText.Split('\n');
+            }
+            //Panel
+            else if (_type == InputType.Panel)
+            {
+                var myPanel = inputSource as GH_Panel;
+                var _stringSeparator = new char[] { '\n' };
+                var _panelValues = myPanel.UserText.Split('\n');
 
-                    if (_panelValues.Any())
+                if (_panelValues.Any())
+                {
+                    foreach (var item in _panelValues)
                     {
-                        foreach (var item in _panelValues)
-                        {
-                            _values.Add(item);
-                        }
+                        _values.Add(item);
+                    }
                         
-                    }
-                    
                 }
-                //ValueList
-                else if (myValueList != null)
+                    
+            }
+            //ValueList
+            else if (_type == InputType.ValueList)
+            {
+                var myValueList = inputSource as GH_ValueList;
+                if (myValueList.SelectedItems.Any())
                 {
-                    if (myValueList.SelectedItems.Any())
+                    foreach (var item in myValueList.SelectedItems)
                     {
-                        foreach (var item in myValueList.SelectedItems)
-                        {
-                            _values.Add(item.Value.ToString());
-
-                        }
-
+                        _values.Add(item.Value.ToString());
                     }
+
+                }
                     
-                }
-                else
-                {
-                    _values.Add("No value");
-                }
-
-
+            }
+            else
+            {
+                _values.Add("Unsupported conponent type! Please use Slider, Panel, or ValueList!");
             }
 
 
             return _values;
         }
         
+        public static InputType ConvertParamTypeFormat(object RawParam)
+        {
+            var _rawType = RawParam.GetType();
+
+            if (_rawType.Equals(typeof(GH_NumberSlider)))
+            {
+                return InputType.Slider;
+
+            } else if (_rawType.Equals(typeof(GH_Panel)))
+            {
+                return InputType.Panel;
+            } else if (_rawType.Equals(typeof(GH_ValueList)))
+            {
+                return InputType.ValueList;
+            }
+            else
+            {
+                return InputType.Unsupported;
+            }
+            
+        }
     }
 }

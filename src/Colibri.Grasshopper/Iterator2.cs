@@ -75,7 +75,7 @@ namespace Colibri.Grasshopper
             //isReady = true;
             
             
-            var validInputSource = new Dictionary<IteratorParam.InputType, IGH_Param>();
+            var validInputSource = new List<object>();
             for (int i = 0; i < this.Params.Input.Count; i++)
             {
                 bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
