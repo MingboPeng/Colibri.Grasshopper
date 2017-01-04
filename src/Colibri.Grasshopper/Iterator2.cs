@@ -47,7 +47,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Value", "Value[N]", "current item of inputs", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Iteration ID", "ID", "connet to Aggregateor", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Iteration ID", "FlyID", "connet to Aggregateor", GH_ParamAccess.list);
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
         }
@@ -239,7 +239,6 @@ namespace Colibri.Grasshopper
                 VariableParameterMaintenance();
                 this.Params.OnParametersChanged();
                 this.ExpireSolution(true);
-
             }
 
 

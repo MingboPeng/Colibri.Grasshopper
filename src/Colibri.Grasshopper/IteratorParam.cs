@@ -94,28 +94,77 @@ namespace Colibri.Grasshopper
         }
 
 
-        public static string GetParamValues(Dictionary<InputType, IGH_Param> ValidSourceParam, IGH_Param InputParam)
+        public static List<string> GetParamValues(Dictionary<InputType, IGH_Param> ValidSourceParam, IGH_Param InputParam)
         {
             //object currentItem = default(T);
             var validSourceParam = ValidSourceParam;
             var inputParam = InputParam;
 
+            var _values = new List<string>();
             var type = validSourceParam.Keys.First();
             IGH_Param inputSource = null;
             if (type == InputType.Unsupported)
             {
 
-                inputSource = inputParam.Sources[0];
+                _values.Add("Unsupported type! Please use Slider, Panel, or ValueList!");
 
             }
             else
             {
-
                 inputSource = validSourceParam.Values.First();
+                var component = inputSource.Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
+                
+                //is there any way to detect the type instead of cast?????
+                var mySlider = inputSource as GH_NumberSlider; //...then cast (?) it as a slider
+                var myPanel = component as GH_Panel; // try to cast it as a panel as well
+                var myValueList = component as GH_ValueList;
+                var _stringSeparator = new char[] {'\n'};
+
+                //Slider
+                if (mySlider != null)
+                {
+                    _values.Add(mySlider.CurrentValue.ToString());
+                    
+                }
+                //Panel
+                else if (myPanel != null)
+                {
+                    var _panelValues = myPanel.UserText.Split('\n');
+
+                    if (_panelValues.Any())
+                    {
+                        foreach (var item in _panelValues)
+                        {
+                            _values.Add(item);
+                        }
+                        
+                    }
+                    
+                }
+                //ValueList
+                else if (myValueList != null)
+                {
+                    if (myValueList.SelectedItems.Any())
+                    {
+                        foreach (var item in myValueList.SelectedItems)
+                        {
+                            _values.Add(item.Value.ToString());
+
+                        }
+
+                    }
+                    
+                }
+                else
+                {
+                    _values.Add("No value");
+                }
+
+
             }
 
 
-            return inputSource.ToString();
+            return _values;
         }
         
     }
