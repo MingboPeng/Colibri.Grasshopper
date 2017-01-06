@@ -7,6 +7,7 @@ using Rhino.Geometry;
 using System.Linq;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Components;
+using System.Threading.Tasks;
 
 namespace Colibri.Grasshopper
 {
@@ -69,19 +70,23 @@ namespace Colibri.Grasshopper
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref _fly);
 
             
+
             //if (!_fly)
             //    return;
 
             //isReady = true;
-            
-            
+
+
             var validInputSource = new List<object>();
+            var validindexList = new List<int>();
+
             for (int i = 0; i < this.Params.Input.Count; i++)
             {
                 bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
                 bool isEmptySource = this.Params.Input[i].SourceCount==0 ? true : false;
                 if (!isFly && !isEmptySource)
                 {
+                    validindexList.Add(i);
                     validInputSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
                     IteratorParam.ChangeParamNickName(validInputSource, this.Params.Input[i], this.Params.Output[i]);
                     var paramValue = IteratorParam.GetParamValues(validInputSource, this.Params.Input[i]);
@@ -92,8 +97,8 @@ namespace Colibri.Grasshopper
 
             }
 
-            
-            
+
+            DA.SetDataList(this.Params.Output.Count - 1, validindexList);
         }
 
 

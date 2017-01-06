@@ -10,10 +10,13 @@ using Grasshopper.Kernel.Parameters;
 
 namespace Colibri.Grasshopper
 {
+
+    public enum InputType { Slider, Panel, ValueList, Unsupported }
+
     static class IteratorParam
     {
 
-        public enum InputType { Slider, Panel, ValueList, Unsupported }
+        
 
 
         /// <summary>
@@ -105,22 +108,22 @@ namespace Colibri.Grasshopper
 
             var _values = new List<string>();
             var _type = ConvertParamTypeFormat(_validSourceParam);
-            var inputSource = _validSourceParam;
+            var _inputSource = _validSourceParam;
            
 
             //Slider
             if (_type==InputType.Slider)
             {
-                var mySlider = inputSource as GH_NumberSlider;
-                _values.Add(mySlider.CurrentValue.ToString());
+                var _mySlider = _inputSource as GH_NumberSlider;
+                _values.Add(_mySlider.CurrentValue.ToString());
                     
             }
             //Panel
             else if (_type == InputType.Panel)
             {
-                var myPanel = inputSource as GH_Panel;
+                var _myPanel = _inputSource as GH_Panel;
                 var _stringSeparator = new char[] { '\n' };
-                var _panelValues = myPanel.UserText.Split('\n');
+                var _panelValues = _myPanel.UserText.Split('\n');
 
                 if (_panelValues.Any())
                 {
@@ -135,14 +138,13 @@ namespace Colibri.Grasshopper
             //ValueList
             else if (_type == InputType.ValueList)
             {
-                var myValueList = inputSource as GH_ValueList;
-                if (myValueList.SelectedItems.Any())
+                var _myValueList = _inputSource as GH_ValueList;
+                if (_myValueList.SelectedItems.Any())
                 {
-                    foreach (var item in myValueList.SelectedItems)
+                    foreach (var item in _myValueList.SelectedItems)
                     {
                         _values.Add(item.Value.ToString());
                     }
-
                 }
                     
             }
