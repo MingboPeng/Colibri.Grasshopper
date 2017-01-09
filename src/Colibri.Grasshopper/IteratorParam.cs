@@ -100,63 +100,54 @@ namespace Colibri.Grasshopper
         }
 
 
-        public static List<string> GetParamValues(List<object> ValidSourceParam, IGH_Param InputParam)
+        public static List<int> GetParamAllStepIndex(List<object> ValidSourceParam)
         {
-            
+            //only pick the first Input source
             var _validSourceParam = ValidSourceParam.First();
-            var inputParam = InputParam;
-
-            var _values = new List<string>();
+            var _values = new List<int>();
             var _type = ConvertParamTypeFormat(_validSourceParam);
             var _inputSource = _validSourceParam;
-           
+
 
             //Slider
-            if (_type==InputType.Slider)
+            if (_type == InputType.Slider)
             {
                 var _mySlider = _inputSource as GH_NumberSlider;
-                _values.Add(_mySlider.CurrentValue.ToString());
-                    
+                var _total = _mySlider.TickCount + 1;
+                _values.AddRange(Enumerable.Range(0, _total));
+
             }
             //Panel
             else if (_type == InputType.Panel)
             {
                 var _myPanel = _inputSource as GH_Panel;
-                var _stringSeparator = new char[] { '\n' };
+                //var _stringSeparator = new char[] { '\n' };
                 var _panelValues = _myPanel.UserText.Split('\n');
 
-                if (_panelValues.Any())
-                {
-                    foreach (var item in _panelValues)
-                    {
-                        _values.Add(item);
-                    }
-                        
-                }
-                    
+                var _total = _panelValues.Count();
+                _values.AddRange(Enumerable.Range(0, _total));
+
+
             }
             //ValueList
             else if (_type == InputType.ValueList)
             {
                 var _myValueList = _inputSource as GH_ValueList;
-                if (_myValueList.SelectedItems.Any())
-                {
-                    foreach (var item in _myValueList.SelectedItems)
-                    {
-                        _values.Add(item.Value.ToString());
-                    }
-                }
-                    
+
+                var _total = _myValueList.ListItems.Count();
+                _values.AddRange(Enumerable.Range(0, _total));
+
+
             }
             else
             {
-                _values.Add("Unsupported conponent type! Please use Slider, Panel, or ValueList!");
+                _values.Add(-1);
+                //_values.Add("Unsupported conponent type! Please use Slider, Panel, or ValueList!");
             }
 
 
             return _values;
         }
-        
         public static InputType ConvertParamTypeFormat(object RawParam)
         {
             var _rawType = RawParam.GetType();

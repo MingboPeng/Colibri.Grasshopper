@@ -89,8 +89,8 @@ namespace Colibri.Grasshopper
                     validindexList.Add(i);
                     validInputSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
                     IteratorParam.ChangeParamNickName(validInputSource, this.Params.Input[i], this.Params.Output[i]);
-                    var paramValue = IteratorParam.GetParamValues(validInputSource, this.Params.Input[i]);
-
+                    var paramValue = IteratorParam.GetParamAllStepIndex(validInputSource);
+                    //paramValue = paramValue.Contains(-1) ? paramValue[0] = "Unsupported conponent type! Please use Slider, Panel, or ValueList!" : paramValue;
                     //assign to output
                     DA.SetDataList(i, paramValue);
                 }   
