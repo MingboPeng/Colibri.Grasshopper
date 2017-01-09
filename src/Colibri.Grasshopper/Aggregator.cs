@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 
 using Grasshopper.Kernel;
+using Rhino.Display;
 using Rhino.Geometry;
 
 namespace Aggregator
@@ -162,6 +163,7 @@ namespace Aggregator
                 }
 
                 //save imgs
+                Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
                 var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
                 pic.Save(imgPath);
 
