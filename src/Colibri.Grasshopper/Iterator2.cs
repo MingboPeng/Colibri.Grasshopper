@@ -69,7 +69,7 @@ namespace Colibri.Grasshopper
             bool _fly = false;
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref _fly);
 
-            
+
 
             //if (!_fly)
             //    return;
@@ -77,27 +77,37 @@ namespace Colibri.Grasshopper
             //isReady = true;
 
 
-            var validInputSource = new List<object>();
+            var validSources = new List<object>();
             var validindexList = new List<int>();
 
             for (int i = 0; i < this.Params.Input.Count; i++)
             {
                 bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
-                bool isEmptySource = this.Params.Input[i].SourceCount==0 ? true : false;
+                bool isEmptySource = this.Params.Input[i].SourceCount == 0 ? true : false;
                 if (!isFly && !isEmptySource)
                 {
                     validindexList.Add(i);
-                    validInputSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
-                    IteratorParam.ChangeParamNickName(validInputSource, this.Params.Input[i], this.Params.Output[i]);
-                    var paramValue = IteratorParam.GetParamAllStepIndex(validInputSource);
+                    var validSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
+                    validSources.Add(validSource);
+                    IteratorParam.ChangeParamNickName(validSource, this.Params.Input[i], this.Params.Output[i]);
+
+                    //var paramValue = IteratorParam.GetParamAllStepIndex(validInputSource);
+                    
                     //paramValue = paramValue.Contains(-1) ? paramValue[0] = "Unsupported conponent type! Please use Slider, Panel, or ValueList!" : paramValue;
                     //assign to output
-                    DA.SetDataList(i, paramValue);
-                }   
+                    //DA.SetDataList(i, paramValue);
+                }
 
             }
 
-
+            //FOR test purpose
+            //var flyParam = new IteratorFlyParam(validSources);
+            //flyParam.SetAllParamsStepIndexes();
+            
+            //for (int i = 0; i < flyParam.InputParamsStepIndexes.Count(); i++)
+            //{
+            //    DA.SetDataList(i, flyParam.InputParamsStepIndexes[i]);
+            //}
             DA.SetDataList(this.Params.Output.Count - 1, validindexList);
         }
 

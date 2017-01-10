@@ -22,10 +22,10 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
-        public static List<object> CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
+        public static object CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
         {
-            var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
-
+            //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
+            object validSourceParam = null;
             // Find the Guid for connected Slide or Panel
 
             var selInput = SelectedInputSource; //ref for input where sliders are connected to this component
@@ -50,18 +50,19 @@ namespace Colibri.Grasshopper
                 //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
                 if (mySlider != null)
                 {
-                    validSourceParam.Add(mySlider);
+                    validSourceParam = mySlider;
+                
                 }
                 else if (myPanel != null)
                 {
-                    validSourceParam.Add(myPanel);
+                    validSourceParam = myPanel;
                 }
                 else if (myValueList != null)
                 {
-                    validSourceParam.Add(myValueList);
+                    validSourceParam = myValueList;
                 }
                 else {
-                    validSourceParam.Add(InputType.Unsupported);
+                    validSourceParam = InputType.Unsupported;
                 }
                     
             }
@@ -71,9 +72,9 @@ namespace Colibri.Grasshopper
 
         //GH_Param<GH_String>
 
-        public static void ChangeParamNickName(List<object> ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
+        public static void ChangeParamNickName(object ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
         {
-            var _validSourceParam = ValidSourceParam.First();
+            var _validSourceParam = ValidSourceParam;
             var _inputParam = InputParam;
             var _outputParam = OutputParam;
 
@@ -100,10 +101,10 @@ namespace Colibri.Grasshopper
         }
 
 
-        public static List<int> GetParamAllStepIndex(List<object> ValidSourceParam)
+        public static List<int> GetParamAllStepIndex(object ValidSourceParam)
         {
             //only pick the first Input source
-            var _validSourceParam = ValidSourceParam.First();
+            var _validSourceParam = ValidSourceParam;
             var _values = new List<int>();
             var _type = ConvertParamTypeFormat(_validSourceParam);
             var _inputSource = _validSourceParam;

@@ -12,59 +12,83 @@ namespace Colibri.Grasshopper
     {
 
         //InputParams objects List
-        private List<object> _InputParams;
+        private List<object> inputParams;
 
         public List<object> InputParams
         {
-            get { return _InputParams; }
-            set { _InputParams = value; }
+            get { return inputParams; }
+            set { inputParams = value; }
         }
 
 
         //List of each input param's all steps index
-        private List<List<int>> _InputParamsStepIndexes;
+        private List<List<int>> inputParamsStepIndexes;
 
         public List<List<int>> InputParamsStepIndexes
         {
-            get { return _InputParamsStepIndexes; }
-            set { _InputParamsStepIndexes = value; }
+            get { return inputParamsStepIndexes; }
+            set { inputParamsStepIndexes = value; }
         }
 
 
         // Total Iteration number int 
-        private int _totalIterations;
+        private int totalIterations;
 
         public int TotalIterations
         {
-            get { return _totalIterations; }
-            set { _totalIterations = value; }
+            get { return totalIterations; }
+            set { totalIterations = value; }
         }
 
         //constructor 
-        public IteratorFlyParam()
-        {
-            _totalIterations = 0;
+        public IteratorFlyParam(){}
 
-            foreach (var item in _InputParams)
-            {
-                var _inputParamSetpIndex = new List<int>();
-                _inputParamSetpIndex = IteratorParam.GetParamAllStepIndex(_InputParams);
-                _InputParamsStepIndexes.Add(_inputParamSetpIndex);
-            }
-           
+        public IteratorFlyParam(List<object> InputParams)
+        {
+            inputParams = InputParams;
+            
         }
 
 
 
 
-        //#region Methods
 
+        #region Methods
+
+       
+        //to get all params' all steps' indexes 
+        public void SetAllParamsStepIndexes()
+        {
+            var _inputParamsStepIndexes = new List<List<int>>();
+            foreach (var item in inputParams)
+            {
+                var _inputParamSetpIndex = new List<int>();
+                _inputParamSetpIndex = IteratorParam.GetParamAllStepIndex(item);
+                _inputParamsStepIndexes.Add(_inputParamSetpIndex);
+            }
+
+            inputParamsStepIndexes = _inputParamsStepIndexes;
+        }
+
+        //doesn't work now
+        public int RunThrough() {
+            //put first for test here, will remove it later
+            foreach (var item in inputParamsStepIndexes.First())
+            {
+                
+                System.Threading.Thread.Sleep(1000);
+                return item;
+
+            }
+            return -1;
+            
+        }
 
         //public bool FlyAll(GH_SolutionEventArgs e) {
         //    while (true)
         //    {
         //        int _currentInputParamIndex = 0;
-                
+
         //        //move to the next set of slider positions
         //        if (!MoveToNextPermutation(ref _currentInputParamIndex, _InputParams))
         //        {
@@ -103,7 +127,7 @@ namespace Colibri.Grasshopper
 
         //    }
 
-            
+
 
 
         //    GH_NumberSlider slider = sliders[_currentInputParamIndex];
@@ -164,7 +188,7 @@ namespace Colibri.Grasshopper
         //}
 
 
-        //#endregion
+        #endregion
 
     }
 }
