@@ -55,9 +55,8 @@ namespace Colibri.Grasshopper
             //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
             IGH_Param validSourceParam = null;
             // Find the Guid for connected Slide or Panel
-
-            var selInput = SelectedInputSource; //ref for input where sliders are connected to this component
-            IList<IGH_Param> sources = selInput.Sources; //list of things connected on this input
+            
+            var sources = SelectedInputSource.Sources; //list of things connected on this input
             
             // Find connected
             if (sources.Any())
@@ -101,29 +100,29 @@ namespace Colibri.Grasshopper
 
         public static void ChangeParamNickName(IGH_Param ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
         {
-            var _validSourceParam = ValidSourceParam;
-            var _inputParam = InputParam;
-            var _outputParam = OutputParam;
+            var validSourceParam = ValidSourceParam;
+            var inputParam = InputParam;
+            var outputParam = OutputParam;
 
            
-            var _type = _validSourceParam.GetGHType();
-            IGH_Param _inputSource = null;
+            var type = validSourceParam.GetGHType();
+            IGH_Param inputSource = null;
 
-            if (_type == InputType.Unsupported)
+            if (type == InputType.Unsupported)
             {
 
-                _inputSource = _inputParam.Sources[0];
+                inputSource = inputParam.Sources[0];
 
             }
             else
             {
-                _inputSource = _validSourceParam as IGH_Param;
+                inputSource = validSourceParam as IGH_Param;
             }
 
 
-            _inputParam.NickName = _type == InputType.Unsupported ? _type.ToString() : _inputSource.NickName;
-            _outputParam.NickName = _type == InputType.Unsupported ? _type.ToString() : _inputSource.NickName;
-            _outputParam.Description = "This item is one of values from " + _type.ToString() + "_" + _inputParam.NickName;
+            inputParam.NickName = type == InputType.Unsupported ? type.ToString() : inputSource.NickName;
+            outputParam.NickName = type == InputType.Unsupported ? type.ToString() : inputSource.NickName;
+            outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
 
         }
 
@@ -142,7 +141,7 @@ namespace Colibri.Grasshopper
             {
                 var _mySlider = _inputSource as GH_NumberSlider;
                 var _total = _mySlider.TickCount + 1;
-                _values.AddRange(Enumerable.Range(0, _total));
+                _values = Enumerable.Range(0, _total).ToList();
 
             }
             //Panel
@@ -153,8 +152,7 @@ namespace Colibri.Grasshopper
                 var _panelValues = _myPanel.UserText.Split('\n');
 
                 var _total = _panelValues.Count();
-                _values.AddRange(Enumerable.Range(0, _total));
-
+                _values = Enumerable.Range(0, _total).ToList();
 
             }
             //ValueList
@@ -163,7 +161,7 @@ namespace Colibri.Grasshopper
                 var _myValueList = _inputSource as GH_ValueList;
 
                 var _total = _myValueList.ListItems.Count();
-                _values.AddRange(Enumerable.Range(0, _total));
+                _values = Enumerable.Range(0, _total).ToList();
 
 
             }

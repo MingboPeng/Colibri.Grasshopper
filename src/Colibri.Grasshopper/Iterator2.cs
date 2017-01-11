@@ -65,50 +65,154 @@ namespace Colibri.Grasshopper
                 doc = GH.Instances.ActiveCanvas.Document;
             }
 
-            bool isReady = false;
-            bool _fly = false;
-            DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref _fly);
+            //bool isReady = false;
+            bool fly = false;
+            DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref fly);
 
 
+            if (Running)
+            {
+                return;
+            }
 
-            //if (!_fly)
-            //    return;
+            if (!fly)
+            {
+                var filteredSources = FilterSources();
+                
+                for (int i = 0; i < filteredSources.Count()-1; i++)
+                {
+                    
+                    var validSource = filteredSources[i];
+                    var type = validSource.GetGHType();
+                    
+                    //validSource.ObjectChanged += ParamInputChanged;
+
+                    if (type == InputType.Slider)
+                    {
+                        var slider = validSource as GH_NumberSlider;
+                        DA.SetData(i, slider.CurrentValue);
+                    }
+                    else if (type == InputType.Panel)
+                    {
+                        DA.SetData(i, "PanelValue");
+                    }
+                    else if (type == InputType.ValueList)
+                    {
+                        var valueList = validSource as GH_ValueList;
+                        DA.SetData(i, valueList.SelectedItems.First().Value);
+                    }
+                    else
+                    {
+                        DA.SetData(i, "Please use Slider, Panel, or ValueList!");
+                    }
+                }
+               
+
+            }
+            else
+            {
+                Run = true;
+                doc.SolutionEnd += OnSolutionEnd;
+            }
+
 
             //isReady = true;
 
 
-            var validSources = new List<IGH_Param>();
-            var validindexList = new List<int>();
+            //var validSources = new List<IGH_Param>();
+            //var validindexList = new List<int>();
 
-            for (int i = 0; i < this.Params.Input.Count; i++)
-            {
-                bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
-                bool isEmptySource = this.Params.Input[i].SourceCount == 0 ? true : false;
-                if (!isFly && !isEmptySource)
-                {
-                    validindexList.Add(i);
-                    var _validSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
-                    validSources.Add(_validSource);
-                    IteratorParam.ChangeParamNickName(_validSource, this.Params.Input[i], this.Params.Output[i]);
 
-                    var paramValue = IteratorParam.GetParamAllStepIndex(_validSource);
 
-                    //paramValue = paramValue.Contains(-1) ? paramValue[0] = "Unsupported conponent type! Please use Slider, Panel, or ValueList!" : paramValue;
-                    //assign to output
-                    DA.SetDataList(i, paramValue);
-                }
 
-            }
 
-            //FOR test purpose
-            //var flyParam = new IteratorFlyParam(validSources);
-            //flyParam.SetAllParamsStepIndexes();
-            
             //for (int i = 0; i < flyParam.InputParamsStepIndexes.Count(); i++)
             //{
             //    DA.SetDataList(i, flyParam.InputParamsStepIndexes[i]);
             //}
-            DA.SetDataList(this.Params.Output.Count - 1, validindexList);
+            //DA.SetDataList(this.Params.Output.Count - 1, validindexList);
+            
+
+        }
+
+        private bool Run = false;
+        private bool Running = false;
+
+        
+        private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
+        {
+            // Unregister the event, we don't want to get called again.
+            e.Document.SolutionEnd -= OnSolutionEnd;
+
+            // If we're not supposed to run, abort now.
+            if (!Run || Running)
+                return;
+
+            // Reset run and running states.
+            Run = false;
+            Running = true;
+
+
+            try
+            {
+                var filteredSources = FilterSources();
+                //System.Windows.Forms.MessageBox.Show(filteredSources.Count().ToString());
+                filteredSources.RemoveAll(item => item == null);
+
+                //Execute the fly
+                if (filteredSources.Count() > 0)
+                {
+                    var flyParam = new IteratorFlyParam(filteredSources);
+                    flyParam.FlyAll(e);
+                }
+                
+                //System.Windows.Forms.MessageBox.Show(flyParam.InputParams.Count().ToString());
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            finally
+            {
+                // Always make sure that _running is switched off.
+                Running = false;
+                e.Document.NewSolution(false);
+                //this.Params.Input.Last().Sources.First().ExpireSolution(true);
+            }
+            
+
+        }
+
+        /// <summary>
+        /// check input source if is slider, panel, or valueList, if not, filter to null
+        /// </summary>   
+        private List<IGH_Param> FilterSources()
+        {
+            var filtedSources = new List<IGH_Param>();
+            //var validindexList = new List<int>();
+            for (int i = 0; i < this.Params.Input.Count; i++)
+            {
+                //Check if it is fly or empty source param
+                bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
+                bool isEmptySource = this.Params.Input[i].SourceCount == 0 ? true : false;
+
+                if (!isFly && !isEmptySource)
+                {
+                    //validindexList.Add(i);
+                    var filtedSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
+                    filtedSources.Add(filtedSource);
+                    IteratorParam.ChangeParamNickName(filtedSource, this.Params.Input[i], this.Params.Output[i]);
+
+                }
+                else
+                {
+                    filtedSources.Add(null);
+                }
+
+            }
+
+            return filtedSources;
         }
 
 
@@ -179,16 +283,12 @@ namespace Colibri.Grasshopper
         {
             var output = new Param_GenericObject();
             output.NickName = String.Empty;
+            output.Access = GH_ParamAccess.item;
             Params.RegisterOutputParam(output, index);
 
             var param = new Param_GenericObject();
             param.NickName = String.Empty;
 
-            //param.Name = "Input";
-            //param.NickName = GH_ComponentParamServer.InventUniqueNickname("BCDEFGHIJKLMNOPQRSTUVWXYZ", Params.Input);
-            //param.Description = "Please connect a Slider, Panel, or ValueList";
-            
-            //param.SetPersistentData(0.0);
             return param;
         }
 
@@ -234,17 +334,16 @@ namespace Colibri.Grasshopper
 
 
         #region ParamInputChanged
-
-        private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
+         private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
             //WIP
+            
 
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
             bool isFly = e.ParameterIndex == this.Params.IndexOfInputParam("Fly?") ? true : false;
             bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
-            
-           
+
 
             if (isInputSide && !isFly && !isSecondLastEmptySource)
             {
@@ -255,9 +354,14 @@ namespace Colibri.Grasshopper
                 this.Params.OnParametersChanged();
                 this.ExpireSolution(true);
             }
+            else
+            {
+                //this.Params.ParameterSourcesChanged -= ParamInputChanged;
+            }
 
 
         }
+
 
         #endregion
 
