@@ -16,53 +16,80 @@ namespace Colibri.Grasshopper
     static class IteratorParam
     {
 
-        
+        public static InputType GetGHType(this IGH_Param RawParam)
+        {
+
+            //Check raw param if is null first
+            if (RawParam == null)
+            {
+                return InputType.Unsupported;
+            }
+
+
+            if (RawParam is GH_NumberSlider)
+            {
+                return InputType.Slider;
+
+            }
+            else if (RawParam is GH_Panel)
+            {
+                return InputType.Panel;
+            }
+            else if (RawParam is GH_ValueList)
+            {
+                return InputType.ValueList;
+            }
+            else
+            {
+                return InputType.Unsupported;
+            }
+        }
 
 
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
-        public static object CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
+
+        public static IGH_Param CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
         {
             //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
-            object validSourceParam = null;
+            IGH_Param validSourceParam = null;
             // Find the Guid for connected Slide or Panel
 
             var selInput = SelectedInputSource; //ref for input where sliders are connected to this component
             IList<IGH_Param> sources = selInput.Sources; //list of things connected on this input
-            bool isAnythingConnected = sources.Any(); //is there actually anything connected?
-            
             
             // Find connected
-            if (isAnythingConnected)
+            if (sources.Any())
             { 
                 //if something's connected,and get the first connected
                 
-                var component = sources[0].Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
-                component.NickName = String.IsNullOrEmpty(component.NickName) || component.NickName=="List" ? "RenamePlease" : component.NickName; //Check if nick name exists
+                var component = sources[0].Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
+                var _type = component.GetGHType();
+
                 component.ExpireSolution(true);
-                //is there any way to detect the type instead of cast?????
-                var mySlider = component as GH_NumberSlider; //...then cast (?) it as a slider
-                var myPanel = component as GH_Panel; // try to cast it as a panel as well
-                var myValueList = component as GH_ValueList;
-                
-                
+
                 //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
-                if (mySlider != null)
+                if (_type == InputType.Slider)
                 {
-                    validSourceParam = mySlider;
+                    validSourceParam = component as GH_NumberSlider;
                 
                 }
-                else if (myPanel != null)
+                else if (_type == InputType.Panel)
                 {
-                    validSourceParam = myPanel;
+                    validSourceParam = component as GH_Panel;
                 }
-                else if (myValueList != null)
+                else if (_type == InputType.ValueList)
                 {
-                    validSourceParam = myValueList;
+                    validSourceParam = component as GH_ValueList;
                 }
                 else {
-                    validSourceParam = InputType.Unsupported;
+                    validSourceParam = null;
+                }
+
+                if (validSourceParam != null)
+                {
+                    validSourceParam.NickName = String.IsNullOrEmpty(component.NickName) || validSourceParam.NickName == "List" ? "RenamePlease" : validSourceParam.NickName; //Check if nick name exists
                 }
                     
             }
@@ -72,14 +99,14 @@ namespace Colibri.Grasshopper
 
         //GH_Param<GH_String>
 
-        public static void ChangeParamNickName(object ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
+        public static void ChangeParamNickName(IGH_Param ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
         {
             var _validSourceParam = ValidSourceParam;
             var _inputParam = InputParam;
             var _outputParam = OutputParam;
 
            
-            var _type = ConvertParamTypeFormat(_validSourceParam);
+            var _type = _validSourceParam.GetGHType();
             IGH_Param _inputSource = null;
 
             if (_type == InputType.Unsupported)
@@ -101,12 +128,12 @@ namespace Colibri.Grasshopper
         }
 
 
-        public static List<int> GetParamAllStepIndex(object ValidSourceParam)
+        public static List<int> GetParamAllStepIndex(IGH_Param ValidSourceParam)
         {
             //only pick the first Input source
             var _validSourceParam = ValidSourceParam;
             var _values = new List<int>();
-            var _type = ConvertParamTypeFormat(_validSourceParam);
+            var _type = _validSourceParam.GetGHType();
             var _inputSource = _validSourceParam;
 
 
@@ -149,26 +176,11 @@ namespace Colibri.Grasshopper
 
             return _values;
         }
-        public static InputType ConvertParamTypeFormat(object RawParam)
-        {
-            var _rawType = RawParam.GetType();
 
-            if (_rawType.Equals(typeof(GH_NumberSlider)))
-            {
-                return InputType.Slider;
 
-            } else if (_rawType.Equals(typeof(GH_Panel)))
-            {
-                return InputType.Panel;
-            } else if (_rawType.Equals(typeof(GH_ValueList)))
-            {
-                return InputType.ValueList;
-            }
-            else
-            {
-                return InputType.Unsupported;
-            }
-            
-        }
+
+
+
+        
     }
 }

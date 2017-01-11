@@ -77,7 +77,7 @@ namespace Colibri.Grasshopper
             //isReady = true;
 
 
-            var validSources = new List<object>();
+            var validSources = new List<IGH_Param>();
             var validindexList = new List<int>();
 
             for (int i = 0; i < this.Params.Input.Count; i++)
@@ -87,15 +87,15 @@ namespace Colibri.Grasshopper
                 if (!isFly && !isEmptySource)
                 {
                     validindexList.Add(i);
-                    var validSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
-                    validSources.Add(validSource);
-                    IteratorParam.ChangeParamNickName(validSource, this.Params.Input[i], this.Params.Output[i]);
+                    var _validSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
+                    validSources.Add(_validSource);
+                    IteratorParam.ChangeParamNickName(_validSource, this.Params.Input[i], this.Params.Output[i]);
 
-                    //var paramValue = IteratorParam.GetParamAllStepIndex(validInputSource);
-                    
+                    var paramValue = IteratorParam.GetParamAllStepIndex(_validSource);
+
                     //paramValue = paramValue.Contains(-1) ? paramValue[0] = "Unsupported conponent type! Please use Slider, Panel, or ValueList!" : paramValue;
                     //assign to output
-                    //DA.SetDataList(i, paramValue);
+                    DA.SetDataList(i, paramValue);
                 }
 
             }

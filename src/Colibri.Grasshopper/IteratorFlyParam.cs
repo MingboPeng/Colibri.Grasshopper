@@ -12,9 +12,9 @@ namespace Colibri.Grasshopper
     {
 
         //InputParams objects List
-        private List<object> inputParams;
+        private List<IGH_Param> inputParams;
 
-        public List<object> InputParams
+        public List<IGH_Param> InputParams
         {
             get { return inputParams; }
             set { inputParams = value; }
@@ -22,14 +22,15 @@ namespace Colibri.Grasshopper
 
 
         //List of each input param's all steps index
-        private List<List<int>> inputParamsStepIndexes;
+        private List<List<int>> inputParamsStepLists;
 
-        public List<List<int>> InputParamsStepIndexes
+        public List<List<int>> InputParamsStepLists
         {
-            get { return inputParamsStepIndexes; }
-            set { inputParamsStepIndexes = value; }
+            get { return inputParamsStepLists; }
+            set { inputParamsStepLists = value; }
         }
 
+        private List<int> currentStepPositions { get; set; }
 
         // Total Iteration number int 
         private int totalIterations;
@@ -43,150 +44,211 @@ namespace Colibri.Grasshopper
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<object> InputParams)
+        public IteratorFlyParam(List<IGH_Param> InputParams)
         {
             inputParams = InputParams;
-            
+            totalIterations = 0;
+            IniAllParamsStepLists();
+            //set current setp index to 0
+            currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
+
         }
-
-
-
 
 
         #region Methods
 
        
         //to get all params' all steps' indexes 
-        public void SetAllParamsStepIndexes()
+        public void IniAllParamsStepLists()
         {
-            var _inputParamsStepIndexes = new List<List<int>>();
+            var _inputParamsStepLists = new List<List<int>>();
             foreach (var item in inputParams)
             {
-                var _inputParamSetpIndex = new List<int>();
-                _inputParamSetpIndex = IteratorParam.GetParamAllStepIndex(item);
-                _inputParamsStepIndexes.Add(_inputParamSetpIndex);
+                var _inputParamSetpList = new List<int>(IteratorParam.GetParamAllStepIndex(item));
+                _inputParamsStepLists.Add(_inputParamSetpList);
             }
 
-            inputParamsStepIndexes = _inputParamsStepIndexes;
+            inputParamsStepLists = _inputParamsStepLists;
         }
 
-        //doesn't work now
-        public int RunThrough() {
-            //put first for test here, will remove it later
-            foreach (var item in inputParamsStepIndexes.First())
-            {
-                
-                System.Threading.Thread.Sleep(1000);
-                return item;
 
+        public void FlyAll(GH_SolutionEventArgs e)
+        {
+            try
+            {
+                while (true)
+                {
+
+                    int _currentParamIndex = 0;
+
+                    //move to the next set of slider positions
+                    if (!MoveToNextPermutation(ref _currentParamIndex))
+                    {
+                        // study is over!
+                        e.Document.NewSolution(false);
+                        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+                        break;
+                    }
+
+                    // We've just got a new valid permutation. Solve the new solution.
+                    //counter++;
+                    e.Document.NewSolution(false);
+                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+                    //UpdateProgressBar(counter, totalLoops, sw, pbChars);
+                }
             }
-            return -1;
+            catch
+            {
+                // "something went wrong!";
+            }
             
         }
 
-        //public bool FlyAll(GH_SolutionEventArgs e) {
-        //    while (true)
-        //    {
-        //        int _currentInputParamIndex = 0;
-
-        //        //move to the next set of slider positions
-        //        if (!MoveToNextPermutation(ref _currentInputParamIndex, _InputParams))
-        //        {
-        //            // study is over!
-        //            e.Document.NewSolution(false);
-        //            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-        //            break;
-        //        }
-
-        //        // We've just got a new valid permutation. Solve the new solution.
-        //        counter++;
-        //        e.Document.NewSolution(false);
-        //        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-        //        UpdateProgressBar(counter, totalLoops, sw, pbChars);
-        //    }
 
 
 
-        //    return true;
-        //}
+        private bool MoveToNextPermutation(ref int MoveToIndex)
+        {
+
+            
+            if (MoveToIndex >= inputParams.Count)
+                return false;
+
+
+            IGH_Param _currentInputParam = inputParams[MoveToIndex];
+            
+            
+            int _currentStepPosition = currentStepPositions[MoveToIndex];
+            List<int> _currentStepIndexes = inputParamsStepLists[MoveToIndex];
+            int _currentParamTotalCount = _currentStepIndexes.Count();
+
+            if (_currentStepPosition < _currentParamTotalCount)
+            {
+                //Figure out which step to fly to...
+
+                //look up the current slider's current sliderStepsPosition and target number
+                //int closestTick = calClosestTick();
+
+                //calClosestTick();
+
+                //The current component is already at the maximum value. Reset it back to zero.
+                setParamValue(_currentInputParam, _currentStepPosition);
+
+                //Increment the current step position
+                currentStepPositions[MoveToIndex]++;
+
+                //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
+                //if (computedValues.Contains(GetSliderVals(sliders)))
+                //{
+                //    return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
+                //}
+
+
+                return true;
+            }
+            else
+            {
+
+
+                resetParamValue(_currentInputParam);
+                ////set our slider steps position back to 0
+                //sliderStepsPositions[_currentInputParamIndex] = 0;
+
+                //// Move on to the next slider.
+                MoveToIndex++;
+
+                //// If we've run out of sliders to modify, we're done permutatin'
+                //if (_currentInputParamIndex >= sliders.Count)
+                //    return false;
+
+                return MoveToNextPermutation(ref MoveToIndex);
+            }
+        }
 
 
 
 
-        //private bool MoveToNextPermutation(int ValidInputParamIndex, object ValidInputParam)
-        //{
-        //    int _currentInputParamIndex = ValidInputParamIndex;
-        //    object _validInputParam = ValidInputParam;
+        private void resetParamValue(IGH_Param currentInputParam)
+        {
+            var _paramType = currentInputParam.GetGHType();
 
-        //    //if (_currentInputParamIndex >= _validInputParams.Count)
-        //    //    return false;
+            if (_paramType == InputType.Slider)
+            {
+                var _slider = currentInputParam as GH_NumberSlider;
+                _slider.TickValue = 0;
+            }
+            else if (_paramType == InputType.Panel)
+            {
+                
+            }
+            else if (_paramType == InputType.ValueList)
+            {
+                var _valueList = currentInputParam as GH_ValueList;
+                _valueList.SelectItem(0);
+            }
+            
+        }
 
-        //    var _currentParamType= IteratorParam.ConvertParamTypeFormat(_validInputParam);
-        //    if (_currentParamType==InputType.Slider)
-        //    {
+        private static int calClosestTick()
+        {
+            //int totalNumberOfSteps = sliderSteps[index];
+            //int currentSliderStepsPosition = sliderStepsPositions[index];
+            //int sliderMidStep = slider.TickCount / 2;
+            //int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
+            //double numTicksToAddAsDouble = (double)slider.TickCount / (double)totalNumberOfSteps;
 
-        //    }
+            ////find the closest tick
+            //int closestTick = 0;
+            //if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
+            //{
+            //    closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition);
+            //}
+            //else
+            //{
+            //    closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
+            //}
 
+            //return closestTick;
+            return 0;
+        }
 
+        private void setParamValue(IGH_Param currentInputParam, int SetToStepIndex) {
 
+            var _paramType = currentInputParam.GetGHType();
 
-        //    GH_NumberSlider slider = sliders[_currentInputParamIndex];
-        //    if (slider.TickValue < slider.TickCount)
-        //    {
-        //        //Figure out which step to fly to...
-
-        //        //look up the current slider's current sliderStepsPosition and target number
-        //        int totalNumberOfSteps = sliderSteps[index];
-        //        int currentSliderStepsPosition = sliderStepsPositions[index];
-        //        int sliderMidStep = slider.TickCount / 2;
-        //        int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
-        //        double numTicksToAddAsDouble = (double)slider.TickCount / (double)totalNumberOfSteps;
-
-        //        //find the closest tick
-        //        int closestTick = 0;
-        //        if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
-        //        {
-        //            closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition);
-        //        }
-        //        else
-        //        {
-        //            closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
-        //        }
-
-        //        // Increment the slider.
-        //        slider.TickValue = closestTick;
-
-        //        //Increment the current step position
-        //        sliderStepsPositions[_currentInputParamIndex]++;
-
-        //        //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
-        //        if (computedValues.Contains(GetSliderVals(sliders)))
-        //        {
-        //            return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
-        //        }
+            if (_paramType == InputType.Slider)
+            {
+                sliderMoveToNextPermutation(currentInputParam as GH_NumberSlider, SetToStepIndex);
+            }
+            else if (_paramType == InputType.Panel)
+            {
+                panelMoveToNextPermutation(currentInputParam as GH_Panel, SetToStepIndex);
+            }
+            else if (_paramType == InputType.ValueList)
+            {
+                valueListMoveToNextPermutation(currentInputParam as GH_ValueList, SetToStepIndex);
+            }
+            
+        }
 
 
-        //        return true;
-        //    }
-        //    else
-        //    {
-        //        // The current slider is already at the maximum value. Reset it back to zero.
-        //        slider.TickValue = 0;
+        private bool sliderMoveToNextPermutation(GH_NumberSlider ValidParam, int SetToStepIndex)
+        {
 
-        //        //set our slider steps position back to 0
-        //        sliderStepsPositions[_currentInputParamIndex] = 0;
+            // Increment the slider.
+            ValidParam.TickValue = SetToStepIndex;
+            return false;
+        }
 
-        //        // Move on to the next slider.
-        //        _currentInputParamIndex++;
+        private bool panelMoveToNextPermutation(GH_Panel ValidParam, int SetToStepIndex)
+        {
+            return false;
+        }
 
-        //        // If we've run out of sliders to modify, we're done permutatin'
-        //        if (_currentInputParamIndex >= sliders.Count)
-        //            return false;
-
-        //        return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
-        //    }
-        //}
-
+        private bool valueListMoveToNextPermutation(GH_ValueList ValidParam, int SetToStepIndex)
+        {
+            return false;
+        }
 
         #endregion
 
