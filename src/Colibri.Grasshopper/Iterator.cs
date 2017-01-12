@@ -111,7 +111,7 @@ namespace Colibri.Grasshopper
             {
                 foreach (GH_NumberSlider slider in connectedSliders)
                 {
-                    tempSteps.Add(slider.TickCount);
+                    tempSteps.Add(slider.TickCount+1);
                 }
             }
 

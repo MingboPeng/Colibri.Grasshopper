@@ -136,7 +136,7 @@ namespace Colibri.Grasshopper
             if (_type == InputType.Slider)
             {
                 var _mySlider = _inputSource as GH_NumberSlider;
-                var _total = _mySlider.TickCount + 1;
+                var _total = _mySlider.TickCount;
                 _values = Enumerable.Range(0, _total).ToList();
 
             }
@@ -144,7 +144,6 @@ namespace Colibri.Grasshopper
             else if (_type == InputType.Panel)
             {
                 var _myPanel = _inputSource as GH_Panel;
-                //var _stringSeparator = new char[] { '\n' };
                 var _panelValues = _myPanel.UserText.Split('\n');
 
                 var _total = _panelValues.Count();
@@ -173,8 +172,50 @@ namespace Colibri.Grasshopper
 
 
 
+        public static int GetParamTotalCount(IGH_Param ValidSourceParam)
+        {
+            var validSourceParam = ValidSourceParam;
+            var count = 0;
+            var type = validSourceParam.GetGHType();
+            var inputSource = validSourceParam;
 
 
-        
+            //Slider
+            if (type == InputType.Slider)
+            {
+                var component = inputSource as GH_NumberSlider;
+                count = component.TickCount;
+
+            }
+            //Panel
+            else if (type == InputType.Panel)
+            {
+                var component = inputSource as GH_Panel;
+                var panelValues = component.UserText.Split('\n');
+                count = panelValues.Count();
+                
+            }
+            //ValueList
+            else if (type == InputType.ValueList)
+            {
+                var component = inputSource as GH_ValueList;
+                
+                count = component.ListItems.Count();
+
+            }
+            else
+            {
+                count = 0;
+            }
+
+
+            return count;
+        }
+
+
+
+
+
+
     }
 }

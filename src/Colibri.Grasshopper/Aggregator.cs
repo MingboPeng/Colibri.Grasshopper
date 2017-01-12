@@ -161,6 +161,7 @@ namespace Aggregator
                 }
 
                 //save imgs
+                Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
                 var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
                 pic.Save(imgPath);
 
