@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
 using GH = Grasshopper;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
-using System.Windows.Forms;
 using System.Linq;
 using Grasshopper.Kernel.Special;
 

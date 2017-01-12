@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using GH = Grasshopper;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
 using System.Linq;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Components;
@@ -22,9 +21,9 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public Iterator2()
-          : base("Iterator(Fly)", "Iterator",
-              "Description",
-              "Colibri", "Colibri")
+          : base("Iterator2(fly)", "Iterator2",
+              "Generates design iterations from a collection of sliders.",
+              "TT Toolbox", "Colibri")
         {
             Params.ParameterSourcesChanged += ParamInputChanged;
         }
