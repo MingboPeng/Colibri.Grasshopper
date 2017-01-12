@@ -240,6 +240,7 @@ namespace Colibri.Grasshopper
 
         private bool valueListMoveToNextPermutation(GH_ValueList ValidParam, int SetToStepIndex)
         {
+            ValidParam.SelectItem(SetToStepIndex);
             return false;
         }
 

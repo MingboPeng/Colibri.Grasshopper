@@ -62,7 +62,7 @@ namespace Colibri.Grasshopper
                 var component = sources[0].Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
                 var _type = component.GetGHType();
 
-                component.ExpireSolution(true);
+                //component.ExpireSolution(true);
 
                 //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
                 if (_type == InputType.Slider)

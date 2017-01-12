@@ -77,8 +77,17 @@ namespace Colibri.Grasshopper
             if (!fly)
             {
                 var filteredSources = FilterSources();
-                
-                for (int i = 0; i < filteredSources.Count()-1; i++)
+
+                var nonNullSources = filteredSources;
+                nonNullSources.RemoveAll(item => item == null);
+                foreach (IGH_Param source in nonNullSources)
+                {
+                    source.ObjectChanged -= Source_ObjectChanged;
+                    source.ObjectChanged += Source_ObjectChanged;
+                }
+
+                //Get current value
+                for (int i = 0; i < filteredSources.Count(); i++)
                 {
                     
                     var validSource = filteredSources[i];
@@ -204,7 +213,7 @@ namespace Colibri.Grasshopper
                     IteratorParam.ChangeParamNickName(filtedSource, this.Params.Input[i], this.Params.Output[i]);
 
                 }
-                else
+                else if (!isFly)
                 {
                     filtedSources.Add(null);
                 }
@@ -332,7 +341,7 @@ namespace Colibri.Grasshopper
         #endregion
 
 
-        #region ParamInputChanged
+        #region Events
          private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
@@ -361,6 +370,10 @@ namespace Colibri.Grasshopper
 
         }
 
+        private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
+        {
+            this.ExpireSolution(true);
+        }
 
         #endregion
 
