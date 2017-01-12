@@ -77,14 +77,13 @@ namespace Colibri.Grasshopper
             while (true)
             {
 
-                int _currentParamIndex = 0;
+                int currentParamIndex = 0;
 
                 //move to the next set of slider positions
-                if (!MoveToNextPermutation(ref _currentParamIndex))
+                if (!MoveToNextPermutation(ref currentParamIndex))
                 {
                     // study is over!
                     e.Document.NewSolution(false);
-                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
                     break;
                 }
 
@@ -109,7 +108,7 @@ namespace Colibri.Grasshopper
                 return false;
 
             //System.Windows.Forms.MessageBox.Show(MoveToIndex.ToString());
-            IGH_Param currentInputParam = inputParams[MoveToIndex];
+            var currentInputParam = inputParams[MoveToIndex];
             
             
             int _currentStepPosition = currentStepPositions[MoveToIndex];
@@ -136,24 +135,23 @@ namespace Colibri.Grasshopper
                 //{
                 //    return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
                 //}
-
-
+                
                 return true;
-            }
-            else
+            }else
             {
 
 
                 resetParamValue(currentInputParam);
                 ////set our slider steps position back to 0
-                //sliderStepsPositions[_currentInputParamIndex] = 0;
+                currentStepPositions[MoveToIndex]=0;
 
                 //// Move on to the next slider.
                 MoveToIndex++;
                 //System.Windows.Forms.MessageBox.Show("index++"+MoveToIndex.ToString());
                 //// If we've run out of sliders to modify, we're done permutatin'
-                //if (_currentInputParamIndex >= sliders.Count)
-                //    return false;
+
+                if (MoveToIndex >= inputParams.Count)
+                    return false;
 
                 return MoveToNextPermutation(ref MoveToIndex);
             }
