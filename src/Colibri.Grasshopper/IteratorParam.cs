@@ -136,7 +136,7 @@ namespace Colibri.Grasshopper
             if (_type == InputType.Slider)
             {
                 var _mySlider = _inputSource as GH_NumberSlider;
-                var _total = _mySlider.TickCount;
+                var _total = _mySlider.TickCount+1;
                 _values = Enumerable.Range(0, _total).ToList();
 
             }

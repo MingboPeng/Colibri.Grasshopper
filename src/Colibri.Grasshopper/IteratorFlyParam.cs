@@ -65,6 +65,7 @@ namespace Colibri.Grasshopper
             {
                 var _inputParamSetpList = new List<int>(IteratorParam.GetParamAllStepIndex(item));
                 _inputParamsStepLists.Add(_inputParamSetpList);
+                resetParamValue(item);
             }
 
             inputParamsStepLists = _inputParamsStepLists;
@@ -73,12 +74,13 @@ namespace Colibri.Grasshopper
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
+
             
             while (true)
             {
 
                 int currentParamIndex = 0;
-
+                
                 //move to the next set of slider positions
                 if (!MoveToNextPermutation(ref currentParamIndex))
                 {
@@ -107,7 +109,9 @@ namespace Colibri.Grasshopper
             if (MoveToIndex >= inputParams.Count)
                 return false;
 
-            //System.Windows.Forms.MessageBox.Show(MoveToIndex.ToString());
+            //Increment the current step position
+            currentStepPositions[MoveToIndex]++;
+
             var currentInputParam = inputParams[MoveToIndex];
             
             
@@ -126,10 +130,7 @@ namespace Colibri.Grasshopper
 
                 //The current component is already at the maximum value. Reset it back to zero.
                 setParamValue(currentInputParam, _currentStepPosition);
-
-                //Increment the current step position
-                currentStepPositions[MoveToIndex]++;
-
+                
                 //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 //if (computedValues.Contains(GetSliderVals(sliders)))
                 //{
@@ -150,8 +151,8 @@ namespace Colibri.Grasshopper
                 //System.Windows.Forms.MessageBox.Show("index++"+MoveToIndex.ToString());
                 //// If we've run out of sliders to modify, we're done permutatin'
 
-                if (MoveToIndex >= inputParams.Count)
-                    return false;
+                //if (MoveToIndex >= inputParams.Count)
+                //    return false;
 
                 return MoveToNextPermutation(ref MoveToIndex);
             }
