@@ -76,6 +76,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ColibriBase.cs" />
     <None Include="Resources\Colibri_logobase_1.png" />
   </ItemGroup>
   <ItemGroup>

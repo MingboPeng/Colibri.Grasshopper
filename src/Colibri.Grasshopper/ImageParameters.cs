@@ -68,7 +68,7 @@ namespace Colibri.Grasshopper
 
             //set output
             Dictionary<string, string> imageP = new Dictionary<string, string>();
-            imageP.Add("Name", imgName);
+            imageP.Add("imgName", imgName);
             imageP.Add("Width", width.ToString());
             imageP.Add("Height", height.ToString());
             

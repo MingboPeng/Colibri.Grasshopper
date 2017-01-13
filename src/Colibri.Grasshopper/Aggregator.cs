@@ -5,7 +5,7 @@ using System.IO;
 
 using Grasshopper.Kernel;
 
-namespace Aggregator
+namespace Colibri.Grasshopper
 {
     public class Aggregator : GH_Component
     {
@@ -73,6 +73,11 @@ namespace Aggregator
             DA.GetData(4, ref writeFile);
 
             //operations
+            Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
+            Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
+            Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
+
+
 
 
             string csvPath = folder + "/data.csv";
@@ -81,97 +86,44 @@ namespace Aggregator
             rawData.AddRange(outputs);
             int allDataLength = rawData.Count;
 
-            string imgName = "img";
-            string imgPath = "";
-            string keyReady = "";
-            string valueReady = "";
+            string flyID = String.Empty;
+            string keyReady = String.Empty;
+            string valueReady = String.Empty;
 
-
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-            else
-            {
-                
-                Directory.CreateDirectory(folder+"_New");
-            }
-            
             
 
+            //Parsing data to csv format
+            keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
+            valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
+            flyID = inputCSVstrings["FlyID"];
 
-            //format write in data
-            for (int i = 0; i < rawData.Count; i++)
-            {
-
-                //units check
-                string item = Convert.ToString(rawData[i]).Replace("[", "").Replace("]", "").Replace(" ", "");
-                string dataKey = item.Split(',')[0];
-                string dataValue = item.Split(',')[1];
-
-                if (i > 0) 
-                {
-
-                    if (i < inDataLength)
-                    {
-                        keyReady += ",in:" + dataKey;
-                        imgName = imgName + "_" + dataKey + "_" + dataValue;
-
-                    }
-                    else
-                    {
-                        keyReady += ",out:" + dataKey;
-                    }
-
-                    valueReady = valueReady + "," + dataValue;
-                    
-
-                }
-                else
-                {
-                    //the first set
-                    keyReady = "in:" + dataKey;
-                    valueReady += dataValue;
-                    imgName = imgName + "_" + dataKey + "_" + dataValue;
-                }
-                
-            }
-
-            //create folder
-            //overwrite
-            
             
             int width = 400;
             int height = 400;
-            List<string> cleanedImgParams = new List<string>();
 
-            foreach (string item in imgParams) 
-            {
-                string cleanItem = Convert.ToString(item).Replace("[", "").Replace("]", "").Replace(" ", "");
-                //string dataValue = cleanItem.Split(',')[1];
-                cleanedImgParams.Add(cleanItem.Split(',')[1]);
-            }
-            if (!String.IsNullOrEmpty(cleanedImgParams[0]))
-            {
-                imgName = cleanedImgParams[0];
-            }
-            if (!String.IsNullOrEmpty(cleanedImgParams[1]))
-            {
-                width = Convert.ToInt32(cleanedImgParams[1]);
-                height = Convert.ToInt32(cleanedImgParams[2]);
-            }
-            Size viewSize = new Size(width, height);
-            //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
-
-
-
+            
             bool run = writeFile;
-            string fileName = imgName;
-            imgPath = folder + "\\" + imgName + ".png";
-            imgName += ".png";
-            string jsonFilePath = folder + "\\" + fileName + ".json";
-            string jsonFileName = fileName + ".json";
+            //string fileName = imgName;
+            string imgName = flyID;
+            
+            
             string writeInData = "";
+
+            // overwrite the image parameter setting if user has inputed the values
+            if (imgParamsClean.Count > 0)
+            {
+                imgName = String.IsNullOrEmpty ( imgParamsClean["imgName"]) ? imgName : imgParamsClean["imgName"];
+                width = Convert.ToInt32(imgParamsClean["Width"]);
+                height = Convert.ToInt32(imgParamsClean["Height"]);
+            }
+            
+            Size viewSize = new Size(width, height);
+
+            string imgFileName = imgName + ".png";
+            string imgPath = folder + @"\" + imgFileName;
+
+            string jsonFileName = imgName + ".json";
+            string jsonFilePath = folder + @"\" + jsonFileName;
 
 
             //if we aren't told to write, clean out the list of already written items
@@ -184,6 +136,10 @@ namespace Aggregator
             {
                 //add this line to our list of already written lines
                 alreadyWrittenLines.Add(valueReady);
+
+                //Check folder if existed
+                Directory.CreateDirectory(folder);
+                
 
                 //check csv file
                 if (!File.Exists(csvPath))
@@ -198,10 +154,9 @@ namespace Aggregator
                 pic.Save(imgPath);
 
                 //save csv
-                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, jsonFileName);
+                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
                 File.AppendAllText(csvPath, writeInData);
-
-
+                
             }
             
             //set output
