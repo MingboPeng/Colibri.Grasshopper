@@ -7,6 +7,7 @@ using System.Linq;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Components;
 using System.Threading.Tasks;
+using Grasshopper.Kernel.Data;
 
 namespace Colibri.Grasshopper
 {
@@ -78,14 +79,7 @@ namespace Colibri.Grasshopper
             {
                 var filteredSources = FilterSources();
 
-                var nonNullSources = filteredSources;
-                nonNullSources.RemoveAll(item => item == null);
-                foreach (IGH_Param source in nonNullSources)
-                {
-                    source.ObjectChanged -= Source_ObjectChanged;
-                    source.ObjectChanged += Source_ObjectChanged;
-                }
-
+                
                 //Get current value
                 for (int i = 0; i < filteredSources.Count(); i++)
                 {
@@ -114,7 +108,17 @@ namespace Colibri.Grasshopper
                         DA.SetData(i, "Please use Slider, Panel, or ValueList!");
                     }
                 }
-               
+
+                
+                filteredSources.RemoveAll(item => item == null);
+                foreach (IGH_Param source in filteredSources)
+                {
+                    source.ObjectChanged -= Source_ObjectChanged;
+                    source.ObjectChanged += Source_ObjectChanged;
+                }
+
+                
+
 
             }
             else
@@ -124,22 +128,6 @@ namespace Colibri.Grasshopper
             }
 
 
-            //isReady = true;
-
-
-            //var validSources = new List<IGH_Param>();
-            //var validindexList = new List<int>();
-
-
-
-
-
-            //for (int i = 0; i < flyParam.InputParamsStepIndexes.Count(); i++)
-            //{
-            //    DA.SetDataList(i, flyParam.InputParamsStepIndexes[i]);
-            //}
-            //DA.SetDataList(this.Params.Output.Count - 1, validindexList);
-            
 
         }
 
@@ -186,6 +174,7 @@ namespace Colibri.Grasshopper
                 // Always make sure that _running is switched off.
                 Running = false;
                 e.Document.NewSolution(false);
+                
                 //this.Params.Input.Last().Sources.First().ExpireSolution(true);
             }
             

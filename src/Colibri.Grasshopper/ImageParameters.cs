@@ -28,6 +28,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddTextParameter("ImageName", "imgName", "Overwrite the image name", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);
             pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 400);
 
@@ -49,12 +50,14 @@ namespace Colibri.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //input variables
+            string imgName = "";
             int width = 400;
             int height = 400;
-            
+
             //get data
-            DA.GetData(0, ref width);
-            DA.GetData(1, ref height);
+            DA.GetData(0, ref imgName);
+            DA.GetData(1, ref width);
+            DA.GetData(2, ref height);
 
             //defense
             if (width < 50 || height < 50)
@@ -64,9 +67,10 @@ namespace Colibri.Grasshopper
             }
 
             //set output
-            Dictionary<string, int> imageP = new Dictionary<string, int>();
-            imageP.Add("Width", width);
-            imageP.Add("Height", height);
+            Dictionary<string, string> imageP = new Dictionary<string, string>();
+            imageP.Add("Name", imgName);
+            imageP.Add("Width", width.ToString());
+            imageP.Add("Height", height.ToString());
             
             DA.SetDataList(0, imageP);
         }

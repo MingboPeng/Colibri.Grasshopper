@@ -34,6 +34,7 @@ namespace Aggregator
             pManager.AddTextParameter("Inputs", "Inputs", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
             pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
+            pManager[3].Optional = true;
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item);
         }
 
@@ -80,15 +81,30 @@ namespace Aggregator
             rawData.AddRange(outputs);
             int allDataLength = rawData.Count;
 
-            string imgName = "";
+            string imgName = "img";
             string imgPath = "";
             string keyReady = "";
             string valueReady = "";
+
+
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            else
+            {
+                
+                Directory.CreateDirectory(folder+"_New");
+            }
             
+            
+
 
             //format write in data
             for (int i = 0; i < rawData.Count; i++)
             {
+
+                //units check
                 string item = Convert.ToString(rawData[i]).Replace("[", "").Replace("]", "").Replace(" ", "");
                 string dataKey = item.Split(',')[0];
                 string dataValue = item.Split(',')[1];
@@ -99,7 +115,8 @@ namespace Aggregator
                     if (i < inDataLength)
                     {
                         keyReady += ",in:" + dataKey;
-                        
+                        imgName = imgName + "_" + dataKey + "_" + dataValue;
+
                     }
                     else
                     {
@@ -107,7 +124,7 @@ namespace Aggregator
                     }
 
                     valueReady = valueReady + "," + dataValue;
-                    imgName = imgName + "_" + dataValue;
+                    
 
                 }
                 else
@@ -115,32 +132,47 @@ namespace Aggregator
                     //the first set
                     keyReady = "in:" + dataKey;
                     valueReady += dataValue;
-                    imgName = dataValue;
+                    imgName = imgName + "_" + dataKey + "_" + dataValue;
                 }
                 
             }
 
+            //create folder
+            //overwrite
             
             
-            bool run = writeFile;
-            string fileName = imgName;
-            imgPath = folder+"/"+imgName + ".png";
-            imgName += ".png";
-            string jsonFilePath = folder + "/" + fileName + ".json";
-            string jsonFileName = fileName + ".json";
-            string writeInData = "";
-            //int width = 500;
-            //int height = 500;
-            List<int> cleanedImgParams = new List<int>();
+            int width = 400;
+            int height = 400;
+            List<string> cleanedImgParams = new List<string>();
+
             foreach (string item in imgParams) 
             {
                 string cleanItem = Convert.ToString(item).Replace("[", "").Replace("]", "").Replace(" ", "");
                 //string dataValue = cleanItem.Split(',')[1];
-                cleanedImgParams.Add(Convert.ToInt32(cleanItem.Split(',')[1]));
+                cleanedImgParams.Add(cleanItem.Split(',')[1]);
             }
-
-            Size viewSize = new Size(cleanedImgParams[0], cleanedImgParams[1]);
+            if (!String.IsNullOrEmpty(cleanedImgParams[0]))
+            {
+                imgName = cleanedImgParams[0];
+            }
+            if (!String.IsNullOrEmpty(cleanedImgParams[1]))
+            {
+                width = Convert.ToInt32(cleanedImgParams[1]);
+                height = Convert.ToInt32(cleanedImgParams[2]);
+            }
+            Size viewSize = new Size(width, height);
             //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
+
+
+
+            bool run = writeFile;
+            string fileName = imgName;
+            imgPath = folder + "\\" + imgName + ".png";
+            imgName += ".png";
+            string jsonFilePath = folder + "\\" + fileName + ".json";
+            string jsonFileName = fileName + ".json";
+            string writeInData = "";
+
 
             //if we aren't told to write, clean out the list of already written items
             if (!run)

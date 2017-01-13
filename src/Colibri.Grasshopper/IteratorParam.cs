@@ -86,7 +86,11 @@ namespace Colibri.Grasshopper
                 {
                     validSourceParam.NickName = String.IsNullOrEmpty(component.NickName) || validSourceParam.NickName == "List" ? "RenamePlease" : validSourceParam.NickName; //Check if nick name exists
                 }
-                    
+
+            }
+            else
+            {
+                validSourceParam = null;
             }
 
             return validSourceParam;
