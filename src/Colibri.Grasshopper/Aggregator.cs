@@ -112,7 +112,8 @@ namespace Colibri.Grasshopper
             // overwrite the image parameter setting if user has inputed the values
             if (imgParamsClean.Count > 0)
             {
-                imgName = String.IsNullOrEmpty ( imgParamsClean["imgName"]) ? imgName : imgParamsClean["imgName"];
+                bool isThereNoImgName = String.IsNullOrEmpty(imgParamsClean["imgName"]) || imgParamsClean["imgName"] == "defaultName";
+                imgName = isThereNoImgName ? imgName : imgParamsClean["imgName"];
                 width = Convert.ToInt32(imgParamsClean["Width"]);
                 height = Convert.ToInt32(imgParamsClean["Height"]);
             }
@@ -175,7 +176,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_4;
+                return Colibri.Grasshopper.Properties.Resources.Aggregator;
             }
         }
 

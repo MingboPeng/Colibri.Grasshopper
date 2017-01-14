@@ -28,7 +28,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("ImageName", "imgName", "Overwrite the image name", GH_ParamAccess.item);
+            pManager.AddTextParameter("ImageName", "imgName", "Overwrite the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
             pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);
             pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 400);
 
@@ -85,7 +85,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_3;
+                return Colibri.Grasshopper.Properties.Resources.imgParam;
             }
         }
 

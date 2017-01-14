@@ -92,7 +92,11 @@
     <None Include="Resources\Colibri_logobase_5.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\IteratorLogo.bmp" />
+    <Content Include="Resources\Aggregator.png" />
+    <Content Include="Resources\imgParam.png" />
+    <Content Include="Resources\Iterator.png" />
+    <Content Include="Resources\Output.png" />
+    <Content Include="Resources\staticInput.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

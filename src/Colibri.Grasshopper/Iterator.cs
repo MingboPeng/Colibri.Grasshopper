@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using System.Windows.Forms;
 using System.Linq;
 using Grasshopper.Kernel.Special;
+using System.IO;
 
 namespace Colibri.Grasshopper
 {
@@ -318,8 +319,12 @@ namespace Colibri.Grasshopper
                 //start a stopwatch
                 System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
+
+                string nowStopFile = @"C:\ladybug\DesignExplorer\STOP.txt";
+
+               
                 // Start a giant loop in which we'll permutate our way across all slider layouts.
-                while (true)
+                while (true && !File.Exists(nowStopFile))
                 {
 
 
@@ -337,7 +342,7 @@ namespace Colibri.Grasshopper
                             return;
                         }
                     }
-
+                    
                     //add the current slider values to our list of already computed values
                     var sliderVals = GetSliderVals(sliders);
                     if (!computedValues.Contains(sliderVals))
@@ -555,7 +560,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Properties.Resources.Colibri_logobase_1;
+                return Properties.Resources.Iterator;
             }
         }
 

@@ -107,7 +107,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Properties.Resources.Colibri_logobase_2;
+                return Properties.Resources.Output;
             }
         }
 
