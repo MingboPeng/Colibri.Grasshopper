@@ -75,7 +75,7 @@ namespace Colibri.Grasshopper
         public void FlyAll(GH_SolutionEventArgs e)
         {
 
-            
+            // watch the folder : RUN file
             while (true)
             {
 
@@ -114,12 +114,11 @@ namespace Colibri.Grasshopper
 
             var currentInputParam = inputParams[MoveToIndex];
             
-            
-            int _currentStepPosition = currentStepPositions[MoveToIndex];
-            List<int> _currentStepIndexes = inputParamsStepLists[MoveToIndex];
-            int _currentParamTotalCount = _currentStepIndexes.Count();
+            int currentStepPosition = currentStepPositions[MoveToIndex];
+            List<int> currentStepIndexes = inputParamsStepLists[MoveToIndex];
+            int currentParamTotalCount = currentStepIndexes.Count();
 
-            if (_currentStepPosition < _currentParamTotalCount)
+            if (currentStepPosition < currentParamTotalCount)
             {
                 //Figure out which step to fly to...
 
@@ -129,7 +128,7 @@ namespace Colibri.Grasshopper
                 //calClosestTick();
 
                 //The current component is already at the maximum value. Reset it back to zero.
-                setParamValue(currentInputParam, _currentStepPosition);
+                setParamValue(currentInputParam, currentStepPosition);
                 
                 //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 //if (computedValues.Contains(GetSliderVals(sliders)))
