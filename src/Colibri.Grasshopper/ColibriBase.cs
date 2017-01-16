@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Colibri.Grasshopper
 {
+    public enum InputType { Slider, Panel, ValueList, Unsupported }
+
     static class ColibriBase
     {
         public static Dictionary<string, string> ConvertBactToDictionary (List<string> StringLikeDictionary)

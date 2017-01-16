@@ -6,8 +6,8 @@ using System.Linq;
 
 namespace Colibri.Grasshopper
 {
-
-    public enum InputType { Slider, Panel, ValueList, Unsupported }
+    //moved to ColibriBase
+    //public enum InputType { Slider, Panel, ValueList, Unsupported }
 
     static class IteratorParam
     {
@@ -46,12 +46,13 @@ namespace Colibri.Grasshopper
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
 
-        public static IGH_Param CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
+        public static ColibriParam CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
         {
             //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
-            IGH_Param validSourceParam = null;
+            //ColibriParam validSourceParam = null;
+            ColibriParam colibriParam = null;
             // Find the Guid for connected Slide or Panel
-            
+
             var sources = SelectedInputSource.Sources; //list of things connected on this input
             
             // Find connected
@@ -60,69 +61,45 @@ namespace Colibri.Grasshopper
                 //if something's connected,and get the first connected
                 
                 var component = sources[0].Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
-                var _type = component.GetGHType();
 
-                //component.ExpireSolution(true);
+                colibriParam = new ColibriParam(component);
 
-                //of course, if the thing isn't a Slider or Panel, the cast doesn't work, so we get null. let's filter out the nulls
-                if (_type == InputType.Slider)
+                if (colibriParam.GHType != InputType.Unsupported)
                 {
-                    validSourceParam = component as GH_NumberSlider;
-                
-                }
-                else if (_type == InputType.Panel)
-                {
-                    validSourceParam = component as GH_Panel;
-                }
-                else if (_type == InputType.ValueList)
-                {
-                    validSourceParam = component as GH_ValueList;
-                }
-                else {
-                    validSourceParam = null;
+                    component.NickName = String.IsNullOrEmpty(component.NickName) || component.NickName == "List" ? "RenamePlease" : colibriParam.NickName; //Check if nick name exists
+                    
                 }
 
-                if (validSourceParam != null)
-                {
-                    validSourceParam.NickName = String.IsNullOrEmpty(component.NickName) || validSourceParam.NickName == "List" ? "RenamePlease" : validSourceParam.NickName; //Check if nick name exists
-                }
+                return colibriParam;
 
             }
             else
             {
-                validSourceParam = null;
+                return null;
             }
-
-            return validSourceParam;
+            
         }
 
         //GH_Param<GH_String>
 
-        public static void ChangeParamNickName(IGH_Param ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
+        public static void ChangeParamNickName(ColibriParam ValidSourceParam, IGH_Param InputParam, IGH_Param OutputParam)
         {
-            var validSourceParam = ValidSourceParam;
-            var inputParam = InputParam;
-            var outputParam = OutputParam;
-
-           
-            var type = validSourceParam.GetGHType();
-            IGH_Param inputSource = null;
-
-            if (type == InputType.Unsupported)
+            
+            if (ValidSourceParam != null)
             {
+                var validSourceParam = ValidSourceParam;
+                var inputParam = InputParam;
+                var outputParam = OutputParam;
 
-                inputSource = inputParam.Sources[0];
 
+                var type = validSourceParam.GHType;
+                bool isTypeUnsupported = type == InputType.Unsupported ? true : false;
+
+                inputParam.NickName = isTypeUnsupported ? type.ToString() : validSourceParam.NickName;
+                outputParam.NickName = inputParam.NickName;
+                outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
             }
-            else
-            {
-                inputSource = validSourceParam as IGH_Param;
-            }
-
-
-            inputParam.NickName = type == InputType.Unsupported ? type.ToString() : inputSource.NickName;
-            outputParam.NickName = type == InputType.Unsupported ? type.ToString() : inputSource.NickName;
-            outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
+            
 
         }
 
