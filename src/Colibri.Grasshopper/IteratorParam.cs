@@ -12,35 +12,6 @@ namespace Colibri.Grasshopper
     static class IteratorParam
     {
 
-        public static InputType GetGHType(this IGH_Param RawParam)
-        {
-
-            //Check raw param if is null first
-            if (RawParam == null)
-            {
-                return InputType.Unsupported;
-            }
-
-
-            if (RawParam is GH_NumberSlider)
-            {
-                return InputType.Slider;
-
-            }
-            else if (RawParam is GH_Panel)
-            {
-                return InputType.Panel;
-            }
-            else if (RawParam is GH_ValueList)
-            {
-                return InputType.ValueList;
-            }
-            else
-            {
-                return InputType.Unsupported;
-            }
-        }
-
 
         /// <summary>
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
@@ -94,7 +65,7 @@ namespace Colibri.Grasshopper
 
                 var type = validSourceParam.GHType;
                 bool isTypeUnsupported = type == InputType.Unsupported ? true : false;
-
+                
                 inputParam.NickName = isTypeUnsupported ? type.ToString() : validSourceParam.NickName;
                 outputParam.NickName = inputParam.NickName;
                 outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
@@ -102,99 +73,6 @@ namespace Colibri.Grasshopper
             
 
         }
-
-
-        public static List<int> GetParamAllStepIndex(IGH_Param ValidSourceParam)
-        {
-            //only pick the first Input source
-            var _validSourceParam = ValidSourceParam;
-            var _values = new List<int>();
-            var _type = _validSourceParam.GetGHType();
-            var _inputSource = _validSourceParam;
-
-
-            //Slider
-            if (_type == InputType.Slider)
-            {
-                var _mySlider = _inputSource as GH_NumberSlider;
-                var _total = _mySlider.TickCount+1;
-                _values = Enumerable.Range(0, _total).ToList();
-
-            }
-            //Panel
-            else if (_type == InputType.Panel)
-            {
-                var _myPanel = _inputSource as GH_Panel;
-                var _panelValues = _myPanel.UserText.Split('\n');
-
-                var _total = _panelValues.Count();
-                _values = Enumerable.Range(0, _total).ToList();
-
-            }
-            //ValueList
-            else if (_type == InputType.ValueList)
-            {
-                var _myValueList = _inputSource as GH_ValueList;
-
-                var _total = _myValueList.ListItems.Count();
-                _values = Enumerable.Range(0, _total).ToList();
-
-
-            }
-            else
-            {
-                _values.Add(-1);
-                //_values.Add("Unsupported conponent type! Please use Slider, Panel, or ValueList!");
-            }
-
-
-            return _values;
-        }
-
-
-
-        public static int GetParamTotalCount(IGH_Param ValidSourceParam)
-        {
-            var validSourceParam = ValidSourceParam;
-            var count = 0;
-            var type = validSourceParam.GetGHType();
-            var inputSource = validSourceParam;
-
-
-            //Slider
-            if (type == InputType.Slider)
-            {
-                var component = inputSource as GH_NumberSlider;
-                count = component.TickCount;
-
-            }
-            //Panel
-            else if (type == InputType.Panel)
-            {
-                var component = inputSource as GH_Panel;
-                var panelValues = component.UserText.Split('\n');
-                count = panelValues.Count();
-                
-            }
-            //ValueList
-            else if (type == InputType.ValueList)
-            {
-                var component = inputSource as GH_ValueList;
-                
-                count = component.ListItems.Count();
-
-            }
-            else
-            {
-                count = 0;
-            }
-
-
-            return count;
-        }
-
-
-
 
 
 

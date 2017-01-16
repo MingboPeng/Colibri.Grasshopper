@@ -2,6 +2,7 @@
 using System.Linq;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 
 namespace Colibri.Grasshopper
 {
@@ -9,9 +10,9 @@ namespace Colibri.Grasshopper
     {
 
         //InputParams objects List
-        private List<IGH_Param> inputParams;
+        private List<ColibriParam> inputParams;
 
-        public List<IGH_Param> InputParams
+        public List<ColibriParam> InputParams
         {
             get { return inputParams; }
             set { inputParams = value; }
@@ -30,6 +31,7 @@ namespace Colibri.Grasshopper
 
         private List<int> currentStepPositions { get; set; }
 
+        private List<IGH_Param> outputPorts { get; set; }
 
         // Total Iteration number int 
         private int totalIterations;
@@ -43,9 +45,10 @@ namespace Colibri.Grasshopper
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<IGH_Param> InputParams)
+        public IteratorFlyParam(List<ColibriParam> SourceParams, List<IGH_Param> IteratorOutputPorts)
         {
-            inputParams = InputParams;
+            inputParams = SourceParams;
+            outputPorts = IteratorOutputPorts;
             totalIterations = 0;
             IniAllParamsStepLists();
             //set current setp index to 0
@@ -60,22 +63,29 @@ namespace Colibri.Grasshopper
         //to get all params' all steps' indexes 
         public void IniAllParamsStepLists()
         {
-            var _inputParamsStepLists = new List<List<int>>();
+            var stepLists = new List<List<int>>();
             foreach (var item in inputParams)
             {
-                var _inputParamSetpList = new List<int>(IteratorParam.GetParamAllStepIndex(item));
-                _inputParamsStepLists.Add(_inputParamSetpList);
-                resetParamValue(item);
+                int totalCount = item.StepCount();
+                if (totalCount >0)
+                {
+                    var SetpList = Enumerable.Range(0, totalCount).ToList();
+                    stepLists.Add(SetpList);
+                }
+                
+                
+                item.ResetValue();
+                
             }
 
-            inputParamsStepLists = _inputParamsStepLists;
+            inputParamsStepLists = stepLists;
         }
 
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
 
-            // watch the folder : RUN file
+            
             while (true)
             {
 
@@ -105,7 +115,8 @@ namespace Colibri.Grasshopper
         private bool MoveToNextPermutation(ref int MoveToIndex)
         {
 
-            
+            // watch the folder : RUN file
+
             if (MoveToIndex >= inputParams.Count)
                 return false;
 
@@ -128,20 +139,19 @@ namespace Colibri.Grasshopper
                 //calClosestTick();
 
                 //The current component is already at the maximum value. Reset it back to zero.
-                setParamValue(currentInputParam, currentStepPosition);
-                
+                currentInputParam.SetParamTo(currentStepPosition);
+
                 //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 //if (computedValues.Contains(GetSliderVals(sliders)))
                 //{
                 //    return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
                 //}
-                
+                outputPorts[0].AddVolatileData(new GH_Path(0), 0, currentInputParam);
                 return true;
             }else
             {
 
-
-                resetParamValue(currentInputParam);
+                currentInputParam.ResetValue();
                 ////set our slider steps position back to 0
                 currentStepPositions[MoveToIndex]=0;
 
@@ -157,29 +167,6 @@ namespace Colibri.Grasshopper
             }
         }
 
-
-
-
-        private void resetParamValue(IGH_Param currentInputParam)
-        {
-            var _paramType = currentInputParam.GetGHType();
-
-            if (_paramType == InputType.Slider)
-            {
-                var _slider = currentInputParam as GH_NumberSlider;
-                _slider.TickValue = 0;
-            }
-            else if (_paramType == InputType.Panel)
-            {
-                
-            }
-            else if (_paramType == InputType.ValueList)
-            {
-                var _valueList = currentInputParam as GH_ValueList;
-                _valueList.SelectItem(0);
-            }
-            
-        }
 
         private static int calClosestTick()
         {
@@ -204,45 +191,6 @@ namespace Colibri.Grasshopper
             return 0;
         }
 
-        //set curretn param to index
-        private void setParamValue(IGH_Param currentInputParam, int SetToStepIndex) {
-
-            var _paramType = currentInputParam.GetGHType();
-
-            if (_paramType == InputType.Slider)
-            {
-                sliderMoveToNextPermutation(currentInputParam as GH_NumberSlider, SetToStepIndex);
-            }
-            else if (_paramType == InputType.Panel)
-            {
-                panelMoveToNextPermutation(currentInputParam as GH_Panel, SetToStepIndex);
-            }
-            else if (_paramType == InputType.ValueList)
-            {
-                valueListMoveToNextPermutation(currentInputParam as GH_ValueList, SetToStepIndex);
-            }
-            
-        }
-
-
-        private bool sliderMoveToNextPermutation(GH_NumberSlider ValidParam, int SetToStepIndex)
-        {
-
-            // Increment the slider.
-            ValidParam.TickValue = SetToStepIndex;
-            return false;
-        }
-
-        private bool panelMoveToNextPermutation(GH_Panel ValidParam, int SetToStepIndex)
-        {
-            return false;
-        }
-
-        private bool valueListMoveToNextPermutation(GH_ValueList ValidParam, int SetToStepIndex)
-        {
-            ValidParam.SelectItem(SetToStepIndex);
-            return false;
-        }
 
         #endregion
 

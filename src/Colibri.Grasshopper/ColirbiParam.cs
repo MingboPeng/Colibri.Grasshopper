@@ -13,6 +13,8 @@ namespace Colibri.Grasshopper
     {
         //Properties
         public InputType GHType { get; private set; }
+
+
         private string nickName;
 
         public string NickName
@@ -24,7 +26,20 @@ namespace Colibri.Grasshopper
                 Param.NickName = nickName;
             }
         }
+
+        // for now is used for tracking the panel values positon only
+        private int position;
+
+        public int Position
+        {
+            get { return position; }
+            private set { position = value; }
+        }
+
         
+
+        private List<string> panelValues = new List<string>();
+
         public IGH_Param Param { get; private set; }
 
         //Constructor
@@ -37,6 +52,12 @@ namespace Colibri.Grasshopper
             Param = RawParam;
             GHType = GetGHType();
             NickName = Param.NickName;
+
+            if (GHType == InputType.Panel)
+            {
+                var panel = this.Param as GH_Panel;
+                panelValues = panel.UserText.Split('\n').ToList();
+            }
 
         }
         
@@ -80,7 +101,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = "PanelValue";
+                currentValue = panelValues[position];
             }
             else if (GHType == InputType.ValueList)
             {
@@ -96,9 +117,104 @@ namespace Colibri.Grasshopper
 
         }
 
+        public int StepCount()
+        {
+            
+            var param = this.Param;
+            var count = 0;
+
+
+            //Slider
+            if (GHType == InputType.Slider)
+            {
+                var mySlider = param as GH_NumberSlider;
+                count = mySlider.TickCount + 1;
+
+            }
+
+            //Panel
+            else if (GHType == InputType.Panel)
+            {
+                
+                count = panelValues.Count();
+
+            }
+
+            //ValueList
+            else if (GHType == InputType.ValueList)
+            {
+                var myValueList = param as GH_ValueList;
+
+                count = myValueList.ListItems.Count();
+
+
+            }
+            else
+            {
+                count = 0;
+            }
+
+
+            return count;
+        }
+
+        public void SetParamTo(int SetToStepIndex)
+        {
+
+            var param = this.Param;
+
+            if (GHType != InputType.Unsupported)
+            {
+                position = SetToStepIndex;
+            }
+
+
+            if (GHType == InputType.Slider)
+            {
+                var slider = param as GH_NumberSlider;
+                slider.TickValue = SetToStepIndex;
+            }
+            else if (GHType == InputType.Panel)
+            {
+                CurrentValue();
+            }
+            else if (GHType == InputType.ValueList)
+            {
+                var valueList = param as GH_ValueList;
+                valueList.SelectItem(SetToStepIndex);
+            }
+
+
+        }
+
+        public void ResetValue()
+        {
+            var param = this.Param;
+
+            if (GHType == InputType.Slider)
+            {
+                var slider = param as GH_NumberSlider;
+                slider.TickValue = 0;
+            }
+            else if (GHType == InputType.Panel)
+            {
+                //do nothing
+            }
+            else if (GHType == InputType.ValueList)
+            {
+                var valueList = param as GH_ValueList;
+                valueList.SelectItem(0);
+            }
+
+            position = 0;
+
+        }
+
+
+        // Override method
         public override string ToString()
         {
-            string currentValue = GHType.ToString()+ CurrentValue();
+            string currentValue = CurrentValue();
 
             return currentValue;
         }
