@@ -71,6 +71,7 @@ namespace Colibri.Grasshopper
 
             var filteredSources = FilterSources();
 
+            Dictionary<string, string> FlyID = new Dictionary<string, string>();
             //Get current value
             for (int i = 0; i < filteredSources.Count(); i++)
             {
@@ -78,10 +79,11 @@ namespace Colibri.Grasshopper
                 if (colibriSource != null)
                 {
                     DA.SetData(i, colibriSource.CurrentValue());
+                    FlyID.Add(colibriSource.NickName, colibriSource.CurrentValue());
                 }
                 
             }
-
+            DA.SetDataList(filteredSources.Count(),FlyID);
 
             //fly
             if (Running)
@@ -134,17 +136,14 @@ namespace Colibri.Grasshopper
                 var filteredSources = FilterSources();
                 
                 filteredSources.RemoveAll(item => item == null);
-
-
+                
                 //Execute the fly
                 if (filteredSources.Count() > 0)
                 {
-                    //System.Windows.Forms.MessageBox.Show(filteredSources.Count().ToString());
                     var flyParam = new IteratorFlyParam(filteredSources);
                     flyParam.FlyAll(e);
                 }
                 
-                //System.Windows.Forms.MessageBox.Show(flyParam.InputParams.Count().ToString());
             }
             catch (Exception ex)
             {
@@ -187,6 +186,21 @@ namespace Colibri.Grasshopper
 
             return filtedSources;
         }
+
+        //private Dictionary<string, string> getFlyID() {
+        //    var flyID = new Dictionary<string, string>();
+        //    var outputs = this.Params.Output;
+        //    for (int i = 0; i < outputs.Count(); i++)
+        //    {
+        //        var param = outputs[i];
+        //        if (param!=null)
+        //        {
+
+        //        }
+        //    }
+
+        //    return flyID;
+        //}
 
 
         /// <summary>
