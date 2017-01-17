@@ -3,6 +3,7 @@ using Grasshopper.Kernel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Grasshopper.Kernel.Data;
 
 namespace Colibri.Grasshopper
 {
@@ -69,6 +70,7 @@ namespace Colibri.Grasshopper
                 inputParam.NickName = isTypeUnsupported ? type.ToString() : validSourceParam.NickName;
                 outputParam.NickName = inputParam.NickName;
                 outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
+                //outputParam.AddVolatileData(new GH_Path(0), 0, ValidSourceParam);
             }
             
 

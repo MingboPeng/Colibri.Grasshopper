@@ -31,8 +31,7 @@ namespace Colibri.Grasshopper
 
         private List<int> currentStepPositions { get; set; }
 
-        private List<IGH_Param> outputPorts { get; set; }
-
+       
         // Total Iteration number int 
         private int totalIterations;
 
@@ -45,21 +44,18 @@ namespace Colibri.Grasshopper
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams, List<IGH_Param> IteratorOutputPorts)
+        public IteratorFlyParam(List<ColibriParam> SourceParams)
         {
             inputParams = SourceParams;
-            outputPorts = IteratorOutputPorts;
             totalIterations = 0;
             IniAllParamsStepLists();
             //set current setp index to 0
             currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
-
         }
 
 
         #region Methods
 
-       
         //to get all params' all steps' indexes 
         public void IniAllParamsStepLists()
         {
@@ -72,7 +68,6 @@ namespace Colibri.Grasshopper
                     var SetpList = Enumerable.Range(0, totalCount).ToList();
                     stepLists.Add(SetpList);
                 }
-                
                 
                 item.ResetValue();
                 
@@ -126,10 +121,10 @@ namespace Colibri.Grasshopper
             var currentInputParam = inputParams[MoveToIndex];
             
             int currentStepPosition = currentStepPositions[MoveToIndex];
-            List<int> currentStepIndexes = inputParamsStepLists[MoveToIndex];
-            int currentParamTotalCount = currentStepIndexes.Count();
+            //List<int> currentStepIndexes = inputParamsStepLists[MoveToIndex];
+            //int currentParamTotalCount = currentStepIndexes.Count();
 
-            if (currentStepPosition < currentParamTotalCount)
+            if (currentStepPosition < currentInputParam.StepCount())
             {
                 //Figure out which step to fly to...
 
@@ -146,7 +141,6 @@ namespace Colibri.Grasshopper
                 //{
                 //    return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
                 //}
-                outputPorts[0].AddVolatileData(new GH_Path(0), 0, currentInputParam);
                 return true;
             }else
             {

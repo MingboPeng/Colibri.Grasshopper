@@ -37,7 +37,6 @@ namespace Colibri.Grasshopper
         }
 
         
-
         private List<string> panelValues = new List<string>();
 
         public IGH_Param Param { get; private set; }
@@ -176,7 +175,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                CurrentValue();
+                this.CurrentValue();
             }
             else if (GHType == InputType.ValueList)
             {

@@ -69,27 +69,25 @@ namespace Colibri.Grasshopper
             bool fly = false;
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref fly);
 
+            var filteredSources = FilterSources();
 
+            //Get current value
+            for (int i = 0; i < filteredSources.Count(); i++)
+            {
+                var colibriSource = filteredSources[i];
+                if (colibriSource != null)
+                {
+                    DA.SetData(i, colibriSource.CurrentValue());
+                }
+                
+            }
+
+
+            //fly
             if (Running)
             {
                 return;
             }
-
-
-            var filteredSources = FilterSources();
-            
-            //Get current value
-            for (int i = 0; i < filteredSources.Count(); i++)
-            {
-
-                var colibriSource = filteredSources[i];
-                //var type = validSource.GHType;
-
-                //validSource.ObjectChanged += ParamInputChanged;
-                DA.SetData(i, colibriSource);
-            }
-
-            this.Params.Output[0].AddVolatileData(new GH_Path(0), 0, "teresss");
 
             if (!fly)
             {
@@ -142,7 +140,7 @@ namespace Colibri.Grasshopper
                 if (filteredSources.Count() > 0)
                 {
                     //System.Windows.Forms.MessageBox.Show(filteredSources.Count().ToString());
-                    var flyParam = new IteratorFlyParam(filteredSources, this.Params.Output);
+                    var flyParam = new IteratorFlyParam(filteredSources);
                     flyParam.FlyAll(e);
                 }
                 
@@ -339,6 +337,7 @@ namespace Colibri.Grasshopper
 
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
+            
             this.ExpireSolution(true);
         }
 
