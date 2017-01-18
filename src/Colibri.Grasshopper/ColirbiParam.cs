@@ -222,12 +222,20 @@ namespace Colibri.Grasshopper
         // Override method
         public override string ToString()
         {
-            string currentValue = CurrentValue();
+            string currentValue =CurrentValue();
 
             return currentValue;
         }
 
-        
+        public string ToString (bool withNames)
+        {
+
+            string currentValue = "[" +nickName+","+ CurrentValue()+ "]";
+
+            return currentValue;
+        }
+
+
 
     }
 }

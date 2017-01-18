@@ -80,7 +80,7 @@ namespace Colibri.Grasshopper
                 if (colibriSource != null)
                 {
                     DA.SetData(i, colibriSource.CurrentValue());
-                    FlyID.Add(colibriSource);
+                    FlyID.Add(colibriSource.ToString(true));
                 }
                 
             }
