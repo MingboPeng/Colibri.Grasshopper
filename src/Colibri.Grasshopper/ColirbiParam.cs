@@ -50,12 +50,21 @@ namespace Colibri.Grasshopper
         {
             Param = RawParam;
             GHType = GetGHType();
-            NickName = Param.NickName;
+            nickName = Param.NickName;
 
             if (GHType == InputType.Panel)
             {
                 var panel = this.Param as GH_Panel;
                 panelValues = panel.UserText.Split('\n').ToList();
+            }
+
+
+            //check slider's Implied Nickname
+            if (GHType == InputType.Slider)
+            {
+                var slider = this.Param as GH_NumberSlider;
+                nickName = String.IsNullOrEmpty(slider.NickName)&& slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
+
             }
 
         }
@@ -217,6 +226,8 @@ namespace Colibri.Grasshopper
 
             return currentValue;
         }
+
+        
 
     }
 }

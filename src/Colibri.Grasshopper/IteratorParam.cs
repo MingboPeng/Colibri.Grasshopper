@@ -18,14 +18,14 @@ namespace Colibri.Grasshopper
         /// Check if is Slider or Panel, and return the first connected conponent's instance GUID
         /// </summary>
 
-        public static ColibriParam CheckAndGetValidInputSource(IGH_Param SelectedInputSource)
+        public static ColibriParam CheckAndGetValidInputSource(IGH_Param SelectedInput)
         {
             //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
             //ColibriParam validSourceParam = null;
             ColibriParam colibriParam = null;
             // Find the Guid for connected Slide or Panel
 
-            var sources = SelectedInputSource.Sources; //list of things connected on this input
+            var sources = SelectedInput.Sources; //list of things connected on this input
             
             // Find connected
             if (sources.Any())
@@ -38,7 +38,8 @@ namespace Colibri.Grasshopper
 
                 if (colibriParam.GHType != InputType.Unsupported)
                 {
-                    component.NickName = String.IsNullOrEmpty(component.NickName) || component.NickName == "List" ? "RenamePlease" : colibriParam.NickName; //Check if nick name exists
+                    var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
+                    colibriParam.NickName = isNicknameEmpty ? "RenamePlease" : colibriParam.NickName; //Check if nick name exists
                     
                 }
 

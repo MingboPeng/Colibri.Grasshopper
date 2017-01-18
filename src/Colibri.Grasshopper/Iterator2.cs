@@ -71,7 +71,8 @@ namespace Colibri.Grasshopper
 
             var filteredSources = FilterSources();
 
-            Dictionary<string, string> FlyID = new Dictionary<string, string>();
+            //Dictionary<string, string> FlyID = new Dictionary<string, string>();
+            var FlyID = new List<object>();
             //Get current value
             for (int i = 0; i < filteredSources.Count(); i++)
             {
@@ -79,7 +80,7 @@ namespace Colibri.Grasshopper
                 if (colibriSource != null)
                 {
                     DA.SetData(i, colibriSource.CurrentValue());
-                    FlyID.Add(colibriSource.NickName, colibriSource.CurrentValue());
+                    FlyID.Add(colibriSource);
                 }
                 
             }
@@ -156,7 +157,6 @@ namespace Colibri.Grasshopper
                 Running = false;
                 e.Document.NewSolution(false);
                 
-                //this.Params.Input.Last().Sources.First().ExpireSolution(true);
             }
             
 
