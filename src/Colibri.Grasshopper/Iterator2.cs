@@ -16,7 +16,6 @@ namespace Colibri.Grasshopper
         
         
         GH_Document doc = null;
-        public List<GH_NumberSlider> allConnectedSliders = new List<GH_NumberSlider>();
 
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
@@ -225,7 +224,10 @@ namespace Colibri.Grasshopper
         }
 
 
-
+        public override void CreateAttributes()
+        {
+            m_attributes = new ColibriParameterAttributes(this);
+        }
 
         #region Methods of IGH_VariableParameterComponent interface
         public bool CanInsertParameter(GH_ParameterSide side, int index)
