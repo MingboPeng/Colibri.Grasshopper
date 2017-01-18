@@ -69,7 +69,24 @@ namespace Colibri.Grasshopper
             bool fly = false;
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref fly);
 
+            var filteredSources = FilterSources();
 
+            //Dictionary<string, string> FlyID = new Dictionary<string, string>();
+            var FlyID = new List<object>();
+            //Get current value
+            for (int i = 0; i < filteredSources.Count(); i++)
+            {
+                var colibriSource = filteredSources[i];
+                if (colibriSource != null)
+                {
+                    DA.SetData(i, colibriSource.CurrentValue());
+                    FlyID.Add(colibriSource.ToString(true));
+                }
+                
+            }
+            DA.SetDataList(filteredSources.Count(),FlyID);
+
+            //fly
             if (Running)
             {
                 return;
@@ -77,48 +94,14 @@ namespace Colibri.Grasshopper
 
             if (!fly)
             {
-                var filteredSources = FilterSources();
-
-                
-                //Get current value
-                for (int i = 0; i < filteredSources.Count(); i++)
-                {
-                    
-                    var validSource = filteredSources[i];
-                    var type = validSource.GetGHType();
-                    
-                    //validSource.ObjectChanged += ParamInputChanged;
-
-                    if (type == InputType.Slider)
-                    {
-                        var slider = validSource as GH_NumberSlider;
-                        DA.SetData(i, slider.CurrentValue);
-                    }
-                    else if (type == InputType.Panel)
-                    {
-                        DA.SetData(i, "PanelValue");
-                    }
-                    else if (type == InputType.ValueList)
-                    {
-                        var valueList = validSource as GH_ValueList;
-                        DA.SetData(i, valueList.SelectedItems.First().Value);
-                    }
-                    else
-                    {
-                        DA.SetData(i, "Please use Slider, Panel, or ValueList!");
-                    }
-                }
-
                 
                 filteredSources.RemoveAll(item => item == null);
-                foreach (IGH_Param source in filteredSources)
+                foreach (var source in filteredSources)
                 {
-                    source.ObjectChanged -= Source_ObjectChanged;
-                    source.ObjectChanged += Source_ObjectChanged;
+                    
+                    source.Param.ObjectChanged -= Source_ObjectChanged;
+                    source.Param.ObjectChanged += Source_ObjectChanged;
                 }
-
-                
-
 
             }
             else
@@ -152,9 +135,9 @@ namespace Colibri.Grasshopper
             try
             {
                 var filteredSources = FilterSources();
-                //System.Windows.Forms.MessageBox.Show(filteredSources.Count().ToString());
+                
                 filteredSources.RemoveAll(item => item == null);
-
+                
                 //Execute the fly
                 if (filteredSources.Count() > 0)
                 {
@@ -162,7 +145,6 @@ namespace Colibri.Grasshopper
                     flyParam.FlyAll(e);
                 }
                 
-                //System.Windows.Forms.MessageBox.Show(flyParam.InputParams.Count().ToString());
             }
             catch (Exception ex)
             {
@@ -175,7 +157,6 @@ namespace Colibri.Grasshopper
                 Running = false;
                 e.Document.NewSolution(false);
                 
-                //this.Params.Input.Last().Sources.First().ExpireSolution(true);
             }
             
 
@@ -184,33 +165,42 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// check input source if is slider, panel, or valueList, if not, filter to null
         /// </summary>   
-        private List<IGH_Param> FilterSources()
+        private List<ColibriParam> FilterSources()
         {
-            var filtedSources = new List<IGH_Param>();
+            var filtedSources = new List<ColibriParam>();
             //var validindexList = new List<int>();
             for (int i = 0; i < this.Params.Input.Count; i++)
             {
                 //Check if it is fly or empty source param
                 bool isFly = i == this.Params.IndexOfInputParam("Fly?") ? true : false;
-                bool isEmptySource = this.Params.Input[i].SourceCount == 0 ? true : false;
 
-                if (!isFly && !isEmptySource)
+                if (!isFly)
                 {
-                    //validindexList.Add(i);
                     var filtedSource = IteratorParam.CheckAndGetValidInputSource(this.Params.Input[i]);
                     filtedSources.Add(filtedSource);
                     IteratorParam.ChangeParamNickName(filtedSource, this.Params.Input[i], this.Params.Output[i]);
-
                 }
-                else if (!isFly)
-                {
-                    filtedSources.Add(null);
-                }
-
+            
+                
             }
 
             return filtedSources;
         }
+
+        //private Dictionary<string, string> getFlyID() {
+        //    var flyID = new Dictionary<string, string>();
+        //    var outputs = this.Params.Output;
+        //    for (int i = 0; i < outputs.Count(); i++)
+        //    {
+        //        var param = outputs[i];
+        //        if (param!=null)
+        //        {
+
+        //        }
+        //    }
+
+        //    return flyID;
+        //}
 
 
         /// <summary>
@@ -331,7 +321,7 @@ namespace Colibri.Grasshopper
 
 
         #region Events
-         private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
+        private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
             //WIP
@@ -344,7 +334,7 @@ namespace Colibri.Grasshopper
 
             if (isInputSide && !isFly && !isSecondLastEmptySource)
             {
-                //System.Windows.Forms.MessageBox.Show(e.ParameterIndex.ToString() + "_" + Params.IndexOfInputParam("Fly?").ToString());
+
                 IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
                 Params.RegisterInputParam(newParam, Params.Input.Count - 1);
                 VariableParameterMaintenance();
@@ -361,6 +351,7 @@ namespace Colibri.Grasshopper
 
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
+            
             this.ExpireSolution(true);
         }
 
