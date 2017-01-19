@@ -56,6 +56,8 @@ namespace Colibri.Grasshopper
             {
                 var panel = this.Param as GH_Panel;
                 panelValues = panel.UserText.Split('\n').ToList();
+                
+                panel.VolatileData
             }
 
 
@@ -97,6 +99,22 @@ namespace Colibri.Grasshopper
             }
         }
 
+        private List<string> getPanelValue(GH_Panel panel)
+        {
+            var panelValues = new List<string>();
+
+            panelValues = panel.UserText.Split('\n').ToList();
+            if (panelValues.Count ==1 && panelValues[0].Contains("Double chlick to edit panel content"))
+            {
+                //panelValues = panel.VolatileData.AllData(true);
+                panelValues = new List<string>() { "VolatileData" };
+            }
+
+
+            return panelValues;
+        }
+
+
         public string CurrentValue() {
 
             var rawParam = this.Param;
@@ -124,7 +142,7 @@ namespace Colibri.Grasshopper
             return currentValue;
 
         }
-
+        
         public int StepCount()
         {
             
