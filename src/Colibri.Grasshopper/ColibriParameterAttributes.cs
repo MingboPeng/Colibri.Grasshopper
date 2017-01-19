@@ -1,8 +1,10 @@
 ﻿using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Attributes;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,15 +12,19 @@ using System.Windows.Forms;
 
 namespace Colibri.Grasshopper
 {
-    public class ColibriParameterAttributes : GH_Attributes<Iterator2>
+    public class ColibriParameterAttributes : GH_ComponentAttributes
     {
-        public ColibriParameterAttributes(Iterator2 owner) : base(owner) { }
+        
+        public string btnText;
+        public ColibriParameterAttributes(GH_Component owner):base((IGH_Component) owner)
+        {
+            this.btnText = "Settings";
+        }
 
         protected override void Layout()
         {
             base.Layout();
-
-            System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
+            System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(((GH_Attributes<IGH_Component>)this).Bounds);
             rec0.Height += 22;
 
             System.Drawing.Rectangle rec1 = rec0;
@@ -27,17 +33,17 @@ namespace Colibri.Grasshopper
             rec1.Inflate(-2, -2);
 
             Bounds = rec0;
-            ButtonBounds = rec1;
+            this.ButtonBounds = rec1;
         }
         private System.Drawing.Rectangle ButtonBounds { get; set; }
 
-        protected override void Render(GH_Canvas canvas, System.Drawing.Graphics graphics, GH_CanvasChannel channel)
+        protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
             base.Render(canvas, graphics, channel);
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Button", 2, 0);
+                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, btnText, 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }

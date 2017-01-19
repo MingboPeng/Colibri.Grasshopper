@@ -223,7 +223,6 @@ namespace Colibri.Grasshopper
             get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
         }
 
-
         public override void CreateAttributes()
         {
             m_attributes = new ColibriParameterAttributes(this);
