@@ -8,6 +8,7 @@ using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Components;
 using System.Threading.Tasks;
 using Grasshopper.Kernel.Data;
+using System.Windows.Forms;
 
 namespace Colibri.Grasshopper
 {
@@ -225,7 +226,15 @@ namespace Colibri.Grasshopper
 
         public override void CreateAttributes()
         {
-            m_attributes = new ColibriParameterAttributes(this);
+            var newButtonAttribute = new ColibriParameterAttributes(this);
+            newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
+            m_attributes = newButtonAttribute;
+            
+        }
+
+        private void OnMouseDownEvent(object sender)
+        {
+            MessageBox.Show("The button was clicked", "Button", MessageBoxButtons.OK);
         }
 
         #region Methods of IGH_VariableParameterComponent interface
