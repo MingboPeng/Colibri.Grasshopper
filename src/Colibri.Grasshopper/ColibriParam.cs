@@ -28,7 +28,7 @@ namespace Colibri.Grasshopper
         }
 
         // for now is used for tracking the panel values positon only
-        private int position;
+        private static int position;
 
         public int Position
         {
@@ -107,8 +107,7 @@ namespace Colibri.Grasshopper
             {
                 panelValues = panel.VolatileData.AllData(true).Select(_=>_.ToString()).ToList();
             }
-
-
+            
             return panelValues;
         }
 
@@ -125,7 +124,8 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = panelValues.First() + "_"+panelValues.Last() +"counts"+panelValues.Count();
+                currentValue = panelValues[position];
+                
             }
             else if (GHType == InputType.ValueList)
             {
@@ -189,7 +189,7 @@ namespace Colibri.Grasshopper
 
             if (GHType != InputType.Unsupported)
             {
-                position = SetToStepIndex;
+                this.Position = SetToStepIndex;
             }
 
 
@@ -200,7 +200,8 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                this.CurrentValue();
+                CurrentValue();
+                this.Param.ExpireSolution(true);
             }
             else if (GHType == InputType.ValueList)
             {

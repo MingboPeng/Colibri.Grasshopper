@@ -218,7 +218,7 @@ namespace Colibri.Grasshopper
                 doc.SolutionEnd += OnSolutionEnd;
                 ExpireSolution(true);
             }
-    }
+        }
 
         #region Methods of IGH_VariableParameterComponent interface
         public bool CanInsertParameter(GH_ParameterSide side, int index)

@@ -123,7 +123,7 @@ namespace Colibri.Grasshopper
             int currentStepPosition = currentStepPositions[MoveToIndex];
             //List<int> currentStepIndexes = inputParamsStepLists[MoveToIndex];
             //int currentParamTotalCount = currentStepIndexes.Count();
-
+            
             if (currentStepPosition < currentInputParam.StepCount())
             {
                 //Figure out which step to fly to...
@@ -135,7 +135,7 @@ namespace Colibri.Grasshopper
 
                 //The current component is already at the maximum value. Reset it back to zero.
                 currentInputParam.SetParamTo(currentStepPosition);
-
+                
                 //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 //if (computedValues.Contains(GetSliderVals(sliders)))
                 //{

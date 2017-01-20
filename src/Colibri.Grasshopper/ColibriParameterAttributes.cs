@@ -88,7 +88,6 @@ namespace Colibri.Grasshopper
                 if (rec.Contains(e.CanvasLocation))
                 {
                     this.MouseDownEvent(this);
-                    //MessageBox.Show("The button was clicked", "Button", MessageBoxButtons.OK);
                     return GH_ObjectResponse.Handled;
                 }
             }
