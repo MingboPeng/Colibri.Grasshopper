@@ -59,12 +59,7 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
-            if (doc == null)
-            {
-                doc = GH.Instances.ActiveCanvas.Document;
-            }
-
+            
             //bool isReady = false;
             bool fly = false;
             DA.GetData(this.Params.IndexOfInputParam("Fly?"), ref fly);
@@ -92,26 +87,16 @@ namespace Colibri.Grasshopper
                 return;
             }
 
-            if (!fly)
+            
+            filteredSources.RemoveAll(item => item == null);
+            foreach (var source in filteredSources)
             {
-                
-                filteredSources.RemoveAll(item => item == null);
-                foreach (var source in filteredSources)
-                {
-                    
-                    source.Param.ObjectChanged -= Source_ObjectChanged;
-                    source.Param.ObjectChanged += Source_ObjectChanged;
-                }
-
-            }
-            else
-            {
-                Run = true;
-                doc.SolutionEnd += OnSolutionEnd;
+                source.Param.ObjectChanged -= Source_ObjectChanged;
+                source.Param.ObjectChanged += Source_ObjectChanged;
             }
 
-
-
+            
+            
         }
 
         private bool Run = false;
@@ -181,26 +166,10 @@ namespace Colibri.Grasshopper
                     IteratorParam.ChangeParamNickName(filtedSource, this.Params.Input[i], this.Params.Output[i]);
                 }
             
-                
             }
 
             return filtedSources;
         }
-
-        //private Dictionary<string, string> getFlyID() {
-        //    var flyID = new Dictionary<string, string>();
-        //    var outputs = this.Params.Output;
-        //    for (int i = 0; i < outputs.Count(); i++)
-        //    {
-        //        var param = outputs[i];
-        //        if (param!=null)
-        //        {
-
-        //        }
-        //    }
-
-        //    return flyID;
-        //}
 
 
         /// <summary>
@@ -227,6 +196,7 @@ namespace Colibri.Grasshopper
         public override void CreateAttributes()
         {
             var newButtonAttribute = new ColibriParameterAttributes(this);
+            newButtonAttribute.btnText = "Fly";
             newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
             m_attributes = newButtonAttribute;
             
@@ -234,8 +204,21 @@ namespace Colibri.Grasshopper
 
         private void OnMouseDownEvent(object sender)
         {
-            MessageBox.Show("The button was clicked", "Button", MessageBoxButtons.OK);
-        }
+            if (doc == null)
+            {
+                doc = GH.Instances.ActiveCanvas.Document;
+            }
+
+            var userClick = MessageBox.Show("ParamCounts" + " slider(s) connected:\n" + "Param Names " +
+                  "\n" + "totalNumber " + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
+
+            if (userClick == DialogResult.Yes)
+            {
+                Run = true;
+                doc.SolutionEnd += OnSolutionEnd;
+                ExpireSolution(true);
+            }
+    }
 
         #region Methods of IGH_VariableParameterComponent interface
         public bool CanInsertParameter(GH_ParameterSide side, int index)
@@ -336,7 +319,6 @@ namespace Colibri.Grasshopper
 
             //WIP
             
-
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
             bool isFly = e.ParameterIndex == this.Params.IndexOfInputParam("Fly?") ? true : false;
             bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
