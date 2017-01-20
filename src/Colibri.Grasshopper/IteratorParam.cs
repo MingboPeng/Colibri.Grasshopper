@@ -43,6 +43,11 @@ namespace Colibri.Grasshopper
                     
                 }
 
+                if (colibriParam.GHType == InputType.Panel)
+                {
+                    SelectedInput.VolatileData.Flatten();
+                }
+
                 return colibriParam;
 
             }

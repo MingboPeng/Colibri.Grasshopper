@@ -55,9 +55,8 @@ namespace Colibri.Grasshopper
             if (GHType == InputType.Panel)
             {
                 var panel = this.Param as GH_Panel;
-                panelValues = panel.UserText.Split('\n').ToList();
-                
-                panel.VolatileData
+                panelValues = getPanelValue(panel);
+
             }
 
 
@@ -104,10 +103,9 @@ namespace Colibri.Grasshopper
             var panelValues = new List<string>();
 
             panelValues = panel.UserText.Split('\n').ToList();
-            if (panelValues.Count ==1 && panelValues[0].Contains("Double chlick to edit panel content"))
+            if (panelValues.Count ==1 && panelValues[0].Contains("Double click to edit panel content"))
             {
-                //panelValues = panel.VolatileData.AllData(true);
-                panelValues = new List<string>() { "VolatileData" };
+                panelValues = panel.VolatileData.AllData(true).Select(_=>_.ToString()).ToList();
             }
 
 
@@ -127,7 +125,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = panelValues[position];
+                currentValue = panelValues.First() + "_"+panelValues.Last() +"counts"+panelValues.Count();
             }
             else if (GHType == InputType.ValueList)
             {
