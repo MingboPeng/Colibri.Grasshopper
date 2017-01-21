@@ -28,7 +28,7 @@ namespace Colibri.Grasshopper
         }
 
         // for now is used for tracking the panel values positon only
-        private static int position;
+        private int position;
 
         public int Position
         {
@@ -36,7 +36,14 @@ namespace Colibri.Grasshopper
             private set { position = value; }
         }
 
-        
+        private int totalCount;
+
+        public int TotalCount
+        {
+            get { return totalCount; }
+            set { totalCount = value; }
+        }
+
         private List<string> panelValues = new List<string>();
 
         public IGH_Param Param { get; private set; }
@@ -51,7 +58,7 @@ namespace Colibri.Grasshopper
             Param = RawParam;
             GHType = GetGHType();
             nickName = Param.NickName;
-
+            
             if (GHType == InputType.Panel)
             {
                 var panel = this.Param as GH_Panel;
@@ -59,6 +66,7 @@ namespace Colibri.Grasshopper
 
             }
 
+            TotalCount = CountSteps();
 
             //check slider's Implied Nickname
             if (GHType == InputType.Slider)
@@ -67,6 +75,9 @@ namespace Colibri.Grasshopper
                 nickName = String.IsNullOrEmpty(slider.NickName)&& slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
 
             }
+
+            CalIniPosition();
+
 
         }
         
@@ -121,16 +132,17 @@ namespace Colibri.Grasshopper
             {
                 var slider = rawParam as GH_NumberSlider;
                 currentValue = slider.CurrentValue.ToString();
+                
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = panelValues[position];
+                currentValue = panelValues[Position];
                 
             }
             else if (GHType == InputType.ValueList)
             {
                 var valueList = rawParam as GH_ValueList;
-                currentValue = valueList.SelectedItems.First().Value.ToString();
+                currentValue = valueList.FirstSelectedItem.Value.ToString();
             }
             else
             {
@@ -140,8 +152,37 @@ namespace Colibri.Grasshopper
             return currentValue;
 
         }
-        
-        public int StepCount()
+        private void CalIniPosition()
+        {
+
+            var rawParam = this.Param;
+
+            if (GHType == InputType.Slider)
+            {
+                var slider = rawParam as GH_NumberSlider;
+                this.Position = slider.TickValue;
+            }
+            else if (GHType == InputType.ValueList)
+            {
+                var valueList = rawParam as GH_ValueList;
+                for (int i = 0; i < valueList.ListItems.Count(); i++)
+                {
+                    var item = valueList.ListItems[i];
+                    if (item.Selected)
+                    {
+                        this.Position = i;
+                    }
+                }
+            }
+            else
+            {
+                this.Position = 0;
+            }
+            
+
+        }
+
+        private int CountSteps()
         {
             
             var param = this.Param;
@@ -187,53 +228,52 @@ namespace Colibri.Grasshopper
 
             var param = this.Param;
 
-            if (GHType != InputType.Unsupported)
-            {
-                this.Position = SetToStepIndex;
-            }
-
+            
+            this.Position = SetToStepIndex;
 
             if (GHType == InputType.Slider)
             {
                 var slider = param as GH_NumberSlider;
                 slider.TickValue = SetToStepIndex;
+
             }
             else if (GHType == InputType.Panel)
             {
-                CurrentValue();
-                this.Param.ExpireSolution(true);
+                this.Param.ExpireSolution(false);
             }
             else if (GHType == InputType.ValueList)
             {
                 var valueList = param as GH_ValueList;
                 valueList.SelectItem(SetToStepIndex);
+                //valueList.ToggleItem(SetToStepIndex);
+
+
             }
 
 
         }
 
-        public void ResetValue()
+        public void Reset()
         {
-            var param = this.Param;
-
-            if (GHType == InputType.Slider)
+            if (GHType == InputType.Panel)
             {
-                var slider = param as GH_NumberSlider;
-                slider.TickValue = 0;
+                SetParamTo(0);
             }
-            else if (GHType == InputType.Panel)
+            
+            else
             {
-                //do nothing
+                
+                if (Position == 0)
+                {
+                    Param.ExpireSolution(true);
+                }
+                else
+                {
+                    SetParamTo(0);
+                }
             }
-            else if (GHType == InputType.ValueList)
-            {
-                var valueList = param as GH_ValueList;
-                valueList.SelectItem(0);
-            }
-
-            position = 0;
-
         }
+            
 
 
         // Override method
