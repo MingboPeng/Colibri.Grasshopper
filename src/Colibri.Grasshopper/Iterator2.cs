@@ -101,7 +101,7 @@ namespace Colibri.Grasshopper
 
         private bool Run = false;
         private bool Running = false;
-        private IteratorFlyParam flyParam;
+
         
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
@@ -119,7 +119,17 @@ namespace Colibri.Grasshopper
 
             try
             {
-                flyParam.FlyAll(e);
+                var filteredSources = FilterSources();
+                
+                filteredSources.RemoveAll(item => item == null);
+                
+                //Execute the fly
+                if (filteredSources.Count() > 0)
+                {
+                    var flyParam = new IteratorFlyParam(filteredSources);
+                    flyParam.FlyAll(e);
+                }
+                
             }
             catch (Exception ex)
             {
@@ -198,37 +208,15 @@ namespace Colibri.Grasshopper
             {
                 doc = GH.Instances.ActiveCanvas.Document;
             }
-            
-            //recollect all params 
-            var filteredSources = FilterSources();
 
-            filteredSources.RemoveAll(item => item == null);
-
-            if (filteredSources.Count() > 0)
-            {
-                flyParam = new IteratorFlyParam(filteredSources);
-            }else
-            {
-                MessageBox.Show("No Valid Slider, ValueList, or Panel connected!");
-            }
-
-
-            if (flyParam == null)
-            {
-                return;
-            }
-
-            
-
-            var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
-                  "\n" + flyParam.TotalIterations + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
+            var userClick = MessageBox.Show("ParamCounts" + " slider(s) connected:\n" + "Param Names " +
+                  "\n" + "totalNumber " + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
 
             if (userClick == DialogResult.Yes)
             {
                 Run = true;
                 doc.SolutionEnd += OnSolutionEnd;
-                doc.NewSolution(false);
-                //ExpireSolution(true);
+                ExpireSolution(true);
             }
         }
 
@@ -345,13 +333,17 @@ namespace Colibri.Grasshopper
                 this.Params.OnParametersChanged();
                 this.ExpireSolution(true);
             }
+            else
+            {
+                //this.Params.ParameterSourcesChanged -= ParamInputChanged;
+            }
 
 
         }
 
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
-            //flyParam = null;
+            
             this.ExpireSolution(true);
         }
 

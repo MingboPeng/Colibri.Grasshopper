@@ -21,7 +21,8 @@ namespace Colibri.Grasshopper
         public static ColibriParam CheckAndGetValidInputSource(IGH_Param SelectedInput)
         {
             //var validSourceParam = new List<object>(); //empty list for valid Slider, Panel, or ValueList
-            var colibriParam = new ColibriParam();
+            //ColibriParam validSourceParam = null;
+            ColibriParam colibriParam = null;
             // Find the Guid for connected Slide or Panel
 
             var sources = SelectedInput.Sources; //list of things connected on this input

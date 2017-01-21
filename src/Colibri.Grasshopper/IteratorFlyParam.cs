@@ -28,15 +28,18 @@ namespace Colibri.Grasshopper
             set { inputParamsStepLists = value; }
         }
 
-        //current each position
+
         private List<int> currentStepPositions { get; set; }
 
-        //current counts
-        public int Count { get; private set; }
        
         // Total Iteration number int 
-        public int TotalIterations { get; private set; }
-        
+        private int totalIterations;
+
+        public int TotalIterations
+        {
+            get { return totalIterations; }
+            set { totalIterations = value; }
+        }
 
         //constructor 
         public IteratorFlyParam(){}
@@ -44,12 +47,10 @@ namespace Colibri.Grasshopper
         public IteratorFlyParam(List<ColibriParam> SourceParams)
         {
             inputParams = SourceParams;
-            calTotalIterations();
+            totalIterations = 0;
+            IniAllParamsStepLists();
             //set current setp index to 0
             currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
-            //currentStepPositions[0] = 1;
-
-            Count = 0;
         }
 
 
@@ -59,50 +60,27 @@ namespace Colibri.Grasshopper
         public void IniAllParamsStepLists()
         {
             var stepLists = new List<List<int>>();
-            foreach (var item in InputParams)
+            foreach (var item in inputParams)
             {
-                int totalCount = item.TotalCount;
+                int totalCount = item.StepCount();
                 if (totalCount >0)
                 {
                     var SetpList = Enumerable.Range(0, totalCount).ToList();
                     stepLists.Add(SetpList);
-                    
                 }
+                
+                item.ResetValue();
                 
             }
 
             inputParamsStepLists = stepLists;
         }
 
-        private void calTotalIterations()
-        {
-            
-            TotalIterations = 1;
-            
-            foreach (var item in InputParams)
-            {
-                int totalCount = item.TotalCount;
-                if (totalCount > 0)
-                {
-                    TotalIterations *= totalCount;
-                }
-            }
-        }
-
-        private void ResetAll()
-        {
-            foreach (var item in InputParams)
-            {
-                item.Reset();
-            }
-        }
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
 
-            ResetAll();
-            e.Document.NewSolution(false);
-
+            
             while (true)
             {
 
@@ -117,8 +95,7 @@ namespace Colibri.Grasshopper
                 }
 
                 // We've just got a new valid permutation. Solve the new solution.
-                this.Count++;
-
+                //counter++;
                 e.Document.NewSolution(false);
                 Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
                 //UpdateProgressBar(counter, totalLoops, sw, pbChars);
@@ -130,21 +107,24 @@ namespace Colibri.Grasshopper
 
 
 
-        private bool MoveToNextPermutation(ref int MoveToParamIndex)
+        private bool MoveToNextPermutation(ref int MoveToIndex)
         {
 
             // watch the folder : RUN file
 
-            if (MoveToParamIndex >= inputParams.Count)
+            if (MoveToIndex >= inputParams.Count)
                 return false;
 
-            
+            //Increment the current step position
+            currentStepPositions[MoveToIndex]++;
 
-            var currentInputParam = inputParams[MoveToParamIndex];
+            var currentInputParam = inputParams[MoveToIndex];
             
-            int nextStepPosition = currentStepPositions[MoveToParamIndex] + 1;
+            int currentStepPosition = currentStepPositions[MoveToIndex];
+            //List<int> currentStepIndexes = inputParamsStepLists[MoveToIndex];
+            //int currentParamTotalCount = currentStepIndexes.Count();
             
-            if (nextStepPosition < currentInputParam.TotalCount)
+            if (currentStepPosition < currentInputParam.StepCount())
             {
                 //Figure out which step to fly to...
 
@@ -152,14 +132,10 @@ namespace Colibri.Grasshopper
                 //int closestTick = calClosestTick();
 
                 //calClosestTick();
-                
 
                 //The current component is already at the maximum value. Reset it back to zero.
-                currentInputParam.SetParamTo(nextStepPosition);
-
-                //Increment the current step position
-                this.currentStepPositions[MoveToParamIndex]++;
-
+                currentInputParam.SetParamTo(currentStepPosition);
+                
                 //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
                 //if (computedValues.Contains(GetSliderVals(sliders)))
                 //{
@@ -168,20 +144,20 @@ namespace Colibri.Grasshopper
                 return true;
             }else
             {
+
+                currentInputParam.ResetValue();
                 ////set our slider steps position back to 0
-                this.currentStepPositions[MoveToParamIndex] = 0;
+                currentStepPositions[MoveToIndex]=0;
 
                 //// Move on to the next slider.
-                MoveToParamIndex++;
+                MoveToIndex++;
                 //System.Windows.Forms.MessageBox.Show("index++"+MoveToIndex.ToString());
                 //// If we've run out of sliders to modify, we're done permutatin'
 
-                if (MoveToParamIndex >= inputParams.Count)
-                    return false;
+                //if (MoveToIndex >= inputParams.Count)
+                //    return false;
 
-                currentInputParam.Reset();
-                
-                return MoveToNextPermutation(ref MoveToParamIndex);
+                return MoveToNextPermutation(ref MoveToIndex);
             }
         }
 
