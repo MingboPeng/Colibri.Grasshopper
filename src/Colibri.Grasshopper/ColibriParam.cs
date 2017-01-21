@@ -28,6 +28,8 @@ namespace Colibri.Grasshopper
         }
 
         // for now is used for tracking the panel values positon only
+        private static int panelItemPosition;
+
         private int position;
 
         public int Position
@@ -136,7 +138,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = panelValues[Position];
+                currentValue = panelValues[panelItemPosition];
                 
             }
             else if (GHType == InputType.ValueList)
@@ -239,6 +241,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
+                panelItemPosition = Position;
                 this.Param.ExpireSolution(false);
             }
             else if (GHType == InputType.ValueList)

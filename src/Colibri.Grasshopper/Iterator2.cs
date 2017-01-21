@@ -351,7 +351,7 @@ namespace Colibri.Grasshopper
 
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
-            //flyParam = null;
+            flyParam = null;
             this.ExpireSolution(true);
         }
 
