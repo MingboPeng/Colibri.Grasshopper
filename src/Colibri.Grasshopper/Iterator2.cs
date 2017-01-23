@@ -158,6 +158,30 @@ namespace Colibri.Grasshopper
 
 
 
+
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override System.Drawing.Bitmap Icon
+        {
+            get
+            {
+                //You can add image files to your project resources and access them like this:
+                // return Resources.IconForThisComponent;
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
+        public override Guid ComponentGuid
+        {
+            get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
+        }
+
+
+
         #region Collecting Source Params, and convert to Colibri Params
 
         /// <summary>
@@ -169,8 +193,8 @@ namespace Colibri.Grasshopper
 
             var sources = SelectedSource; //list of things connected on this input
 
-            
-            
+
+
 
             var component = sources.Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
 
@@ -193,7 +217,7 @@ namespace Colibri.Grasshopper
                 MessageBox.Show("Please check all inputs! \nSlider, ValueList, or Panel are only supported!");
             }
 
-            
+
 
             return colibriParam;
 
@@ -208,7 +232,7 @@ namespace Colibri.Grasshopper
 
             if (ValidSourceParam != null)
             {
-                
+
                 var validSourceParam = ValidSourceParam;
                 int atPosition = validSourceParam.AtIteratorPosition;
 
@@ -238,7 +262,7 @@ namespace Colibri.Grasshopper
             for (int i = 0; i < this.Params.Input.Count; i++)
             {
                 //Check if it is fly or empty source param
-                bool isFly = i == this.Params.Input.Count-1 ? true : false;
+                bool isFly = i == this.Params.Input.Count - 1 ? true : false;
                 var source = this.Params.Input[i].Sources;
                 bool ifAny = source.Any();
 
@@ -258,39 +282,19 @@ namespace Colibri.Grasshopper
             return filtedSources;
         }
         #endregion
+        
 
-
-
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the unique ID for this component. Do not change this ID after release.
-        /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
-        }
-
+        #region Button on Iterator
+        // Create Button
         public override void CreateAttributes()
         {
             var newButtonAttribute = new ColibriParameterAttributes(this);
             newButtonAttribute.btnText = "Fly";
             newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
             m_attributes = newButtonAttribute;
-            
-        }
 
+        }
+        // response to Button event
         private void OnMouseDownEvent(object sender)
         {
             if (doc == null)
@@ -302,22 +306,19 @@ namespace Colibri.Grasshopper
             //var filteredSources = FilterSources();
 
             filteredSources.RemoveAll(item => item == null);
+            filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
 
             if (filteredSources.Count() > 0)
             {
                 flyParam = new IteratorFlyParam(filteredSources);
-            }else
+            }
+            else
             {
                 MessageBox.Show("No Valid Slider, ValueList, or Panel connected!");
-            }
-
-
-            if (flyParam == null)
-            {
                 return;
             }
 
-            
+
 
             var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
                   "\n" + flyParam.TotalIterations + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
@@ -334,7 +335,11 @@ namespace Colibri.Grasshopper
             }
         }
 
+        #endregion
+
+
         #region Methods of IGH_VariableParameterComponent interface
+
         public bool CanInsertParameter(GH_ParameterSide side, int index)
         {
             bool isInputSide = (side == GH_ParameterSide.Input) ? true : false;
@@ -428,6 +433,7 @@ namespace Colibri.Grasshopper
 
 
         #region Events
+        //This is for if any source connected, removed, 
         private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
@@ -457,7 +463,7 @@ namespace Colibri.Grasshopper
         }
         
         
-        //This is for if any source connected, removed, name changed
+        //This is for if any source name changed
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
             this.flyParam = null;
