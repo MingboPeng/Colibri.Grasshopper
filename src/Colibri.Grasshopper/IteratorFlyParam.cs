@@ -47,7 +47,6 @@ namespace Colibri.Grasshopper
             calTotalIterations();
             //set current setp index to 0
             currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
-            //currentStepPositions[0] = 1;
 
             Count = 0;
         }
@@ -56,7 +55,7 @@ namespace Colibri.Grasshopper
         #region Methods
 
         //to get all params' all steps' indexes 
-        public void IniAllParamsStepLists()
+        private void IniAllParamsStepLists()
         {
             var stepLists = new List<List<int>>();
             foreach (var item in InputParams)
@@ -89,7 +88,7 @@ namespace Colibri.Grasshopper
             }
         }
 
-        public void FirstResetAll()
+        private void FirstResetAll()
         {
             foreach (var item in InputParams)
             {
@@ -101,6 +100,8 @@ namespace Colibri.Grasshopper
         {
 
             FirstResetAll();
+            //Todo: creat a run file
+            //Todo: watch the file to stop
 
             while (true)
             {
@@ -124,6 +125,7 @@ namespace Colibri.Grasshopper
                 if (!isRunning )
                 {
                     // study is over!
+                    
                     break;
 
                 }
@@ -134,14 +136,11 @@ namespace Colibri.Grasshopper
             
         }
 
-
-
-
+       
         private bool MoveToNextPermutation(ref int MoveToParamIndex)
         {
 
-            // watch the folder : RUN file
-
+           
             if (MoveToParamIndex >= inputParams.Count)
                 return false;
 

@@ -28,7 +28,7 @@ namespace Colibri.Grasshopper
         }
 
 
-        
+        //todo: merge this to position
         // for now is used for tracking the panel values positon only
         private int panelItemPosition;
 
@@ -149,6 +149,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.ValueList)
             {
+                //todo: two mode for running or unrunning 
                 var valueList = rawParam as GH_ValueList;
                 //currentValue = valueList.FirstSelectedItem.Value.ToString();
                 currentValue = valueList.ListItems[panelItemPosition].Value.ToString();
@@ -236,7 +237,6 @@ namespace Colibri.Grasshopper
         {
 
             var param = this.Param;
-
             
             this.Position = SetToStepIndex;
 
@@ -260,40 +260,25 @@ namespace Colibri.Grasshopper
 
                 panelItemPosition = Position;
                 this.Param.ExpireSolution(false);
-
-
+                
             }
 
 
         }
 
+        // todo: SetToNext() 
+        public void SetToNext()
+        {
+
+        }
         public void Reset()
         {
             
             SetParamTo(0);
 
-            //if (GHType == InputType.ValueList)
-            //{
-            //    SetParamTo(1);
-            //}
-            //else
-            //{
-            //    SetParamTo(0);
-            //}
-
-            //else
-            //{
-
-            //    if (Position == 0)
-            //    {
-            //        Param.ExpireSolution(true);
-            //    }
-            //    else
-            //    {
-            //        SetParamTo(0);
-            //    }
-            //}
         }
+
+        //todo: merge if possible
         public void Reset(bool isFirstReset)
         {
            
