@@ -162,6 +162,46 @@ namespace Colibri.Grasshopper
             return currentValue;
 
         }
+        public string CurrentValue(bool isFlying)
+        {
+
+            var rawParam = this.Param;
+            string currentValue = string.Empty;
+
+            if (GHType == InputType.Slider)
+            {
+                var slider = rawParam as GH_NumberSlider;
+                currentValue = slider.CurrentValue.ToString();
+
+            }
+            else if (GHType == InputType.Panel)
+            {
+                currentValue = panelValues[panelItemPosition];
+
+            }
+            else if (GHType == InputType.ValueList)
+            {
+                //two modes for running or unrunning 
+                var valueList = rawParam as GH_ValueList;
+                if (isFlying)
+                {
+                    currentValue = valueList.ListItems[panelItemPosition].Value.ToString();
+                }
+                else
+                {
+                    currentValue = valueList.FirstSelectedItem.Value.ToString();
+                    
+                }
+                
+            }
+            else
+            {
+                currentValue = "Please use Slider, Panel, or ValueList!";
+            }
+
+            return currentValue;
+
+        }
         private void CalIniPosition()
         {
 
@@ -282,7 +322,7 @@ namespace Colibri.Grasshopper
         public void Reset(bool isFirstReset)
         {
            
-            if (GHType != InputType.ValueList && GHType != InputType.Slider)
+            if (GHType != InputType.ValueList)
             {
                 SetParamTo(0);
             }

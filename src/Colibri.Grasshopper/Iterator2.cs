@@ -19,6 +19,7 @@ namespace Colibri.Grasshopper
         GH_Document doc = null;
         private bool Run = false;
         private bool Running = false;
+        private bool IsAutoSetting = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
 
@@ -30,7 +31,7 @@ namespace Colibri.Grasshopper
               "Generates design iterations from a collection of sliders.",
               "TT Toolbox", "Colibri")
         {
-            Params.ParameterSourcesChanged += ParamInputChanged;
+            Params.ParameterSourcesChanged += ParamSourcesChanged;
         }
 
         /// <summary>
@@ -81,23 +82,12 @@ namespace Colibri.Grasshopper
                 return;
             }
 
-
-            //get all current Values
-            //for (int i = 0; i < filteredSources.Count(); i++)
-            //{
-            //    var colibriSource = filteredSources[i];
-            //    if (colibriSource != null)
-            //    {
-            //        DA.SetData(i, colibriSource.CurrentValue());
-            //        FlyID.Add(colibriSource.ToString(true));
-            //    }
-                
-            //}
+            bool isRunning = Run || Running;
             foreach (var item in filteredSources)
             {
                 if (item != null)
                 {
-                    DA.SetData(item.AtIteratorPosition, item.CurrentValue());
+                    DA.SetData(item.AtIteratorPosition, item.CurrentValue(isRunning));
                     FlyID.Add(item.ToString(true));
                 }
             }
@@ -110,14 +100,19 @@ namespace Colibri.Grasshopper
                 return;
             }
 
-            
+            //if (IsAutoSetting)
+            //{
+            //    return;
+            //}
+
             filteredSources.RemoveAll(item => item == null);
             foreach (var source in filteredSources)
             {
                 source.Param.ObjectChanged -= Source_ObjectChanged;
                 source.Param.ObjectChanged += Source_ObjectChanged;
             }
-            
+
+
         }
 
         
@@ -156,9 +151,7 @@ namespace Colibri.Grasshopper
 
         }
 
-
-
-
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
@@ -192,18 +185,18 @@ namespace Colibri.Grasshopper
             // Find the Guid for connected Slide or Panel
 
             var sources = SelectedSource; //list of things connected on this input
-
-
-
-
+            
             var component = sources.Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
 
             ColibriParam colibriParam = new ColibriParam(component, AtIteratorPosition);
 
             if (colibriParam.GHType != InputType.Unsupported)
             {
+                //IsAutoSetting = true;
                 var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
                 colibriParam.NickName = isNicknameEmpty ? "RenamePlz" : colibriParam.NickName; //Check if nick name exists
+                colibriParam.Param.ExpireSolution(false);
+                //IsAutoSetting = false;
 
                 //Flatten the Panel's data just in case 
                 if (colibriParam.GHType == InputType.Panel)
@@ -232,7 +225,7 @@ namespace Colibri.Grasshopper
 
             if (ValidSourceParam != null)
             {
-
+                
                 var validSourceParam = ValidSourceParam;
                 int atPosition = validSourceParam.AtIteratorPosition;
 
@@ -246,7 +239,7 @@ namespace Colibri.Grasshopper
                 inputParam.NickName = isTypeUnsupported ? type.ToString() : validSourceParam.NickName;
                 outputParam.NickName = inputParam.NickName;
                 outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
-                //outputParam.AddVolatileData(new GH_Path(0), 0, ValidSourceParam);
+                
             }
 
 
@@ -271,8 +264,12 @@ namespace Colibri.Grasshopper
                     //if something's connected,and get the first connected
                     var filtedSource = ConvertToColibriParam(source[0], i);
                     //null  added if input is unsupported type
-                    filtedSources.Add(filtedSource);
-                    ChangeParamNickName(filtedSource);
+                    if (filtedSource != null)
+                    {
+                        filtedSources.Add(filtedSource);
+                        ChangeParamNickName(filtedSource);
+                    }
+                    
                 }
             }
 
@@ -301,6 +298,8 @@ namespace Colibri.Grasshopper
             {
                 doc = GH.Instances.ActiveCanvas.Document;
             }
+            //Clean first
+            this.flyParam = null;
 
             //recollect all params 
             //var filteredSources = FilterSources();
@@ -310,7 +309,7 @@ namespace Colibri.Grasshopper
 
             if (filteredSources.Count() > 0)
             {
-                flyParam = new IteratorFlyParam(filteredSources);
+                this.flyParam = new IteratorFlyParam(filteredSources);
             }
             else
             {
@@ -434,7 +433,7 @@ namespace Colibri.Grasshopper
 
         #region Events
         //This is for if any source connected, removed, 
-        private void ParamInputChanged(Object sender, GH_ParamServerEventArgs e)
+        private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
 
             //WIP
@@ -456,7 +455,7 @@ namespace Colibri.Grasshopper
                 this.ExpireSolution(true);
 
             }
-
+            
             //recollecting the filteredSources and rename
             filteredSources = FilterSources();
 
@@ -466,7 +465,7 @@ namespace Colibri.Grasshopper
         //This is for if any source name changed
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
-            this.flyParam = null;
+            //this.flyParam = null;
             this.filteredSources = FilterSources();
             this.ExpireSolution(true);
         }
