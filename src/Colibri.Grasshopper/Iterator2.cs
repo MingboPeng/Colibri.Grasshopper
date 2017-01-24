@@ -19,7 +19,7 @@ namespace Colibri.Grasshopper
         GH_Document doc = null;
         private bool Run = false;
         private bool Running = false;
-        private bool IsAutoSetting = false;
+        //private bool IsAutoSetting = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
 

@@ -161,7 +161,8 @@ namespace Colibri.Grasshopper
                 
 
                 //The current component is already at the maximum value. Reset it back to zero.
-                currentInputParam.SetParamTo(nextStepPosition);
+                //currentInputParam.SetParamTo(nextStepPosition);
+                currentInputParam.SetToNext();
 
                 //Increment the current step position
                 this.currentStepPositions[MoveToParamIndex]++;
