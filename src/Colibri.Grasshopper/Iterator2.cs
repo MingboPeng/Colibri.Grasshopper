@@ -99,12 +99,6 @@ namespace Colibri.Grasshopper
             }
 
             DA.SetDataList(Params.Output.Count()-1,FlyID);
-
-            //fly
-            if (Running)
-            {
-                return;
-            }
             
         }
         
@@ -128,20 +122,6 @@ namespace Colibri.Grasshopper
         {
             get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
         }
-
-        //protected override void BeforeSolveInstance()
-        //{
-        //    if (filteredSources ==null)
-        //    {
-        //        return;
-        //    }
-
-        //    foreach (var source in filteredSources)
-        //    {
-        //        source.Param.ObjectChanged -= Source_ObjectChanged;
-        //    }
-        //}
-
 
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
@@ -503,19 +483,6 @@ namespace Colibri.Grasshopper
 
 
             //recollecting the filteredSources and rename while any source changed
-            //filteredSources = null;
-
-            //source.ObjectChanged -= Source_ObjectChanged;
-            //foreach (var item in filteredSources)
-            //{
-            //    if (item!=null)
-            //    {
-            //        item.Param.ObjectChanged -= Source_ObjectChanged;
-            //    }
-                
-            //}
-
-            filteredSources = null;
             filteredSources = gatherSources();
             checkAllNames(filteredSources);
             //this.ExpireSolution(true);

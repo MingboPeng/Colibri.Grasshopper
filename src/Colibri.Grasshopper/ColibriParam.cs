@@ -366,10 +366,6 @@ namespace Colibri.Grasshopper
         }
 
         
-        //public event EventHandler ObjectChanged;
-
-
-
     }
     
 }
