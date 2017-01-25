@@ -34,16 +34,19 @@ namespace Colibri.Grasshopper
         //current counts
         public static int Count { get; private set; }
        
-        // Total Iteration number int 
+        // Total Iteration number int
         public int TotalIterations { get; private set; }
-        
+
+        //control the expire of Iterator
+        private Iterator2 iterator;
 
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams)
+        public IteratorFlyParam(List<ColibriParam> SourceParams , Iterator2 Iterator)
         {
             inputParams = SourceParams;
+            this.iterator = Iterator;
             calTotalIterations();
             //set current setp index to 0
             currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
@@ -90,15 +93,21 @@ namespace Colibri.Grasshopper
 
         private void FirstResetAll()
         {
+            //bool isThereValueList = false;
+
             foreach (var item in InputParams)
             {
-                item.Reset(true);
+                
+                if (item.GHType != InputType.ValueList)
+                {
+                    item.Reset();
+                }
             }
         }
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
-
+            //iterator.GoExpire = expireIterator;
             FirstResetAll();
             //Todo: creat a run file
             //Todo: watch the file to stop
@@ -107,7 +116,7 @@ namespace Colibri.Grasshopper
             {
 
                 int currentParamIndex = 0;
-
+                iterator.GoodToExpire = false;
                 //move to the next set of slider positions
                 bool isRunning = MoveToNextPermutation(ref currentParamIndex);
                 Count++;
@@ -116,7 +125,10 @@ namespace Colibri.Grasshopper
 
                 //if (!isTheEnd)
                 //{
-                    e.Document.NewSolution(false);
+                iterator.GoodToExpire = true;
+                iterator.ExpireSolution(false);
+                e.Document.NewSolution(false);
+                    
                 //}
                
                 //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
@@ -161,8 +173,8 @@ namespace Colibri.Grasshopper
                 
 
                 //The current component is already at the maximum value. Reset it back to zero.
-                //currentInputParam.SetParamTo(nextStepPosition);
-                currentInputParam.SetToNext();
+                currentInputParam.SetParamTo(nextStepPosition);
+                //currentInputParam.SetToNext();
 
                 //Increment the current step position
                 this.currentStepPositions[MoveToParamIndex]++;
@@ -221,4 +233,5 @@ namespace Colibri.Grasshopper
         #endregion
 
     }
+
 }

@@ -19,9 +19,18 @@ namespace Colibri.Grasshopper
         GH_Document doc = null;
         private bool Run = false;
         private bool Running = false;
-        //private bool IsAutoSetting = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
+
+        private bool goodToExpire;
+
+        public bool GoodToExpire
+        {
+            get { return goodToExpire; }
+            set { goodToExpire = value; }
+        }
+
+
 
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
@@ -85,11 +94,8 @@ namespace Colibri.Grasshopper
             bool isRunning = Run || Running;
             foreach (var item in filteredSources)
             {
-                if (item != null)
-                {
-                    DA.SetData(item.AtIteratorPosition, item.CurrentValue(isRunning));
-                    FlyID.Add(item.ToString(true));
-                }
+                DA.SetData(item.AtIteratorPosition, item.CurrentValue());
+                FlyID.Add(item.ToString(true));
             }
 
             DA.SetDataList(Params.Output.Count()-1,FlyID);
@@ -99,58 +105,8 @@ namespace Colibri.Grasshopper
             {
                 return;
             }
-
-            //if (IsAutoSetting)
-            //{
-            //    return;
-            //}
-
-            filteredSources.RemoveAll(item => item == null);
-            foreach (var source in filteredSources)
-            {
-                source.Param.ObjectChanged -= Source_ObjectChanged;
-                source.Param.ObjectChanged += Source_ObjectChanged;
-            }
-
-
-        }
-
-        
-
-        private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
-        {
-            // Unregister the event, we don't want to get called again.
-            e.Document.SolutionEnd -= OnSolutionEnd;
-
-            // If we're not supposed to run, abort now.
-            if (!Run || Running)
-                return;
-
-            // Reset run and running states.
-            Run = false;
-            Running = true;
-
-
-            try
-            {
-                flyParam.FlyAll(e);
-            }
-            catch (Exception ex)
-            {
-
-                throw ex;
-            }
-            finally
-            {
-                // Always make sure that _running is switched off.
-                Running = false;
-                //e.Document.NewSolution(false);
-                
-            }
             
-
         }
-
         
         /// <summary>
         /// Provides an Icon for the component.
@@ -173,7 +129,73 @@ namespace Colibri.Grasshopper
             get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
         }
 
+        //protected override void BeforeSolveInstance()
+        //{
+        //    if (filteredSources ==null)
+        //    {
+        //        return;
+        //    }
 
+        //    foreach (var source in filteredSources)
+        //    {
+        //        source.Param.ObjectChanged -= Source_ObjectChanged;
+        //    }
+        //}
+
+
+        private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
+        {
+            // Unregister the event, we don't want to get called again.
+            e.Document.SolutionEnd -= OnSolutionEnd;
+
+            // If we're not supposed to run, abort now.
+            if (!Run || Running)
+                return;
+
+            // Reset run and running states.
+            Run = false;
+            Running = true;
+            goodToExpire = false;
+
+            try
+            {
+                flyParam.FlyAll(e);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            finally
+            {
+                // Always make sure that _running is switched off.
+                Running = false;
+                goodToExpire = true;
+                //e.Document.NewSolution(false);
+
+            }
+
+
+        }
+
+        public override void ExpireSolution(bool recompute)
+        {
+            if (Run || Running)
+            {
+                //MessageBox.Show("Test"+GoExpire);
+                if (goodToExpire)
+                {
+                    base.ExpireSolution(recompute);
+                }
+                
+            }
+            else
+            {
+                base.ExpireSolution(recompute);
+            }
+            
+        }
+        
 
         #region Collecting Source Params, and convert to Colibri Params
 
@@ -184,71 +206,72 @@ namespace Colibri.Grasshopper
         {
             // Find the Guid for connected Slide or Panel
 
-            var sources = SelectedSource; //list of things connected on this input
+            var component = SelectedSource; //list of things connected on this input
             
-            var component = sources.Attributes.GetTopLevel.DocObject as IGH_Param; //for this connected thing, bring it into the code in a way where we can access its properties
-
             ColibriParam colibriParam = new ColibriParam(component, AtIteratorPosition);
-
-            if (colibriParam.GHType != InputType.Unsupported)
+            if (colibriParam.GHType == InputType.Unsupported)
             {
-                //IsAutoSetting = true;
-                var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
-                colibriParam.NickName = isNicknameEmpty ? "RenamePlz" : colibriParam.NickName; //Check if nick name exists
-                colibriParam.Param.ExpireSolution(false);
-                //IsAutoSetting = false;
-
-                //Flatten the Panel's data just in case 
-                if (colibriParam.GHType == InputType.Panel)
-                {
-                    sources.VolatileData.Flatten();
-                }
+                MessageBox.Show("Please check all inputs! \nSlider, ValueList, or Panel are only supported!");
+                return null;
             }
             else
             {
-                colibriParam = null;
-                MessageBox.Show("Please check all inputs! \nSlider, ValueList, or Panel are only supported!");
+                //Flatten the Panel's data just in case 
+                if (colibriParam.GHType == InputType.Panel)
+                {
+                    component.VolatileData.Flatten();
+                }
+                
+                return colibriParam;
             }
-
-
-
-            return colibriParam;
-
-
+            
         }
 
         /// <summary>
         /// Change Iterator's NickName
         /// </summary>   
-        public void ChangeParamNickName(ColibriParam ValidSourceParam)
+        private void checkSourceNickname(ColibriParam colibriParam)
+        {
+            
+            //Check if nickname exists
+            var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
+            if (isNicknameEmpty)
+            {
+                //MessageBox.Show("Test"+ colibriParam.NickName);
+                colibriParam.NickName = "RenamePlz";
+                colibriParam.Param.ExpireSolution(false);
+            }
+            
+        }
+
+        /// <summary>
+        /// Change Iterator's input and output NickName
+        /// </summary>   
+        private void checkParamNickname(ColibriParam ValidSourceParam)
         {
 
             if (ValidSourceParam != null)
             {
+                var colibriParam = ValidSourceParam;
                 
-                var validSourceParam = ValidSourceParam;
-                int atPosition = validSourceParam.AtIteratorPosition;
+                int atPosition = colibriParam.AtIteratorPosition;
 
                 var inputParam = this.Params.Input[atPosition];
                 var outputParam = this.Params.Output[atPosition];
 
-
-                var type = validSourceParam.GHType;
-                bool isTypeUnsupported = type == InputType.Unsupported ? true : false;
-
-                inputParam.NickName = isTypeUnsupported ? type.ToString() : validSourceParam.NickName;
-                outputParam.NickName = inputParam.NickName;
-                outputParam.Description = "This item is one of values from " + type.ToString() + "_" + inputParam.NickName;
+                string newNickname = colibriParam.NickName;
+                inputParam.NickName = newNickname;
+                outputParam.NickName = newNickname;
+                outputParam.Description = "This item is one of values from " + colibriParam.GHType.ToString() + "_" + newNickname;
                 
             }
-
-
+            
         }
 
         /// <summary>
         /// check input source if is slider, panel, or valueList, if not, remove it
         /// </summary>   
-        private List<ColibriParam> FilterSources()
+        private List<ColibriParam> gatherSources()
         {
             var filtedSources = new List<ColibriParam>();
             //var validindexList = new List<int>();
@@ -262,22 +285,40 @@ namespace Colibri.Grasshopper
                 if (!isFly && ifAny)
                 {
                     //if something's connected,and get the first connected
-                    var filtedSource = ConvertToColibriParam(source[0], i);
+                    var colibriParam = ConvertToColibriParam(source[0], i);
                     //null  added if input is unsupported type
-                    if (filtedSource != null)
+                    if (colibriParam != null)
                     {
-                        filtedSources.Add(filtedSource);
-                        ChangeParamNickName(filtedSource);
+                        colibriParam.Param.ObjectChanged += Source_ObjectChanged;
+                        filtedSources.Add(colibriParam);
+                        
                     }
                     
                 }
             }
-
-            // remove all unvalid items 
-            //filteredSources.RemoveAll(item => item == null);
-
+            
             return filtedSources;
         }
+
+        /// <summary>
+        /// check input source Nicknames, and iterator's input and output params' nicknames
+        /// </summary>   
+        private void checkAllNames(List<ColibriParam> validColibriParams)
+        {
+            //all items in the list are unnull. which is checked in gatherSources();
+            
+            if (validColibriParams.Count()==0)
+            {
+                return;
+            }
+            foreach (var item in validColibriParams)
+            {
+                checkSourceNickname(item);
+                checkParamNickname(item);
+            }
+        }
+
+
         #endregion
         
 
@@ -298,18 +339,20 @@ namespace Colibri.Grasshopper
             {
                 doc = GH.Instances.ActiveCanvas.Document;
             }
+
             //Clean first
             this.flyParam = null;
+            //this.filteredSources.Clear();
 
             //recollect all params 
-            //var filteredSources = FilterSources();
+            filteredSources = gatherSources();
 
             filteredSources.RemoveAll(item => item == null);
             filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
 
             if (filteredSources.Count() > 0)
             {
-                this.flyParam = new IteratorFlyParam(filteredSources);
+                this.flyParam = new IteratorFlyParam(filteredSources,this);
             }
             else
             {
@@ -330,7 +373,6 @@ namespace Colibri.Grasshopper
 
                 // only recompute those are expired flagged
                 doc.NewSolution(false);
-
             }
         }
 
@@ -397,6 +439,8 @@ namespace Colibri.Grasshopper
             return true;
         }
 
+
+        //Todo remove unnecessary code here
         public void VariableParameterMaintenance()
         {
            
@@ -432,42 +476,71 @@ namespace Colibri.Grasshopper
 
 
         #region Events
-        //This is for if any source connected, removed, 
+        //This is for if any source connected, reconnected, removed, replacement 
         private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
-
-            //WIP
             
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
             bool isFly = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
             bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
 
-            
-
-            if (isInputSide && !isFly && !isSecondLastEmptySource)
+            if (!isInputSide || isFly)
             {
-                // add a new input param
+                return;
+            }
+
+            // add a new input param while the second last input is not empty
+            if (!isSecondLastEmptySource)
+            {
+                
                 IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
                 Params.RegisterInputParam(newParam, Params.Input.Count - 1);
                 VariableParameterMaintenance();
                 this.Params.OnParametersChanged();
-                
-                this.ExpireSolution(true);
 
+                //this.ExpireSolution(true);
             }
-            
-            //recollecting the filteredSources and rename
-            filteredSources = FilterSources();
 
+
+            //recollecting the filteredSources and rename while any source changed
+            //filteredSources = null;
+
+            //source.ObjectChanged -= Source_ObjectChanged;
+            //foreach (var item in filteredSources)
+            //{
+            //    if (item!=null)
+            //    {
+            //        item.Param.ObjectChanged -= Source_ObjectChanged;
+            //    }
+                
+            //}
+
+            filteredSources = null;
+            filteredSources = gatherSources();
+            checkAllNames(filteredSources);
+            //this.ExpireSolution(true);
+            
+            
         }
         
-        
-        //This is for if any source name changed
+        //todo: check inputnumbers, or one source to multi inputs
+
+        //This is for if any source name changed, NOTE: cannot deteck the edited
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
-            //this.flyParam = null;
-            this.filteredSources = FilterSources();
-            this.ExpireSolution(true);
+            
+            bool isExist = filteredSources.Exists(_ => _.Param.Equals(sender));
+            if (isExist)
+            {
+                checkAllNames(filteredSources);
+                //this.ExpireSolution(true);
+            }
+            else
+            {
+                sender.ObjectChanged -= Source_ObjectChanged;
+            }
+            
+
         }
 
         

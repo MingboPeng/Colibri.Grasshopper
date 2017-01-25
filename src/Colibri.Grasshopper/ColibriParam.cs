@@ -19,7 +19,14 @@ namespace Colibri.Grasshopper
 
         public string NickName
         {
-            get { return nickName; }
+            get
+            {
+                if (nickName != Param.NickName)
+                {
+                    nickName = Param.NickName;
+                }
+                return nickName;
+            }
             set
             {
                 nickName = value;
@@ -80,8 +87,8 @@ namespace Colibri.Grasshopper
             if (GHType == InputType.Slider)
             {
                 var slider = this.Param as GH_NumberSlider;
-                nickName = String.IsNullOrEmpty(slider.NickName)&& slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
-
+                nickName = String.IsNullOrEmpty(slider.NickName) && slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
+                slider.NickName = nickName;
             }
 
             CalIniPosition();
@@ -145,14 +152,13 @@ namespace Colibri.Grasshopper
             else if (GHType == InputType.Panel)
             {
                 currentValue = panelValues[position];
-                
             }
             else if (GHType == InputType.ValueList)
             {
                 //todo: two mode for running or unrunning 
                 var valueList = rawParam as GH_ValueList;
-                //currentValue = valueList.FirstSelectedItem.Value.ToString();
-                currentValue = valueList.ListItems[position].Value.ToString();
+                currentValue = valueList.FirstSelectedItem.Value.ToString();
+                //currentValue = valueList.ListItems[position].Value.ToString();
             }
             else
             {
@@ -296,7 +302,11 @@ namespace Colibri.Grasshopper
                 //valueList.SelectItem(position);
                 //valueList.ToggleItem(SetToStepIndex);
                 
-                this.Param.ExpireSolution(false);
+                //this.Param.ExpireSolution(false);
+
+
+                var valueList = param as GH_ValueList;
+                valueList.SelectItem(position);
 
             }
 
@@ -335,39 +345,9 @@ namespace Colibri.Grasshopper
         }
         public void Reset()
         {
-            
             SetParamTo(0);
-
         }
-
-        //todo: merge if possible
-        public void Reset(bool isFirstReset)
-        {
-           
-            if (GHType != InputType.ValueList)
-            {
-                SetParamTo(0);
-            }
-            //else
-            //{
-            //    SetParamTo(0);
-            //}
-
-            //else
-            //{
-
-            //    if (Position == 0)
-            //    {
-            //        Param.ExpireSolution(true);
-            //    }
-            //    else
-            //    {
-            //        SetParamTo(0);
-            //    }
-            //}
-        }
-
-
+        
 
         // Override method
         public override string ToString()
@@ -385,7 +365,11 @@ namespace Colibri.Grasshopper
             return currentValue;
         }
 
+        
+        //public event EventHandler ObjectChanged;
+
 
 
     }
+    
 }
