@@ -21,14 +21,7 @@ namespace Colibri.Grasshopper
         private bool Running = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
-
-        private bool goodToExpire;
-
-        public bool GoodToExpire
-        {
-            get { return goodToExpire; }
-            set { goodToExpire = value; }
-        }
+        
 
 
 
@@ -88,10 +81,10 @@ namespace Colibri.Grasshopper
 
             if (filteredSources == null)
             {
-                return;
+                filteredSources = gatherSources();
             }
 
-            bool isRunning = Run || Running;
+            //bool isRunning = Run || Running;
             foreach (var item in filteredSources)
             {
                 DA.SetData(item.AtIteratorPosition, item.CurrentValue());
@@ -135,7 +128,6 @@ namespace Colibri.Grasshopper
             // Reset run and running states.
             Run = false;
             Running = true;
-            goodToExpire = false;
 
             try
             {
@@ -150,7 +142,7 @@ namespace Colibri.Grasshopper
             {
                 // Always make sure that _running is switched off.
                 Running = false;
-                goodToExpire = true;
+                //goodToExpire = true;
                 //e.Document.NewSolution(false);
 
             }
@@ -158,23 +150,23 @@ namespace Colibri.Grasshopper
 
         }
 
-        public override void ExpireSolution(bool recompute)
-        {
-            if (Run || Running)
-            {
-                //MessageBox.Show("Test"+GoExpire);
-                if (goodToExpire)
-                {
-                    base.ExpireSolution(recompute);
-                }
+        //public override void ExpireSolution(bool recompute)
+        //{
+        //    if (Run || Running)
+        //    {
+        //        //MessageBox.Show("Test"+GoExpire);
+        //        if (goodToExpire)
+        //        {
+        //            base.ExpireSolution(recompute);
+        //        }
                 
-            }
-            else
-            {
-                base.ExpireSolution(recompute);
-            }
+        //    }
+        //    else
+        //    {
+        //        base.ExpireSolution(recompute);
+        //    }
             
-        }
+        //}
         
 
         #region Collecting Source Params, and convert to Colibri Params
@@ -332,7 +324,7 @@ namespace Colibri.Grasshopper
 
             if (filteredSources.Count() > 0)
             {
-                this.flyParam = new IteratorFlyParam(filteredSources,this);
+                this.flyParam = new IteratorFlyParam(filteredSources);
             }
             else
             {

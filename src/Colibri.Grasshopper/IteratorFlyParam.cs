@@ -38,15 +38,15 @@ namespace Colibri.Grasshopper
         public int TotalIterations { get; private set; }
 
         //control the expire of Iterator
-        private Iterator2 iterator;
+        //private Iterator2 iterator;
 
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams , Iterator2 Iterator)
+        public IteratorFlyParam(List<ColibriParam> SourceParams)
         {
             inputParams = SourceParams;
-            this.iterator = Iterator;
+            //this.iterator = Iterator;
             calTotalIterations();
             //set current setp index to 0
             currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
@@ -98,15 +98,16 @@ namespace Colibri.Grasshopper
             foreach (var item in InputParams)
             {
                 
-                if (item.GHType != InputType.ValueList)
-                {
+                //if (item.GHType != InputType.ValueList)
+                //{
                     item.Reset();
-                }
+                //}
             }
         }
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
+            
             //iterator.GoExpire = expireIterator;
             FirstResetAll();
             //Todo: creat a run file
@@ -116,7 +117,7 @@ namespace Colibri.Grasshopper
             {
 
                 int currentParamIndex = 0;
-                iterator.GoodToExpire = false;
+                //iterator.GoodToExpire = false;
                 //move to the next set of slider positions
                 bool isRunning = MoveToNextPermutation(ref currentParamIndex);
                 Count++;
@@ -125,8 +126,8 @@ namespace Colibri.Grasshopper
 
                 //if (!isTheEnd)
                 //{
-                iterator.GoodToExpire = true;
-                iterator.ExpireSolution(false);
+                //iterator.GoodToExpire = true;
+                //iterator.ExpireSolution(false);
                 e.Document.NewSolution(false);
                     
                 //}

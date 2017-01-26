@@ -306,7 +306,9 @@ namespace Colibri.Grasshopper
 
 
                 var valueList = param as GH_ValueList;
-                valueList.SelectItem(position);
+                string state = indexToValueListState(position);
+                valueList.LoadState(state);
+                this.Param.ExpireSolution(false);
 
             }
 
@@ -348,6 +350,17 @@ namespace Colibri.Grasshopper
             SetParamTo(0);
         }
         
+        //this convert current step position to ValueList state string.
+        private string indexToValueListState(int positionIndex)
+        {
+            int position = positionIndex < totalCount ? positionIndex : 0;
+            string state = new String('N', totalCount-1);
+            state = state.Substring(0, position) + "Y" + state.Substring(position);
+            return state;
+
+        }
+
+
 
         // Override method
         public override string ToString()
