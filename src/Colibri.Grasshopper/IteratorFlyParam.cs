@@ -91,6 +91,25 @@ namespace Colibri.Grasshopper
             }
         }
 
+        //todo: check aggregator before fly
+        //get dowmstream Aggregator first
+        private bool preFlyCheckedAggregator(GH_Component Aggregator)
+        {
+            //check if Aggregator connected
+            if (Aggregator == null)
+            {
+                return false;
+            }
+
+            //get aggregator's folder value
+            var aggregator = Aggregator;
+            aggregator.Params.Input.First().Sources.First();
+
+            //get aggregator's write? value
+
+            return false;
+        }
+
         private void FirstResetAll()
         {
             //bool isThereValueList = false;
@@ -107,13 +126,15 @@ namespace Colibri.Grasshopper
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
-            
+            //Todo:preFlyCheckedAggregator()
+            //Todo: creat a run file in Aggregator folder 
+
             //iterator.GoExpire = expireIterator;
             FirstResetAll();
-            //Todo: creat a run file
-            //Todo: watch the file to stop
+            
+            
 
-            while (true)
+            while (true)//Todo: watch the file to stop
             {
 
                 int currentParamIndex = 0;
@@ -142,10 +163,8 @@ namespace Colibri.Grasshopper
                     break;
 
                 }
-
                 
             }
-            
             
         }
 
