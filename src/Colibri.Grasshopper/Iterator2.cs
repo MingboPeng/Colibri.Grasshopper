@@ -332,6 +332,14 @@ namespace Colibri.Grasshopper
                 return;
             }
 
+            if (!isAggregatorReady())
+            {
+                var userClickForAggregator = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo);
+                if (userClickForAggregator == DialogResult.No)
+                {
+                    return;
+                }
+            }
 
 
             var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
@@ -502,9 +510,107 @@ namespace Colibri.Grasshopper
 
         }
 
-        
+
         #endregion
 
+        #region Checking before fly
+        //Check if Aggregator exist, and if it is at the last
+        private bool isAggregatorReady()
+        {
+            if (doc == null)
+            {
+                doc = GH.Instances.ActiveCanvas.Document;
+            }
+
+            var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
+            //GH_PersistentParam<GH.Kernel.Types.GH_Boolean> AggWriteInput;
+            bool isAggWriting = false;
+            bool isAggLast = false;
+            Aggregator aggObj = aggregatorObj(aggregatorID);
+            
+            //check if Aggregator is set to write file 
+            if (aggObj != null)
+            {
+                var AggWriteInput = aggObj.Params.Input[4] as GH_PersistentParam<GH.Kernel.Types.GH_Boolean>;
+                isAggWriting = AggWriteInput.PersistentData[0].First().Value;
+                //isAggWriting = aggObj.Params.Input[4].VolatileData.get_Branch(0)[0] as GH.Kernel.Types.GH_Boolean;
+
+                // todo: check if aggregator is writing
+                if (!isAggWriting)
+                {
+                    var userClickForAggregator = MessageBox.Show("Aggregator is nor recording the data, do you want to continue?", "Attention", MessageBoxButtons.YesNo);
+                    if (userClickForAggregator == DialogResult.No)
+                    {
+                        // users doesn;t want ot continue! return false to stop
+                        return false;
+                    }
+                    else if(!isAggregatorLast(aggregatorID))
+                    {
+                        //isAggLast = isAggregatorLast(aggregatorID);
+
+                        userClickForAggregator = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo);
+                        if (userClickForAggregator == DialogResult.No)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+                 
+                
+
+            }
+            else
+            {
+                //if aggregator doesn't exist, then just return true to start fly.
+                return true;
+            }
+                
+
+
+            
+            
+
+        }
+
+        private Aggregator aggregatorObj(Guid guid)
+        {
+            Aggregator aggObj = null;
+            
+            foreach (IGH_DocumentObject obj in doc.Objects)
+            {
+                if (obj.ComponentGuid.Equals(guid))
+                {
+                    aggObj = obj as Aggregator;
+
+                }
+            }
+
+            return aggObj;
+        }
+
+        private bool isAggregatorLast(Guid guid)
+        {
+            bool isAggregatorLast = doc.Objects.Last().ComponentGuid.Equals(guid);
+            if (isAggregatorLast)
+            {
+                //Aggregator is at the last position to be execulted, so can capture all previewed objs
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        #endregion
 
     }
 

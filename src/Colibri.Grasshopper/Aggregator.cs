@@ -12,7 +12,6 @@ namespace Colibri.Grasshopper
     
     public class Aggregator : GH_Component
     {
-        GH_Document doc = null;
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
         /// constructor without any arguments.
@@ -39,7 +38,7 @@ namespace Colibri.Grasshopper
             pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
             pManager[3].Optional = true;
-            pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
         }
 
         /// <summary>
@@ -143,24 +142,6 @@ namespace Colibri.Grasshopper
 
             if (run && !alreadyWrittenLines.Contains(valueReady))
             {
-                //Check if Aggregator is at the calculation list end
-                //var userClick = DialogResult.No;
-                if (!isGoodToSeeAllView())
-                {
-                    var userClick = MessageBox.Show("Aggregator might not capture all objects that you can see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo);
-                    if (userClick == DialogResult.No)
-                    {
-                        var toggle = this.Params.Input[4].Sources[0] as GH_BooleanToggle;
-                        if (toggle!= null)
-                        {
-                            toggle.Value = false; //set trigger value to false
-                            toggle.ExpireSolution(true);
-                        }
-                        
-                        return;
-                    }
-                }
-
                 
                 //add this line to our list of already written lines
                 alreadyWrittenLines.Add(valueReady);
@@ -219,44 +200,42 @@ namespace Colibri.Grasshopper
 
 
 
-        public bool isGoodToSeeAllView()
-        {
-            if (doc == null)
-            {
-                doc = GH.Instances.ActiveCanvas.Document;
-            }
-            int totalObjs = doc.ObjectCount;
-            int executePosition = 0;
-            //var runList = new List<string>();
+        //public bool isGoodToSeeAllView()
+        //{
+        //    if (doc == null)
+        //    {
+        //        doc = GH.Instances.ActiveCanvas.Document;
+        //    }
+        //    int totalObjs = doc.ObjectCount;
+        //    int executePosition = 0;
+        //    //var runList = new List<string>();
 
-            //foreach (IGH_DocumentObject obj in doc.Objects)
-            //{
-            //    runList.Add(obj.NickName + " (" + obj.Name + ")" + " (" + obj.Category + ")");
-            //}
-            for (int i = 0; i < totalObjs; i++)
-            {
-                //bool isDisplayTypeObj = doc.Objects[i].Category == "Display";
-                //bool isNamedPreview = doc.Objects[i].Name.Contains("Preview");
-                //bool isWireframe = doc.Objects[i].Name.Contains("Wireframe");
-                bool isAggregator = doc.Objects[i].ComponentGuid.Equals(new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"));
-                if (isAggregator)
-                {
-                    executePosition = i;
-                }
-            }
+        //    //foreach (IGH_DocumentObject obj in doc.Objects)
+        //    //{
+        //    //    runList.Add(obj.NickName + " (" + obj.Name + ")" + " (" + obj.Category + ")");
+        //    //}
+        //    for (int i = 0; i < totalObjs; i++)
+        //    {
+        //        //Aggregator's ID
+        //        bool isAggregator = doc.Objects[i].ComponentGuid.Equals(new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"));
+        //        if (isAggregator)
+        //        {
+        //            executePosition = i;
+        //        }
+        //    }
 
 
-            if (executePosition == totalObjs-1)
-            {
-                //Aggregator is at the last position to be execulted, so can capture all previewed objs
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+        //    if (executePosition == totalObjs-1)
+        //    {
+        //        //Aggregator is at the last position to be execulted, so can capture all previewed objs
+        //        return true;
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
             
-        }
+        //}
 
 
     }
