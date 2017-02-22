@@ -545,38 +545,40 @@ namespace Colibri.Grasshopper
             }
 
             bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(instanceGuid);
+            bool isAggReady = true;
             if (!isAggregatorLast)
             {
                 var userClickNo = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
                 if (userClickNo)
                 {
                     // user doesn't want ot continue! set isReady to false to stop
-                    isAggregatorLast = false;
+                    isAggReady = false;
                 }
+
 
             }
             
-            return isAggregatorLast;
+            return isAggReady;
         }
 
         private bool isAggregatorRecordingChecked(Aggregator aggregator)
         {
             var isRecording = aggregator.Params.Input[4].VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
-            bool isRecordingChecked = isRecording.Value;
-            if (!isRecordingChecked)
+            bool isAggReady = true;
+            if (!isRecording.Value)
             {
                 var userClickNo = MessageBox.Show("Aggregator is nor Writing the data, do you want to continue?", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
                 if (userClickNo)
                 {
-                    // user doesn't want ot continue! set isReady to false to stop
-                    isRecordingChecked = false;
+                    // user doesn't want ot continue! set isRecordingChecked to false to stop
+                    isAggReady = false;
                 }
-                else
-                {
-                    isRecordingChecked = true;
-                }
+                
+                // if user clicked Yes, then keep isRecordingChecked to true to continue.
+                    
             }
-            return isRecordingChecked;
+
+            return isAggReady;
             
         }
         #endregion

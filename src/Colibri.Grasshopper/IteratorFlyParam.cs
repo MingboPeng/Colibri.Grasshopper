@@ -91,25 +91,7 @@ namespace Colibri.Grasshopper
             }
         }
 
-        //todo: check aggregator before fly
-        //get dowmstream Aggregator first
-        private bool preFlyCheckedAggregator(GH_Component Aggregator)
-        {
-            //check if Aggregator connected
-            if (Aggregator == null)
-            {
-                return false;
-            }
-
-            //get aggregator's folder value
-            var aggregator = Aggregator;
-            aggregator.Params.Input.First().Sources.First();
-
-            //get aggregator's write? value
-
-            return false;
-        }
-
+        
         private void FirstResetAll()
         {
             //bool isThereValueList = false;
@@ -126,7 +108,6 @@ namespace Colibri.Grasshopper
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
-            //Todo:preFlyCheckedAggregator()
             //Todo: creat a run file in Aggregator folder 
 
             //iterator.GoExpire = expireIterator;
@@ -198,12 +179,7 @@ namespace Colibri.Grasshopper
 
                 //Increment the current step position
                 this.currentStepPositions[MoveToParamIndex]++;
-
-                //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
-                //if (computedValues.Contains(GetSliderVals(sliders)))
-                //{
-                //    return MoveToNextPermutation(ref _currentInputParamIndex, sliders);
-                //}
+                
                 return true;
             }else
             {

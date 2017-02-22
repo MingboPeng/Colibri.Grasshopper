@@ -37,7 +37,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Inputs", "Inputs", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
+            pManager.AddTextParameter("FlyID", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
             pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
             pManager[3].Optional = true;
