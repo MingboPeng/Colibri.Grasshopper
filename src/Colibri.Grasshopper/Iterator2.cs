@@ -559,6 +559,11 @@ namespace Colibri.Grasshopper
                         }
 
                     }
+                    else
+                    {
+                        return false;
+        
+                    }
                 }
                 else
                 {
