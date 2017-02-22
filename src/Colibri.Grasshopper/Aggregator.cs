@@ -12,6 +12,9 @@ namespace Colibri.Grasshopper
     
     public class Aggregator : GH_Component
     {
+        bool writeFile = false;
+        public string folder = "";
+
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
         /// constructor without any arguments.
@@ -62,11 +65,11 @@ namespace Colibri.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //input variables
-            string folder = "";
+            
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
             List<string> imgParams = new List<string>();
-            bool writeFile = false;
+            
             
             //get data
             DA.GetData(0, ref folder);
@@ -79,10 +82,7 @@ namespace Colibri.Grasshopper
             Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
             Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
             Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
-
-
-
-
+            
             string csvPath = folder + "/data.csv";
             var rawData = inputs;
             int inDataLength = rawData.Count;

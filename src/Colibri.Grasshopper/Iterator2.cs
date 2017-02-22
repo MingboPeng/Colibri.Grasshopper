@@ -15,16 +15,13 @@ namespace Colibri.Grasshopper
     public class Iterator2 : GH_Component, IGH_VariableParameterComponent
     {
         
-        
         GH_Document doc = null;
         private bool Run = false;
         private bool Running = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
         
-
-
-
+        
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
@@ -149,24 +146,6 @@ namespace Colibri.Grasshopper
 
 
         }
-
-        //public override void ExpireSolution(bool recompute)
-        //{
-        //    if (Run || Running)
-        //    {
-        //        //MessageBox.Show("Test"+GoExpire);
-        //        if (goodToExpire)
-        //        {
-        //            base.ExpireSolution(recompute);
-        //        }
-                
-        //    }
-        //    else
-        //    {
-        //        base.ExpireSolution(recompute);
-        //    }
-            
-        //}
         
 
         #region Collecting Source Params, and convert to Colibri Params
@@ -332,13 +311,10 @@ namespace Colibri.Grasshopper
                 return;
             }
 
+            //checked if Aggregator is recording and the last
             if (!isAggregatorReady())
             {
-                var userClickForAggregator = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo);
-                if (userClickForAggregator == DialogResult.No)
-                {
-                    return;
-                }
+                return;
             }
 
 
@@ -517,70 +493,28 @@ namespace Colibri.Grasshopper
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
-            if (doc == null)
-            {
-                doc = GH.Instances.ActiveCanvas.Document;
-            }
-
+            
             var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
-            //GH_PersistentParam<GH.Kernel.Types.GH_Boolean> AggWriteInput;
-            bool isAggWriting = false;
-            bool isAggLast = false;
+            
+            
+            bool isReady = true;
             Aggregator aggObj = aggregatorObj(aggregatorID);
             
-            //check if Aggregator is set to write file 
+            
             if (aggObj != null)
             {
-                var AggWriteInput = aggObj.Params.Input[4] as GH_PersistentParam<GH.Kernel.Types.GH_Boolean>;
-                isAggWriting = AggWriteInput.PersistentData[0].First().Value;
-                //isAggWriting = aggObj.Params.Input[4].VolatileData.get_Branch(0)[0] as GH.Kernel.Types.GH_Boolean;
-
-                // todo: check if aggregator is writing
-                if (!isAggWriting)
-                {
-                    var userClickForAggregator = MessageBox.Show("Aggregator is nor recording the data, do you want to continue?", "Attention", MessageBoxButtons.YesNo);
-                    if (userClickForAggregator == DialogResult.No)
-                    {
-                        // users doesn;t want ot continue! return false to stop
-                        return false;
-                    }
-                    else if(!isAggregatorLast(aggregatorID))
-                    {
-                        //isAggLast = isAggregatorLast(aggregatorID);
-
-                        userClickForAggregator = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo);
-                        if (userClickForAggregator == DialogResult.No)
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            return true;
-                        }
-
-                    }
-                    else
-                    {
-                        return false;
-        
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-                 
+                isReady = isAggregatorRecordingChecked(aggObj);
                 
-
-            }
-            else
-            {
-                //if aggregator doesn't exist, then just return true to start fly.
-                return true;
-            }
+                //check if Aggregator is the last 
+                if (isReady)
+                {
+                    isReady = isAggregatorLastChecked(aggObj.InstanceGuid);
+                }
                 
+            }
+           
 
-
+            return isReady;
             
             
 
@@ -589,31 +523,61 @@ namespace Colibri.Grasshopper
         private Aggregator aggregatorObj(Guid guid)
         {
             Aggregator aggObj = null;
-            
-            foreach (IGH_DocumentObject obj in doc.Objects)
-            {
-                if (obj.ComponentGuid.Equals(guid))
-                {
-                    aggObj = obj as Aggregator;
 
+            // only check Recipients of FlyID
+            var flyIDRecipients = this.Params.Output.Last().Recipients;
+            foreach (var item in flyIDRecipients)
+            {
+                var recipientParent = item.Attributes.GetTopLevel.DocObject;
+                if (recipientParent.ComponentGuid.Equals(guid))
+                {
+                    aggObj = recipientParent as Aggregator;
                 }
             }
-
             return aggObj;
         }
 
-        private bool isAggregatorLast(Guid guid)
+        private bool isAggregatorLastChecked(Guid instanceGuid)
         {
-            bool isAggregatorLast = doc.Objects.Last().ComponentGuid.Equals(guid);
-            if (isAggregatorLast)
+            if (doc == null)
             {
-                //Aggregator is at the last position to be execulted, so can capture all previewed objs
-                return true;
+                doc = GH.Instances.ActiveCanvas.Document;
             }
-            else
+
+            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(instanceGuid);
+            if (!isAggregatorLast)
             {
-                return false;
+                var userClickNo = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
+                if (userClickNo)
+                {
+                    // user doesn't want ot continue! set isReady to false to stop
+                    isAggregatorLast = false;
+                }
+
             }
+            
+            return isAggregatorLast;
+        }
+
+        private bool isAggregatorRecordingChecked(Aggregator aggregator)
+        {
+            var isRecording = aggregator.Params.Input[4].VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
+            bool isRecordingChecked = isRecording.Value;
+            if (!isRecordingChecked)
+            {
+                var userClickNo = MessageBox.Show("Aggregator is nor Writing the data, do you want to continue?", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
+                if (userClickNo)
+                {
+                    // user doesn't want ot continue! set isReady to false to stop
+                    isRecordingChecked = false;
+                }
+                else
+                {
+                    isRecordingChecked = true;
+                }
+            }
+            return isRecordingChecked;
+            
         }
         #endregion
 
