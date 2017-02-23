@@ -34,6 +34,11 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>References\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="RhinoCommon">
       <HintPath>References\RhinoCommon.dll</HintPath>
     </Reference>
@@ -54,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
+    <Compile Include="Colibri3DParam.cs" />
     <Compile Include="ColibriInputs.cs" />
     <Compile Include="ColibriParameterAttributes.cs" />
     <Compile Include="ColibriParam.cs" />

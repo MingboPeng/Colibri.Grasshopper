@@ -15,7 +15,7 @@ namespace Colibri.Grasshopper
         /// new tabs/panels will automatically be created.
         /// </summary>
         public ImageParameters()
-          : base("Image Parameters", "Image Parameters",
+          : base("Image Parameters", "Img Param",
               "Defines how Colibri generates images.  Right now this just sets the size, but we could expose more options like Ladybug's Capture View component.",
               "TT Toolbox", "Colibri")
         {
