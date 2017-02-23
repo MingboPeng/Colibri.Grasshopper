@@ -17,7 +17,7 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the Colibri3DParam class.
         /// </summary>
         public Colibri3DParam()
-          : base("Colibri3DParam", "3D Param",
+          : base("3D Parameters", "3D Param",
               "Defines how Colibri generates 3D models.",
               "TT Toolbox", "Colibri")
         {
@@ -45,7 +45,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("3d Element", "threeD", "3d element output to feed into Aggregator component", GH_ParamAccess.item);
+            pManager.AddGenericParameter("3d Element", "3DParams", "3d element output to feed into Aggregator component", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -59,25 +59,21 @@ namespace Colibri.Grasshopper
             DA.GetDataList(0, curves);
             DA.GetDataList(1, meshes);
 
-            if (meshes==null)
+            if (meshes.Any())
             {
-                return;
-            }
+                Mesh joinedMesh = new Mesh();
+                foreach (var item in meshes)
+                {
+                    joinedMesh.Append(item.Value);
+                }
 
-            Mesh joinedMesh = new Mesh();
-            foreach (var item in meshes)
-            {
-                joinedMesh.Append(item.Value);
+                //create json from mesh
+                string outJSON = makeJsonString(joinedMesh);
+                outJSON = outJSON.Replace("OOO", "object");
+
+                DA.SetData(0, outJSON);
             }
             
-            //create json from mesh
-            var outJSON = makeJsonString(joinedMesh);
-            outJSON = outJSON.Replace("OOO", "object");
-            //Material material = new Material(MaterialWithVertexColors(), SpectaclesMaterialType.Mesh);
-            //Element e = new Element(outJSON, SpectaclesElementType.Mesh, material, new Layer("Default"));
-
-            DA.SetData(0, outJSON);
-
         }
 
         /// <summary>
@@ -201,10 +197,9 @@ namespace Colibri.Grasshopper
         {
             dynamic JSON = new ExpandoObject();
             JSON.materials = new ExpandoObject();
-            JSON.
+            JSON.faceMaterialIndex = new ExpandoObject();
 
             dynamic JsonMat = new ExpandoObject();
-
             JsonMat.uuid = Guid.NewGuid();
             JsonMat.type = "MeshFaceMaterial";
 
@@ -234,7 +229,14 @@ namespace Colibri.Grasshopper
 
                 //get a string representation of the color
                 int firstFaceVertexIndex = mesh.Faces.GetTopologicalVertices(matCounter).First();
-                string myColorStr = hexColor(new GH_Colour(meshColors[firstFaceVertexIndex]));
+                //default color
+                string myColorStr = "0x677A85";
+                //change to mesh face color
+                if (meshColors.Any())
+                {
+                    myColorStr = hexColor(new GH_Colour(meshColors[firstFaceVertexIndex]));
+                }
+                
 
                 //check to see if we need to create a new material index
                 if (!faceMaterials.ContainsKey(myColorStr))
@@ -268,25 +270,24 @@ namespace Colibri.Grasshopper
                 JsonMat.materials[i] = matthew;
             }
 
-            return JsonMat;
+            JSON.materials = JsonMat;
+            JSON.faceMaterialIndex = String.Join(",", myMaterialIndexes);
+
+            return JSON;
             //return JsonConvert.SerializeObject(JsonMat);
         }
 
-        private string makeJsonString(Mesh mesh)
+        private dynamic makeJsonString(Mesh mesh)
         {
             var meshObj = geoJSON(mesh);
             var meshMaterial = getMeshFaceMaterials(mesh);
+            dynamic faceMaterialIndex = new ExpandoObject();
+            faceMaterialIndex.Spectacles_FaceColorIndexes = meshMaterial.faceMaterialIndex;
+            //var faceMaterialIndex = meshMaterial.faceMaterialIndex;
 
-            
             //create a dynamic object to populate
             dynamic jason = new ExpandoObject();
-
-            ////JSON.metadata metadata object
-            //jason.metadata = new ExpandoObject();
-            //jason.metadata.version = 4.3;
-            //jason.metadata.type = "Object";
-            //jason.metadata.generator = "Spectacles_Grasshopper_Exporter";
-
+            
             int size = 1;
 
             //populate mesh geometries:
@@ -294,7 +295,7 @@ namespace Colibri.Grasshopper
             jason.materials = new object[size];  //array for materials - both lines and meshes
 
             jason.geometries[0] = meshObj;
-            jason.materials[0] = meshMaterial;
+            jason.materials[0] = meshMaterial.materials;
 
             //create scene:
             jason.OOO = new ExpandoObject();
@@ -314,13 +315,15 @@ namespace Colibri.Grasshopper
                 jason.OOO.children[i].uuid = Guid.NewGuid();
                 jason.OOO.children[i].name = "mesh" + i.ToString();
                 jason.OOO.children[i].type = "Mesh";
-                jason.OOO.children[i].geometry = meshObj.uuid;
-                jason.OOO.children[i].material = meshMaterial.uuid;
+                jason.OOO.children[i].geometry = jason.geometries[i].uuid;
+                jason.OOO.children[i].material = jason.materials[i].uuid;
                 jason.OOO.children[i].matrix = numbers;
-                jason.OOO.children[i].userData = "userdata!!";
-                //i++;
+                jason.OOO.children[i].userData = faceMaterialIndex;
+            //i++;
             //}
 
+
+            //return jason;
             return JsonConvert.SerializeObject(jason);
         }
 

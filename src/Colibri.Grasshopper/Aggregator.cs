@@ -41,6 +41,8 @@ namespace Colibri.Grasshopper
             pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
             pManager[3].Optional = true;
+            pManager.AddTextParameter("3DParams", "3DParams", "3DParams object from the Colibri 3DParameters component.", GH_ParamAccess.list);
+            pManager[4].Optional = true;
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
         }
 
@@ -69,14 +71,15 @@ namespace Colibri.Grasshopper
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
             List<string> imgParams = new List<string>();
-            
+            List<string> JSON = new List<string>();
             
             //get data
             DA.GetData(0, ref folder);
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
             DA.GetDataList(3, imgParams);
-            DA.GetData(4, ref writeFile);
+            DA.GetDataList(4, JSON);
+            DA.GetData(5, ref writeFile);
 
             //operations
             Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
@@ -161,6 +164,14 @@ namespace Colibri.Grasshopper
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
                 var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
                 pic.Save(imgPath);
+
+                
+                //save json
+                if (!String.IsNullOrEmpty(JSON[0]))
+                {
+                    File.WriteAllText(jsonFilePath, JSON[0]);
+                }
+                
 
                 //save csv
                 writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);

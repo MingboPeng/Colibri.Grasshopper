@@ -513,11 +513,8 @@ namespace Colibri.Grasshopper
                 
             }
            
-
             return isReady;
             
-            
-
         }
 
         private Aggregator aggregatorObj(Guid guid)
@@ -563,7 +560,7 @@ namespace Colibri.Grasshopper
 
         private bool isAggregatorRecordingChecked(Aggregator aggregator)
         {
-            var isRecording = aggregator.Params.Input[4].VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
+            var isRecording = aggregator.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
             bool isAggReady = true;
             if (!isRecording.Value)
             {
