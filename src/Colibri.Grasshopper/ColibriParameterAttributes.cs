@@ -16,8 +16,19 @@ namespace Colibri.Grasshopper
     public class ColibriParameterAttributes : GH_ComponentAttributes
     {
         
-        public string btnText;
-        
+        //public string btnText;
+
+        private string btnText;
+
+        public string ButtonText
+        {
+            get { return btnText; }
+            set
+            {
+                btnText = value;
+            }
+        }
+
         public delegate void Button_Handler(object sender);
 
         private Button_Handler MouseDownEvent;
@@ -52,7 +63,7 @@ namespace Colibri.Grasshopper
         {
             this.btnText = "Settings";
         }
-
+        //public void 
         protected override void Layout()
         {
             base.Layout();

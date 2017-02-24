@@ -113,6 +113,37 @@ namespace Colibri.Grasshopper
             get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
         }
 
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "Test Fly", Menu_DoClick);
+            Menu_AppendEnableItem(menu);
+            //menu_
+        }
+
+        private void Menu_DoClick(object sender, EventArgs e)
+        {
+            isTestFly = !isTestFly;
+            //var newButtonAttribute = new ColibriParameterAttributes(this) { btnText = "testFly" };
+            //buttonText = "testFly";
+            //newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
+            //var att = this.Attributes.Bounds;
+            //this.CreateAttributes();
+            //this.Attributes.Bounds = att;
+            //this.m_attributes = newButtonAttribute;
+            //this.Attributes.ExpireLayout();
+            //this.p;
+            
+            var att = this.Attributes as ColibriParameterAttributes;
+            att.ButtonText = "testFly";
+            att.PerformLayout();
+            //this.Attributes.ExpireLayout();
+            //MessageBox.Show("Test:"+ myBool);
+            att.Selected = false;
+
+        }
+        public bool isTestFly = false;
+
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
             // Unregister the event, we don't want to get called again.
@@ -139,8 +170,6 @@ namespace Colibri.Grasshopper
             {
                 // Always make sure that _running is switched off.
                 Running = false;
-                //goodToExpire = true;
-                //e.Document.NewSolution(false);
 
             }
 
@@ -271,17 +300,17 @@ namespace Colibri.Grasshopper
 
 
         #endregion
-        
+
 
         #region Button on Iterator
         // Create Button
+        
         public override void CreateAttributes()
         {
-            var newButtonAttribute = new ColibriParameterAttributes(this);
-            newButtonAttribute.btnText = "Fly";
+            var newButtonAttribute = new ColibriParameterAttributes(this) { ButtonText = "Fly"};
             newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
             m_attributes = newButtonAttribute;
-
+            
         }
         // response to Button event
         private void OnMouseDownEvent(object sender)
