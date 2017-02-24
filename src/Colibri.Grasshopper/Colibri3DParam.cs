@@ -121,12 +121,12 @@ namespace Colibri.Grasshopper
             jason.data.vertices[4] = Math.Round(line.ToZ, 5);
             jason.data.vertices[5] = Math.Round(line.ToY, 5);
             jason.data.normals = new object[0];
-            jason.data.uvs = new object[0];
+            //jason.data.uvs = new object[0];
             jason.data.faces = new object[0];
             jason.data.scale = 1;
             jason.data.visible = true;
-            jason.data.castShadow = true;
-            jason.data.receiveShadow = false;
+            //jason.data.castShadow = true;
+            //jason.data.receiveShadow = false;
 
 
             //return
@@ -180,7 +180,7 @@ namespace Colibri.Grasshopper
                 JsonObjectChildren.type = "Line";
                 JsonObjectChildren.geometry = JsonFile.geometries[i].uuid;
                 JsonObjectChildren.material = JsonFile.materials.uuid;
-                JsonObjectChildren.matrix = numbers;
+                //JsonObjectChildren.matrix = numbers;
                 //JsonObjectChildren.userData = userData;
 
                 //add children to JsonFile
@@ -389,7 +389,7 @@ namespace Colibri.Grasshopper
             dynamic userData = new ExpandoObject();
             userData.Spectacles_FaceColorIndexes = materialsInfo["faceMaterialIndex"];
             
-            int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+            //int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             for (int i = 0; i < size; i++)
             {
                 dynamic JsonObjectChildren = new ExpandoObject();
@@ -398,16 +398,13 @@ namespace Colibri.Grasshopper
                 JsonObjectChildren.type = "Mesh";
                 JsonObjectChildren.geometry = JsonFile.geometries[i].uuid;
                 JsonObjectChildren.material = JsonFile.materials.uuid;
-                JsonObjectChildren.matrix = numbers;
+                //JsonObjectChildren.matrix = numbers;
                 JsonObjectChildren.userData = userData;
 
                 //add children to JsonFile
                 JsonFile.children[i] = JsonObjectChildren;
             }
             
-
-            
-
             return JsonFile;
         }
 
@@ -462,8 +459,8 @@ namespace Colibri.Grasshopper
             outJsonFile.OOO = new ExpandoObject();
             outJsonFile.OOO.uuid = System.Guid.NewGuid();
             outJsonFile.OOO.type = "Scene";
-            int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-            outJsonFile.OOO.matrix = numbers;
+            //int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+            outJsonFile.OOO.matrix = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             outJsonFile.OOO.children = JsonChildren;
 
 
