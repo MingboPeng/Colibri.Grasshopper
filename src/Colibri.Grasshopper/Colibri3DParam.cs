@@ -30,11 +30,11 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Lines", "Lines", "Lines or Curves", GH_ParamAccess.list);
+            pManager.AddLineParameter("Lines", "Lines", "Lines or Curves that will be exported", GH_ParamAccess.list);
             pManager[0].Optional = true;
             pManager[0].DataMapping = GH_DataMapping.Flatten;
 
-            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Meshes", "Meshes", "Meshes that will be exported with its current material if it exists", GH_ParamAccess.list);
             pManager[1].Optional = true;
             pManager[1].DataMapping = GH_DataMapping.Flatten;
 
@@ -54,21 +54,15 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var curves = new List<GH_Curve>();
+            var lines = new List<GH_Line>();
             var meshes = new List<GH_Mesh>();
-            DA.GetDataList(0, curves);
+            DA.GetDataList(0, lines);
             DA.GetDataList(1, meshes);
 
-            if (meshes.Any())
+            if (meshes.Any() || lines.Any())
             {
-                Mesh joinedMesh = new Mesh();
-                foreach (var item in meshes)
-                {
-                    joinedMesh.Append(item.Value);
-                }
-
                 //create json from mesh
-                string outJSON = makeJsonString(joinedMesh);
+                string outJSON = makeJsonString(meshes,lines);
                 outJSON = outJSON.Replace("OOO", "object");
 
                 DA.SetData(0, outJSON);
@@ -97,7 +91,7 @@ namespace Colibri.Grasshopper
             get { return new Guid("{711f50aa-b437-4850-af56-ac2e7db19568}"); }
         }
 
-
+        
         public static string hexColor(GH_Colour ghColor)
         {
             string hexStr = "0x" + ghColor.Value.R.ToString("X2") +
@@ -107,18 +101,111 @@ namespace Colibri.Grasshopper
             return hexStr;
         }
 
+        #region getLineForJson
+        private dynamic lineJSON(Line line)
+        {
+            //create a dynamic object to populate
+            dynamic jason = new ExpandoObject();
+
+            //top level properties
+            jason.uuid = Guid.NewGuid();
+            jason.type = "Geometry";
+            jason.data = new ExpandoObject();
+
+            //populate data object properties
+            jason.data.vertices = new object[6];
+            jason.data.vertices[0] = Math.Round(line.FromX * -1.0, 5);
+            jason.data.vertices[1] = Math.Round(line.FromZ, 5);
+            jason.data.vertices[2] = Math.Round(line.FromY, 5);
+            jason.data.vertices[3] = Math.Round(line.ToX * -1.0, 5);
+            jason.data.vertices[4] = Math.Round(line.ToZ, 5);
+            jason.data.vertices[5] = Math.Round(line.ToY, 5);
+            jason.data.normals = new object[0];
+            jason.data.uvs = new object[0];
+            jason.data.faces = new object[0];
+            jason.data.scale = 1;
+            jason.data.visible = true;
+            jason.data.castShadow = true;
+            jason.data.receiveShadow = false;
+
+
+            //return
+            return jason;
+            //return JsonConvert.SerializeObject(jason);
+        }
+
+        private object makeLineMaterial()
+        {
+            dynamic JsonMat = new ExpandoObject();
+            JsonMat.uuid = Guid.NewGuid();
+            JsonMat.type = "LineBasicMaterial";
+            JsonMat.color = "0x000000";
+            JsonMat.linewidth = 1;
+            JsonMat.opacity = 1;
+
+            return JsonMat;
+        }
+
+        private dynamic linesJSON (List<GH_Line> GHLines)
+        {
+
+            if (!GHLines.Any())
+            {
+                return null;
+            }
+            
+            var JsonGeometries = new List<object>();
+            foreach (var item in GHLines)
+            {
+                JsonGeometries.Add(lineJSON(item.Value));
+            }
+
+            int size = JsonGeometries.Count;
+
+
+            dynamic JsonFile = new ExpandoObject();
+            JsonFile.geometries = JsonGeometries;
+            JsonFile.materials = makeLineMaterial();
+            JsonFile.children = new object[size];
+            //dynamic userData = new ExpandoObject();
+            //userData.layer = "Default";
+
+
+            int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+            for (int i = 0; i < size; i++)
+            {
+                dynamic JsonObjectChildren = new ExpandoObject();
+                JsonObjectChildren.uuid = Guid.NewGuid();
+                JsonObjectChildren.name = "Line " + i.ToString();
+                JsonObjectChildren.type = "Line";
+                JsonObjectChildren.geometry = JsonFile.geometries[i].uuid;
+                JsonObjectChildren.material = JsonFile.materials.uuid;
+                JsonObjectChildren.matrix = numbers;
+                //JsonObjectChildren.userData = userData;
+
+                //add children to JsonFile
+                JsonFile.children[i] = JsonObjectChildren;
+            }
+            
+            
+            return JsonFile;
+        }
+
+        #endregion
+
+        #region getMeshForJson
         /// <summary>
         /// Returns a JSON string representing a rhino mesh, and containing any attributes as user data
         /// </summary>
         /// <param name="mesh">The rhino mesh to serialize.  Can contain quads and tris.</param>
         /// <param name="attDict">The attribute dictionary to serialize.  Objects should all be reference types.</param>
         /// <returns>a JSON string representing a rhino mes</returns>
-        public static dynamic geoJSON(Mesh mesh)
+        private static object meshJSON(Mesh mesh)
         {
             //create a dynamic object to populate
             dynamic jason = new ExpandoObject();
 
-            
+
             jason.uuid = Guid.NewGuid();
             jason.type = "Geometry";
             jason.data = new ExpandoObject();
@@ -126,7 +213,7 @@ namespace Colibri.Grasshopper
             //populate data object properties
 
             //fisrt, figure out how many faces we need based on the tri/quad count
-            
+
             var quads = from q in mesh.Faces
                         where q.IsQuad
                         select q;
@@ -193,12 +280,10 @@ namespace Colibri.Grasshopper
             //return JsonConvert.SerializeObject(jason);
         }
 
-        public dynamic getMeshFaceMaterials(Mesh mesh)
+        private Dictionary<string, object> getMeshFaceMaterials(Mesh mesh)
         {
-            dynamic JSON = new ExpandoObject();
-            JSON.materials = new ExpandoObject();
-            JSON.faceMaterialIndex = new ExpandoObject();
-
+            var JSON = new Dictionary<string, object>();
+            
             dynamic JsonMat = new ExpandoObject();
             JsonMat.uuid = Guid.NewGuid();
             JsonMat.type = "MeshFaceMaterial";
@@ -214,9 +299,9 @@ namespace Colibri.Grasshopper
 
             int matCounter = 0;
             int uniqueColorCounter = 0;
-            
+
             var meshColors = mesh.VertexColors.ToList();
-            
+
 
             foreach (var face in mesh.Faces)
             {
@@ -228,7 +313,7 @@ namespace Colibri.Grasshopper
                 //if (matCounter > colors.Count - 1) matCounter = colors.Count - 1;
 
                 //get a string representation of the color
-                int firstFaceVertexIndex = mesh.Faces.GetTopologicalVertices(matCounter).First();
+                int firstFaceVertexIndex = mesh.Faces.GetFace(matCounter).A;
                 //default color
                 string myColorStr = "0x677A85";
                 //change to mesh face color
@@ -236,7 +321,7 @@ namespace Colibri.Grasshopper
                 {
                     myColorStr = hexColor(new GH_Colour(meshColors[firstFaceVertexIndex]));
                 }
-                
+
 
                 //check to see if we need to create a new material index
                 if (!faceMaterials.ContainsKey(myColorStr))
@@ -251,7 +336,7 @@ namespace Colibri.Grasshopper
                 {
                     myMaterialIndexes.Add(faceMaterials[myColorStr]);
                 }
-                if (face.IsQuad)
+                else if (face.IsQuad)
                 {
                     myMaterialIndexes.Add(faceMaterials[myColorStr]);
                     myMaterialIndexes.Add(faceMaterials[myColorStr]);
@@ -270,61 +355,129 @@ namespace Colibri.Grasshopper
                 JsonMat.materials[i] = matthew;
             }
 
-            JSON.materials = JsonMat;
-            JSON.faceMaterialIndex = String.Join(",", myMaterialIndexes);
+            JSON.Add("materials", JsonMat);
+            JSON.Add("faceMaterialIndex", String.Join(",", myMaterialIndexes));
 
             return JSON;
             //return JsonConvert.SerializeObject(JsonMat);
         }
 
-        private dynamic makeJsonString(Mesh mesh)
+        private dynamic meshesJSON(List<GH_Mesh> GHMeshes)
         {
-            var meshObj = geoJSON(mesh);
-            var meshMaterial = getMeshFaceMaterials(mesh);
-            dynamic faceMaterialIndex = new ExpandoObject();
-            faceMaterialIndex.Spectacles_FaceColorIndexes = meshMaterial.faceMaterialIndex;
+
+            if (!GHMeshes.Any())
+            {
+                return null;
+            }
+
+            Mesh joinedMesh = new Mesh();
+            foreach (var item in GHMeshes)
+            {
+                joinedMesh.Append(item.Value);
+            }
+
+            var JsonGeometries = new List<object> { meshJSON(joinedMesh) };
+            var materialsInfo = getMeshFaceMaterials(joinedMesh);
+
+            int size = JsonGeometries.Count;
+
+            dynamic JsonFile = new ExpandoObject();
+            JsonFile.geometries = JsonGeometries;
+            JsonFile.materials = materialsInfo["materials"];
+            JsonFile.children = new object[size];
+
+            dynamic userData = new ExpandoObject();
+            userData.Spectacles_FaceColorIndexes = materialsInfo["faceMaterialIndex"];
+            
+            int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+            for (int i = 0; i < size; i++)
+            {
+                dynamic JsonObjectChildren = new ExpandoObject();
+                JsonObjectChildren.uuid = Guid.NewGuid();
+                JsonObjectChildren.name = "mesh" + i.ToString();
+                JsonObjectChildren.type = "Mesh";
+                JsonObjectChildren.geometry = JsonFile.geometries[i].uuid;
+                JsonObjectChildren.material = JsonFile.materials.uuid;
+                JsonObjectChildren.matrix = numbers;
+                JsonObjectChildren.userData = userData;
+
+                //add children to JsonFile
+                JsonFile.children[i] = JsonObjectChildren;
+            }
+            
+
+            
+
+            return JsonFile;
+        }
+
+        #endregion
+
+
+        private dynamic makeJsonString(List<GH_Mesh> meshes, List<GH_Line> lines)
+        {
+            var meshesJsonObj = meshesJSON(meshes);
+            var linesJsonObj = linesJSON(lines);
+
+            var JsonGeometries = new List<object>();
+            var JsonMaterials = new List<object>();
+            var JsonChildren = new List<object>();
+
+            if (meshesJsonObj!=null)
+            {
+                JsonGeometries.AddRange(meshesJsonObj.geometries);
+                JsonMaterials.Add(meshesJsonObj.materials);
+                JsonChildren.AddRange(meshesJsonObj.children);
+            }
+
+            if (linesJsonObj!=null)
+            {
+                JsonGeometries.AddRange(linesJsonObj.geometries);
+                JsonMaterials.Add(linesJsonObj.materials);
+                JsonChildren.AddRange(linesJsonObj.children);
+            }
+            
+
+
+
+            //dynamic meshObj = meshesJSON(meshes);
+            //var meshMaterial = getMeshFaceMaterials(meshes);
+            
             //var faceMaterialIndex = meshMaterial.faceMaterialIndex;
 
             //create a dynamic object to populate
-            dynamic jason = new ExpandoObject();
+            dynamic outJsonFile = new ExpandoObject();
             
-            int size = 1;
+            int geoSize = JsonGeometries.Count;
+            int metSize = JsonMaterials.Count;
 
-            //populate mesh geometries:
-            jason.geometries = new object[size];   //array for geometry - both lines and meshes
-            jason.materials = new object[size];  //array for materials - both lines and meshes
+            //create geometries placeholders:
+            //outJsonFile.geometries = new object[geoSize];
+            outJsonFile.geometries = JsonGeometries;
+            //create materials placeholders:
+            //outJsonFile.materials = new object[metSize];
+            outJsonFile.materials = JsonMaterials;
 
-            jason.geometries[0] = meshObj;
-            jason.materials[0] = meshMaterial.materials;
-
-            //create scene:
-            jason.OOO = new ExpandoObject();
-            jason.OOO.uuid = System.Guid.NewGuid();
-            jason.OOO.type = "Scene";
+            //create scene placeholder:
+            outJsonFile.OOO = new ExpandoObject();
+            outJsonFile.OOO.uuid = System.Guid.NewGuid();
+            outJsonFile.OOO.type = "Scene";
             int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-            jason.OOO.matrix = numbers;
-            jason.OOO.children = new object[size];
+            outJsonFile.OOO.matrix = numbers;
+            outJsonFile.OOO.children = JsonChildren;
 
-            
-            //create childern
-            //loop over meshes and lines
-            int i = 0;
-            //foreach (var meshItem in meshObj.) //meshes
+
+
+
+            //for (int i = 0; i < geoSize; i++)
             //{
-                jason.OOO.children[i] = new ExpandoObject();
-                jason.OOO.children[i].uuid = Guid.NewGuid();
-                jason.OOO.children[i].name = "mesh" + i.ToString();
-                jason.OOO.children[i].type = "Mesh";
-                jason.OOO.children[i].geometry = jason.geometries[i].uuid;
-                jason.OOO.children[i].material = jason.materials[i].uuid;
-                jason.OOO.children[i].matrix = numbers;
-                jason.OOO.children[i].userData = faceMaterialIndex;
-            //i++;
+            //    outJsonFile.geometries[i] = JsonGeometries[i];
+            //    outJsonFile.OOO.children[i] = JsonChildren[i];
             //}
-
-
+            
+            
             //return jason;
-            return JsonConvert.SerializeObject(jason);
+            return JsonConvert.SerializeObject(outJsonFile);
         }
 
     }
