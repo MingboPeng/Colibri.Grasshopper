@@ -37,11 +37,11 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
-            pManager.AddTextParameter("FlyID", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
+            pManager.AddTextParameter("FlyID(inputs)", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
             pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
-            pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
-            pManager.AddTextParameter("3DParams", "3DParams", "3DParams object from the Colibri 3DParameters component.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("3DParams", "3DParams", "Optional input from the Colibri 3DParameters component.", GH_ParamAccess.item);
             pManager[4].Optional = true;
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
         }
@@ -70,21 +70,22 @@ namespace Colibri.Grasshopper
             
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
-            List<string> imgParams = new List<string>();
-            List<string> JSON = new List<string>();
-            
+            //List<string> imgParams = new List<string>();
+            var JSON = new threeDParam();
+            var imgParams = new ImgParam();
+
             //get data
             DA.GetData(0, ref folder);
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
-            DA.GetDataList(3, imgParams);
-            DA.GetDataList(4, JSON);
+            DA.GetData(3, ref imgParams);
+            DA.GetData(4, ref JSON);
             DA.GetData(5, ref writeFile);
 
             //operations
             Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
             Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
-            Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
+            //Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
             
             string csvPath = folder + "/data.csv";
             var rawData = inputs;
@@ -114,14 +115,17 @@ namespace Colibri.Grasshopper
             
             
             string writeInData = "";
-
+            var ViewNames = new List<string>();
             // overwrite the image parameter setting if user has inputed the values
-            if (imgParamsClean.Count > 0)
+            if (imgParams.IsDefined)
             {
-                bool isThereNoImgName = String.IsNullOrEmpty(imgParamsClean["imgName"]) || imgParamsClean["imgName"] == "defaultName";
-                imgName = isThereNoImgName ? imgName : imgParamsClean["imgName"];
-                width = Convert.ToInt32(imgParamsClean["Width"]);
-                height = Convert.ToInt32(imgParamsClean["Height"]);
+                bool isThereNoImgName = imgParams.SaveName == "defaultName";
+                imgName = isThereNoImgName ? imgName : imgParams.SaveName;
+
+                ViewNames = imgParams.ViewNames;
+                width = imgParams.Width;
+                height = imgParams.Height;
+                
             }
             
             Size viewSize = new Size(width, height);
@@ -138,8 +142,6 @@ namespace Colibri.Grasshopper
             {
                 alreadyWrittenLines = new List<string>();
             }
-
-            
             
                 //if we are told to run and we haven't written this line yet, do so
 
@@ -162,14 +164,24 @@ namespace Colibri.Grasshopper
 
                 //save imgs
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
+                //try
+                //{
+                //    Rhino.RhinoDoc.ActiveDoc.Views.ActiveView 
+                //}
+                //catch (Exception)
+                //{
+
+                //    throw;
+                //}
+                
                 var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
                 pic.Save(imgPath);
 
                 
                 //save json
-                if (!String.IsNullOrEmpty(JSON[0]))
+                if (JSON.IsDefined)
                 {
-                    File.WriteAllText(jsonFilePath, JSON[0]);
+                    File.WriteAllText(jsonFilePath, JSON.JsonSting);
                 }
                 
 
@@ -208,8 +220,7 @@ namespace Colibri.Grasshopper
         {
             get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
         }
-
-
+        
 
         //public bool isGoodToSeeAllView()
         //{

@@ -3,6 +3,7 @@ using System.Linq;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
+using System;
 
 namespace Colibri.Grasshopper
 {
@@ -94,27 +95,18 @@ namespace Colibri.Grasshopper
         
         private void FirstResetAll()
         {
-            //bool isThereValueList = false;
-
             foreach (var item in InputParams)
             {
-                
-                //if (item.GHType != InputType.ValueList)
-                //{
-                    item.Reset();
-                //}
+               item.Reset();
             }
         }
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
             //Todo: creat a run file in Aggregator folder 
-
-            //iterator.GoExpire = expireIterator;
+            
             FirstResetAll();
             
-            
-
             while (true)//Todo: watch the file to stop
             {
 
@@ -125,22 +117,15 @@ namespace Colibri.Grasshopper
                 Count++;
                 // We've just got a new valid permutation. Solve the new solution.
                 bool isTheEnd = Count > TotalIterations;
-
-                //if (!isTheEnd)
-                //{
-                //iterator.GoodToExpire = true;
-                //iterator.ExpireSolution(false);
+                
                 e.Document.NewSolution(false);
-                    
-                //}
-               
+                
                 //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
                 //UpdateProgressBar(counter, totalLoops, sw, pbChars);
 
                 if (!isRunning )
                 {
                     // study is over!
-                    
                     break;
 
                 }
@@ -148,7 +133,52 @@ namespace Colibri.Grasshopper
             }
             
         }
+        public void FlyTest(GH_SolutionEventArgs e, int testNumber)
+        {
+            
+            if (TotalIterations<= testNumber)
+            {
+                FlyAll(e);
+                return;
+            }
 
+            FirstResetAll();
+
+            int totalParamCount = inputParams.Count;
+            var random = new Random();
+
+            var flewID = new HashSet<string>();
+
+            while (true)
+            {
+                //pick random input param
+                int randomParamIndex = random.Next(totalParamCount);
+                var currentInputParam = inputParams[randomParamIndex];
+
+                //pick random step of param
+                int randomStepIndex = random.Next(currentInputParam.TotalCount);
+                var flyID = randomParamIndex + "_" + randomStepIndex;
+
+                //test if the same flyID has already ran
+                if (!flewID.Contains(flyID))
+                {
+                    
+                    flewID.Add(flyID);
+                    currentInputParam.SetParamTo(randomStepIndex);
+                    Count++;
+
+                    e.Document.NewSolution(false);
+
+                    if (flewID.Count >= testNumber)
+                    {
+                        // study is over!
+                        break;
+                    }
+
+                }
+            }
+        }
+        
        
         private bool MoveToNextPermutation(ref int MoveToParamIndex)
         {
@@ -156,9 +186,7 @@ namespace Colibri.Grasshopper
            
             if (MoveToParamIndex >= inputParams.Count)
                 return false;
-
             
-
             var currentInputParam = inputParams[MoveToParamIndex];
             
             int nextStepPosition = currentStepPositions[MoveToParamIndex] + 1;

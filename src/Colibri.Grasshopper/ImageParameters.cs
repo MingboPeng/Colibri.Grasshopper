@@ -5,6 +5,44 @@ using Grasshopper.Kernel;
 
 namespace Colibri.Grasshopper
 {
+    public class ImgParam
+    {
+        public bool IsDefined { get; set; }
+        public string SaveName { get; set; }
+        public List<string> ViewNames { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+
+        public ImgParam()
+        {
+            this.IsDefined = false;
+        }
+        public ImgParam(string SaveName, List<string> ViewNames, int Width, int Height)
+        {
+            this.IsDefined = true;
+            this.SaveName = SaveName;
+            this.ViewNames = ViewNames;
+            this.Width = Width;
+            this.Height = Height;
+        }
+
+        public override string ToString()
+        {
+            string output = "SaveName:" + SaveName + ";\n";
+            if (ViewNames.Count ==0)
+            {
+                ViewNames.Add("ActiveView");
+            }
+            string vName = "ViewNames:"+string.Join(",", ViewNames)+ ";\n";
+
+            output += vName;
+            output += "Width:" + Width.ToString() + ";\n";
+            output += "Height:" + Height.ToString() + ";";
+
+            return output;
+        }
+    }
+
     public class ImageParameters : GH_Component
     {
         /// <summary>
@@ -28,7 +66,9 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("ImageName", "imgName", "Overwrite the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
+            pManager.AddTextParameter("ImageSaveName", "saveName", "Overwrite the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
+            pManager.AddTextParameter("RhinoViewNames", "views", "Optional input for the Rhino viewport name which you would like to take a snapshot of.  Acceptable inputs include \"Perspective\", \"Top\", \"Bottom\", etc or any view name that you have already saved within the Rhino file (note that you do not need to input quotations).  If no text is input here, the default will be an image of the active viewport (or the last viewport in which you navigated).", GH_ParamAccess.list);
+            pManager[1].Optional = true;
             pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);
             pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 400);
 
@@ -51,14 +91,15 @@ namespace Colibri.Grasshopper
         {
             //input variables
             string imgName = "";
+            var viewNames = new List<string>();
             int width = 400;
             int height = 400;
 
             //get data
             DA.GetData(0, ref imgName);
-            DA.GetData(1, ref width);
-            DA.GetData(2, ref height);
-
+            DA.GetDataList(1, viewNames);
+            DA.GetData(2, ref width);
+            DA.GetData(3, ref height);
             //defense
             if (width < 50 || height < 50)
             {
@@ -67,12 +108,15 @@ namespace Colibri.Grasshopper
             }
 
             //set output
-            Dictionary<string, string> imageP = new Dictionary<string, string>();
-            imageP.Add("imgName", imgName);
-            imageP.Add("Width", width.ToString());
-            imageP.Add("Height", height.ToString());
+            var imageP = new ImgParam(imgName, viewNames, width, height);
+            //var imageP = new Dictionary<string, object>();
+            //imageP.Add("imgName", imgName);
+            //imageP.Add("viewNames", viewNames);
+            //imageP.Add("Width", width);
+            //imageP.Add("Height", height);
+            //DA.SetDataList(0, imageP);
+            DA.SetData(0, imageP);
             
-            DA.SetDataList(0, imageP);
         }
 
         /// <summary>

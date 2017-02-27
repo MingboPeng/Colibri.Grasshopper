@@ -39,7 +39,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Steps", "Steps", ".....", GH_ParamAccess.item,false);
+            pManager.AddBooleanParameter("Selection", "S", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item,false);
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
@@ -116,31 +116,30 @@ namespace Colibri.Grasshopper
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Test Fly", Menu_DoClick);
-            Menu_AppendEnableItem(menu);
-            //menu_
+            Menu_AppendItem(menu, "Fly Test", Menu_DoClick);
+            Menu_AppendSeparator(menu);
         }
-
+        
         private void Menu_DoClick(object sender, EventArgs e)
         {
             isTestFly = !isTestFly;
-            //var newButtonAttribute = new ColibriParameterAttributes(this) { btnText = "testFly" };
-            //buttonText = "testFly";
-            //newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
-            //var att = this.Attributes.Bounds;
-            //this.CreateAttributes();
-            //this.Attributes.Bounds = att;
-            //this.m_attributes = newButtonAttribute;
-            //this.Attributes.ExpireLayout();
-            //this.p;
-            
-            var att = this.Attributes as ColibriParameterAttributes;
-            att.ButtonText = "testFly";
-            att.PerformLayout();
-            //this.Attributes.ExpireLayout();
-            //MessageBox.Show("Test:"+ myBool);
-            att.Selected = false;
 
+            var att = this.Attributes as ColibriParameterAttributes;
+            if (isTestFly)
+            {
+                att.ButtonText = "Fly Test";            }
+            else
+            {
+                att.ButtonText = "Fly";
+            }
+            this.ExpireSolution(true);
+            //att.PerformLayout();
+            //this.Attributes.ExpireLayout();
+
+            //MessageBox.Show("Test:"+ myBool);
+            //att.Selected = false;
+            //this.OnPingDocument();
+            
         }
         public bool isTestFly = false;
 
@@ -159,7 +158,15 @@ namespace Colibri.Grasshopper
 
             try
             {
-                flyParam.FlyAll(e);
+                if (isTestFly)
+                {
+                    flyParam.FlyTest(e, 3);
+                }
+                else
+                {
+                    flyParam.FlyAll(e);
+                }
+                
             }
             catch (Exception ex)
             {
@@ -347,13 +354,18 @@ namespace Colibri.Grasshopper
             }
 
 
+            int testIterationNumber = flyParam.TotalIterations;
+            int totalIterationNumber = flyParam.TotalIterations;
+            if (isTestFly)
+            {
+                testIterationNumber = 3;
+            }
             var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
-                  "\n" + flyParam.TotalIterations + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
+                  "\n\n" + testIterationNumber + " (out of "+ totalIterationNumber + ") iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
 
             if (userClick == DialogResult.Yes)
             {
                 Run = true;
-                //flyParam.FirstResetAll();
                 doc.SolutionEnd += OnSolutionEnd;
 
                 // only recompute those are expired flagged
@@ -514,8 +526,7 @@ namespace Colibri.Grasshopper
             
 
         }
-
-
+        
         #endregion
 
         #region Checking before fly
@@ -580,8 +591,7 @@ namespace Colibri.Grasshopper
                     // user doesn't want ot continue! set isReady to false to stop
                     isAggReady = false;
                 }
-
-
+                
             }
             
             return isAggReady;

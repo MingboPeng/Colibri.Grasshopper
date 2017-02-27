@@ -29,7 +29,9 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Names", "Names", "Output names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
+            pManager[0].DataMapping = GH_DataMapping.Flatten;
             pManager.AddTextParameter("Values", "Values", "Output Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
+            pManager[1].DataMapping = GH_DataMapping.Flatten;
         }
 
         /// <summary>

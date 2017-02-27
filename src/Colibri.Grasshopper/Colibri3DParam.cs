@@ -11,6 +11,29 @@ using Newtonsoft.Json;
 
 namespace Colibri.Grasshopper
 {
+    public class threeDParam
+    {
+        public bool IsDefined { get; set; }
+        public string JsonSting { get; set; }
+        public threeDParam()
+        {
+            this.IsDefined = false;
+        }
+        public threeDParam(object JsonObj)
+        {
+            this.IsDefined = true;
+            this.JsonSting = JsonConvert.SerializeObject(JsonObj);
+            this.JsonSting = JsonSting.Replace("OOO", "object");
+
+        }
+
+        public override string ToString()
+        {
+            string outputString = "3D Model for Design Explorer";
+            return outputString;
+        }
+    }
+
     public class Colibri3DParam : GH_Component
     {
         /// <summary>
@@ -39,7 +62,7 @@ namespace Colibri.Grasshopper
             pManager[1].DataMapping = GH_DataMapping.Flatten;
 
         }
-
+        
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
@@ -62,10 +85,11 @@ namespace Colibri.Grasshopper
             if (meshes.Any() || lines.Any())
             {
                 //create json from mesh
-                string outJSON = makeJsonString(meshes,lines);
-                outJSON = outJSON.Replace("OOO", "object");
+                
+                object outJSON = makeThreeDParam(meshes,lines);
+                var outParam = new threeDParam(outJSON, MeshCount, LineCount);
 
-                DA.SetData(0, outJSON);
+                DA.SetData(0, outParam);
             }
             
         }
@@ -153,7 +177,8 @@ namespace Colibri.Grasshopper
             {
                 return null;
             }
-            
+
+            LineCount = GHLines.Count;
             var JsonGeometries = new List<object>();
             foreach (var item in GHLines)
             {
@@ -356,7 +381,7 @@ namespace Colibri.Grasshopper
             }
 
             JSON.Add("materials", JsonMat);
-            JSON.Add("faceMaterialIndex", String.Join(",", myMaterialIndexes));
+            JSON.Add("faceMaterialIndex", string.Join(",", myMaterialIndexes));
 
             return JSON;
             //return JsonConvert.SerializeObject(JsonMat);
@@ -369,6 +394,8 @@ namespace Colibri.Grasshopper
             {
                 return null;
             }
+
+            MeshCount = GHMeshes.Count;
 
             Mesh joinedMesh = new Mesh();
             foreach (var item in GHMeshes)
@@ -410,8 +437,10 @@ namespace Colibri.Grasshopper
 
         #endregion
 
+        int LineCount = 0;
+        int MeshCount = 0;
 
-        private dynamic makeJsonString(List<GH_Mesh> meshes, List<GH_Line> lines)
+        private object makeThreeDParam(List<GH_Mesh> meshes, List<GH_Line> lines)
         {
             var meshesJsonObj = meshesJSON(meshes);
             var linesJsonObj = linesJSON(lines);
@@ -434,14 +463,7 @@ namespace Colibri.Grasshopper
                 JsonChildren.AddRange(linesJsonObj.children);
             }
             
-
-
-
-            //dynamic meshObj = meshesJSON(meshes);
-            //var meshMaterial = getMeshFaceMaterials(meshes);
             
-            //var faceMaterialIndex = meshMaterial.faceMaterialIndex;
-
             //create a dynamic object to populate
             dynamic outJsonFile = new ExpandoObject();
             
@@ -459,22 +481,10 @@ namespace Colibri.Grasshopper
             outJsonFile.OOO = new ExpandoObject();
             outJsonFile.OOO.uuid = System.Guid.NewGuid();
             outJsonFile.OOO.type = "Scene";
-            //int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             outJsonFile.OOO.matrix = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             outJsonFile.OOO.children = JsonChildren;
-
-
-
-
-            //for (int i = 0; i < geoSize; i++)
-            //{
-            //    outJsonFile.geometries[i] = JsonGeometries[i];
-            //    outJsonFile.OOO.children[i] = JsonChildren[i];
-            //}
             
-            
-            //return jason;
-            return JsonConvert.SerializeObject(outJsonFile);
+            return outJsonFile;
         }
 
     }

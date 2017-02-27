@@ -26,6 +26,8 @@ namespace Colibri.Grasshopper
             set
             {
                 btnText = value;
+                //this.Owner.OnPingDocument();
+                //(GH_DocumentObject)((GH_Attributes<IGH_Component>)this).Owner.OnPingDocument();
             }
         }
 
@@ -79,7 +81,7 @@ namespace Colibri.Grasshopper
             this.ButtonBounds = rec1;
         }
         private System.Drawing.Rectangle ButtonBounds { get; set; }
-
+        
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
             base.Render(canvas, graphics, channel);
@@ -90,6 +92,11 @@ namespace Colibri.Grasshopper
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }
+        }
+
+        private void drawButton()
+        {
+            
         }
         public override GH_ObjectResponse RespondToMouseDown(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
