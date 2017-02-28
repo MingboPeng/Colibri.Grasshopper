@@ -4,6 +4,7 @@ using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using System;
+using System.IO;
 
 namespace Colibri.Grasshopper
 {
@@ -38,21 +39,32 @@ namespace Colibri.Grasshopper
         // Total Iteration number int
         public int TotalIterations { get; private set; }
 
-        //control the expire of Iterator
-        //private Iterator2 iterator;
+        private string watchFilePath { get; set; }
 
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams)
+        public IteratorFlyParam(List<ColibriParam> SourceParams, string StudyFolder)
         {
-            inputParams = SourceParams;
-            //this.iterator = Iterator;
+            this.inputParams = SourceParams;
             calTotalIterations();
-            //set current setp index to 0
-            currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
-
+            this.currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
             Count = 0;
+
+            //create a watch file 
+            if (!string.IsNullOrEmpty(StudyFolder))
+            {
+                watchFilePath = StudyFolder + "\\running.txt";
+                try
+                {
+                    File.WriteAllText(watchFilePath, "running");
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+
+            }
         }
 
 
@@ -69,7 +81,6 @@ namespace Colibri.Grasshopper
                 {
                     var SetpList = Enumerable.Range(0, totalCount).ToList();
                     stepLists.Add(SetpList);
-                    
                 }
                 
             }
@@ -103,11 +114,10 @@ namespace Colibri.Grasshopper
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
-            //Todo: creat a run file in Aggregator folder 
             
             FirstResetAll();
             
-            while (true)//Todo: watch the file to stop
+            while (true)
             {
 
                 int currentParamIndex = 0;
@@ -126,8 +136,26 @@ namespace Colibri.Grasshopper
                 if (!isRunning )
                 {
                     // study is over!
-                    break;
+                    try
+                    {
+                       File.Delete(watchFilePath);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
 
+                    break;
+                }
+
+                //watch the file to stop
+                if (!string.IsNullOrEmpty(watchFilePath))
+                {
+                    if (!File.Exists(watchFilePath))
+                    {
+                        // watch file was deleted by user
+                        break;
+                    }
                 }
                 
             }

@@ -20,7 +20,8 @@ namespace Colibri.Grasshopper
         private bool Running = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
-        
+
+        private string StudyFolder = "";
         
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
@@ -39,7 +40,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Selection", "S", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item,false);
+            pManager.AddBooleanParameter("Selection", "Sel(WIP)", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item,false);
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
@@ -56,9 +57,7 @@ namespace Colibri.Grasshopper
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
         }
-
         
-
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -337,9 +336,16 @@ namespace Colibri.Grasshopper
             filteredSources.RemoveAll(item => item == null);
             filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
 
+            //checked if Aggregator is recording and the last
+            if (!isAggregatorReady())
+            {
+                return;
+            }
+
+            //check if any vaild input source connected to Iteratior
             if (filteredSources.Count() > 0)
             {
-                this.flyParam = new IteratorFlyParam(filteredSources);
+                this.flyParam = new IteratorFlyParam(filteredSources,this.StudyFolder);
             }
             else
             {
@@ -347,11 +353,7 @@ namespace Colibri.Grasshopper
                 return;
             }
 
-            //checked if Aggregator is recording and the last
-            if (!isAggregatorReady())
-            {
-                return;
-            }
+            
 
 
             int testIterationNumber = flyParam.TotalIterations;
@@ -535,8 +537,7 @@ namespace Colibri.Grasshopper
         {
             
             var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
-            
-            
+            var folder = "";
             bool isReady = true;
             Aggregator aggObj = aggregatorObj(aggregatorID);
             
@@ -544,7 +545,7 @@ namespace Colibri.Grasshopper
             if (aggObj != null)
             {
                 isReady = isAggregatorRecordingChecked(aggObj);
-                
+                folder = aggObj.folder;
                 //check if Aggregator is the last 
                 if (isReady)
                 {
@@ -552,7 +553,8 @@ namespace Colibri.Grasshopper
                 }
                 
             }
-           
+
+            StudyFolder = folder;
             return isReady;
             
         }
@@ -603,7 +605,7 @@ namespace Colibri.Grasshopper
             bool isAggReady = true;
             if (!isRecording.Value)
             {
-                var userClickNo = MessageBox.Show("Aggregator is nor Writing the data, do you want to continue?", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
+                var userClickNo = MessageBox.Show("Aggregator is not writing the data. \nStill continue? \n\n (Click No, set Aggregator's write? to true)", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
                 if (userClickNo)
                 {
                     // user doesn't want ot continue! set isRecordingChecked to false to stop
@@ -617,6 +619,8 @@ namespace Colibri.Grasshopper
             return isAggReady;
             
         }
+
+        
         #endregion
 
     }

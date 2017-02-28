@@ -28,6 +28,7 @@ namespace Colibri.Grasshopper
 
         public override string ToString()
         {
+            
             string output = "SaveName:" + SaveName + ";\n";
             if (ViewNames.Count ==0)
             {

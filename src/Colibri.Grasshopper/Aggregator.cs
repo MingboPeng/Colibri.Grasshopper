@@ -6,6 +6,7 @@ using System.IO;
 using GH = Grasshopper;
 using Grasshopper.Kernel;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace Colibri.Grasshopper
 {
@@ -96,46 +97,21 @@ namespace Colibri.Grasshopper
             string flyID = String.Empty;
             string keyReady = String.Empty;
             string valueReady = String.Empty;
-
             
-
             //Parsing data to csv format
             keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
             valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
             flyID = inputCSVstrings["FlyID"];
 
             
-            int width = 400;
-            int height = 400;
-
-            
             bool run = writeFile;
-            //string fileName = imgName;
-            string imgName = flyID;
             
             
             string writeInData = "";
-            var ViewNames = new List<string>();
-            // overwrite the image parameter setting if user has inputed the values
-            if (imgParams.IsDefined)
-            {
-                bool isThereNoImgName = imgParams.SaveName == "defaultName";
-                imgName = isThereNoImgName ? imgName : imgParams.SaveName;
-
-                ViewNames = imgParams.ViewNames;
-                width = imgParams.Width;
-                height = imgParams.Height;
-                
-            }
+            //var ViewNames = new List<string>();
             
-            Size viewSize = new Size(width, height);
 
-            string imgFileName = imgName + ".png";
-            string imgPath = folder + @"\" + imgFileName;
-
-            string jsonFileName = imgName + ".json";
-            string jsonFilePath = folder + @"\" + jsonFileName;
-
+            
 
             //if we aren't told to write, clean out the list of already written items
             if (!run)
@@ -153,37 +129,28 @@ namespace Colibri.Grasshopper
 
                 //Check folder if existed
                 Directory.CreateDirectory(folder);
-                
+
+                //save img
+                keyReady += ",img";
+                string imgFileName = captureViews(imgParams, flyID);
+
+                //save json
+                string jsonFileName = string.Empty;
+                string jsonFilePath = string.Empty;
+                if (JSON.IsDefined)
+                {
+                    keyReady += ",threeD";
+                    jsonFileName = flyID + ".json";
+                    jsonFilePath = folder + @"\" + jsonFileName;
+                    File.WriteAllText(jsonFilePath, JSON.JsonSting);
+                }
 
                 //check csv file
                 if (!File.Exists(csvPath))
                 {
-                    keyReady = keyReady + ",img,threeD" + Environment.NewLine;
+                    keyReady += Environment.NewLine;
                     File.WriteAllText(csvPath, keyReady);
                 }
-
-                //save imgs
-                Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
-                //try
-                //{
-                //    Rhino.RhinoDoc.ActiveDoc.Views.ActiveView 
-                //}
-                //catch (Exception)
-                //{
-
-                //    throw;
-                //}
-                
-                var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
-                pic.Save(imgPath);
-
-                
-                //save json
-                if (JSON.IsDefined)
-                {
-                    File.WriteAllText(jsonFilePath, JSON.JsonSting);
-                }
-                
 
                 //save csv
                 writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
@@ -192,8 +159,7 @@ namespace Colibri.Grasshopper
             }
             
             //set output
-            //DA.SetData(0, writeInData);
-            DA.SetData(0, jsonFilePath);
+            DA.SetData(0, writeInData);
 
         }
 
@@ -220,7 +186,89 @@ namespace Colibri.Grasshopper
         {
             get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
         }
-        
+
+        private string captureViews(ImgParam imgParams,string flyID)
+        {
+            //string imgID = flyID;
+            var ViewNames = new List<string>();
+            int width = 400;
+            int height = 400;
+
+            Size imageSize = new Size(width, height);
+            string imgName = flyID;
+            string imgPath = string.Empty;
+
+
+            // overwrite the image parameter setting if user has inputed the values
+            if (imgParams.IsDefined)
+            {
+                bool isThereNoImgName = imgParams.SaveName == "defaultName";
+                imgName = isThereNoImgName ? imgName : imgParams.SaveName;
+                ViewNames = imgParams.ViewNames;
+                width = imgParams.Width;
+                height = imgParams.Height;
+
+            }
+
+
+            //If ViewNames is empty, which means to capture current active view
+            var activeView = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
+            if (!ViewNames.Any())
+            {
+                imgName += ".png";
+                imgPath = folder + @"\" + imgName;
+
+                activeView.Redraw();
+                var pic = activeView.CaptureToBitmap(imageSize);
+                pic.Save(imgPath);
+
+                //return here, and skip the following views' check
+                return imgName;
+
+            }
+            
+            //If user set View Names
+            var views = Rhino.RhinoDoc.ActiveDoc.Views.ToDictionary(v => v.ActiveViewport.Name, v => v);
+            var namedViews = Rhino.RhinoDoc.ActiveDoc.NamedViews.ToDictionary(v => v.Name, v => v);
+
+            //string newImgPathWithViewName = ImagePath;
+
+            for (int i = 0; i < ViewNames.Count; i++)
+            {
+                string viewName = ViewNames[i];
+                string existViewName = string.Empty;
+
+                if (views.ContainsKey(viewName))
+                {
+                    activeView = views[viewName];
+                    existViewName = viewName;
+                }
+                else if(namedViews.ContainsKey(viewName))
+                {
+                    existViewName = viewName;
+                    var namedViewIndex = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(viewName);
+                    Rhino.RhinoDoc.ActiveDoc.NamedViews.Restore(namedViewIndex, Rhino.RhinoDoc.ActiveDoc.Views.ActiveView, true);
+                }
+                
+                //capture
+                if (!string.IsNullOrEmpty(existViewName))
+                {
+                    imgName += "_" + existViewName + ".png";
+                    imgPath = folder + @"\" + imgName;
+                    //save imgs
+                    activeView.Redraw();
+                    var pic = activeView.CaptureToBitmap(imageSize);
+                    pic.Save(imgPath);
+                    
+                }
+
+            }
+            return imgName;
+
+
+
+
+        }
 
         //public bool isGoodToSeeAllView()
         //{
