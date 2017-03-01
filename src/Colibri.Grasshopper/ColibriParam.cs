@@ -275,8 +275,7 @@ namespace Colibri.Grasshopper
                 var myValueList = param as GH_ValueList;
 
                 count = myValueList.ListItems.Count();
-
-
+                
             }
             else
             {

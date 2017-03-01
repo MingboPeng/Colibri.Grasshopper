@@ -41,30 +41,21 @@ namespace Colibri.Grasshopper
 
         private string watchFilePath { get; set; }
 
+        private IteratorSelection selections { get; set; }
+
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams, string StudyFolder)
+        public IteratorFlyParam(List<ColibriParam> SourceParams, IteratorSelection Selection, string StudyFolder)
         {
             this.inputParams = SourceParams;
+            this.selections = Selection;
             calTotalIterations();
             this.currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
             Count = 0;
+            
+            createWatchFile(StudyFolder);
 
-            //create a watch file 
-            if (!string.IsNullOrEmpty(StudyFolder))
-            {
-                watchFilePath = StudyFolder + "\\running.txt";
-                try
-                {
-                    File.WriteAllText(watchFilePath, "running");
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-
-            }
         }
 
 
@@ -102,7 +93,24 @@ namespace Colibri.Grasshopper
                 }
             }
         }
+        
+        //create a watch file 
+        private void createWatchFile(string FolderPath)
+        {
+            if (!string.IsNullOrEmpty(FolderPath))
+            {
+                watchFilePath = FolderPath + "\\running.txt";
+                try
+                {
+                    File.WriteAllText(watchFilePath, "running");
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
 
+            }
+        }
         
         private void FirstResetAll()
         {
@@ -281,6 +289,11 @@ namespace Colibri.Grasshopper
             return 0;
         }
 
+        private bool isInSelection(List<int> FlyIndexID)
+        {
+
+            return true;
+        }
 
         #endregion
 

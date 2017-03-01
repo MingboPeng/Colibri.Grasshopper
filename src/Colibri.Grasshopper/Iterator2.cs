@@ -9,6 +9,7 @@ using Grasshopper.Kernel.Components;
 using System.Threading.Tasks;
 using Grasshopper.Kernel.Data;
 using System.Windows.Forms;
+using Grasshopper.Kernel.Types;
 
 namespace Colibri.Grasshopper
 {
@@ -20,29 +21,34 @@ namespace Colibri.Grasshopper
         private bool Running = false;
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
-
+        private bool isTestFly = false;
         private string StudyFolder = "";
-        
+
+        private IteratorSelection Selections = new IteratorSelection();
+
+
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public Iterator2()
-          : base("Iterator2(fly)", "Iterator2",
+          : base("Colibri Iterator2(fly)", "Iterator2",
               "Generates design iterations from a collection of sliders.",
               "TT Toolbox", "Colibri")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
         }
-
+        
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Selection", "Sel(WIP)", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item,false);
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
+
+            pManager.AddGenericParameter("Selections", "Sel", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item);
+            pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 
         }
@@ -65,10 +71,6 @@ namespace Colibri.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             
-            //bool isReady = false;
-            bool fly = false;
-            DA.GetData(this.Params.Input.Count-1, ref fly);
-
             //var filteredSources = FilterSources();
 
             //Dictionary<string, string> FlyID = new Dictionary<string, string>();
@@ -80,6 +82,15 @@ namespace Colibri.Grasshopper
                 filteredSources = gatherSources();
             }
 
+            if (filteredSources.Count >0 && !Running)
+            {
+                var selections = new IteratorSelection();
+                DA.GetData(this.Params.Input.Count-1,ref selections);
+
+                this.Selections = selections;
+                this.Message = updateComponentMsg(filteredSources, selections);
+            }
+            
             //bool isRunning = Run || Running;
             foreach (var item in filteredSources)
             {
@@ -87,7 +98,7 @@ namespace Colibri.Grasshopper
                 FlyID.Add(item.ToString(true));
             }
 
-            DA.SetDataList(Params.Output.Count()-1,FlyID);
+            DA.SetDataList(Params.Output.Count-1,FlyID);
             
         }
         
@@ -140,8 +151,7 @@ namespace Colibri.Grasshopper
             //this.OnPingDocument();
             
         }
-        public bool isTestFly = false;
-
+        
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
             // Unregister the event, we don't want to get called again.
@@ -345,7 +355,7 @@ namespace Colibri.Grasshopper
             //check if any vaild input source connected to Iteratior
             if (filteredSources.Count() > 0)
             {
-                this.flyParam = new IteratorFlyParam(filteredSources,this.StudyFolder);
+                this.flyParam = new IteratorFlyParam(filteredSources,this.Selections,this.StudyFolder);
             }
             else
             {
@@ -354,8 +364,6 @@ namespace Colibri.Grasshopper
             }
 
             
-
-
             int testIterationNumber = flyParam.TotalIterations;
             int totalIterationNumber = flyParam.TotalIterations;
             if (isTestFly)
@@ -474,39 +482,44 @@ namespace Colibri.Grasshopper
         #endregion
 
 
-        #region Events
+        #region Events for ParamSourcesChanged
+        
         //This is for if any source connected, reconnected, removed, replacement 
         private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
             
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
-            bool isFly = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
+            bool isSelection = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
             bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
 
-            if (!isInputSide || isFly)
+            if (!isSelection)
             {
-                return;
-            }
+                if (!isInputSide)
+                {
+                    return;
+                }
 
-            // add a new input param while the second last input is not empty
-            if (!isSecondLastEmptySource)
-            {
-                
-                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
-                Params.RegisterInputParam(newParam, Params.Input.Count - 1);
-                VariableParameterMaintenance();
-                this.Params.OnParametersChanged();
 
+                // add a new input param while the second last input is not empty
+                if (!isSecondLastEmptySource)
+                {
+
+                    IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
+                    Params.RegisterInputParam(newParam, Params.Input.Count - 1);
+                    VariableParameterMaintenance();
+                    this.Params.OnParametersChanged();
+
+                }
+
+
+                //recollecting the filteredSources and rename while any source changed
+                filteredSources = gatherSources();
+                checkAllNames(filteredSources);
                 //this.ExpireSolution(true);
             }
-
-
-            //recollecting the filteredSources and rename while any source changed
-            filteredSources = gatherSources();
-            checkAllNames(filteredSources);
-            //this.ExpireSolution(true);
             
-            
+            //this.Message = updateComponentMsg(filteredSources, this.Selections);
+
         }
         
         //todo: check inputnumbers, or one source to multi inputs
@@ -525,13 +538,87 @@ namespace Colibri.Grasshopper
             {
                 sender.ObjectChanged -= Source_ObjectChanged;
             }
-            
+
 
         }
-        
+
+        private string updateComponentMsg(List<ColibriParam> ColibriParams, IteratorSelection Selections)
+        {
+            if (ColibriParams == null)
+            {
+                return null;
+            }
+            
+            int totalIterations = 1;
+            int runIterationNumber = 1;
+            var steps = new List<int>();
+            var domains = new List<GH_Interval>();
+            string messages = "";
+
+            if (Selections.IsDefined)
+            {
+                steps = Selections.Steps;
+                domains = Selections.Domains;
+
+                if (steps.Count != ColibriParams.Count)
+                {
+                    runIterationNumber = totalIterations;
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
+                }
+            }
+
+
+            //todo: cal steps to match  ColibriParams numbers
+            for (int i = 0; i < ColibriParams.Count; i++)
+            {
+                //Cal total number of iterations
+                int totalCount = ColibriParams[i].TotalCount>0 ? ColibriParams[i].TotalCount:0;
+                totalIterations *= totalCount;
+
+                //cal run numbers
+                if (steps.Count != ColibriParams.Count)
+                {
+                    runIterationNumber = totalIterations;
+                    continue;
+                }
+
+                int step = steps[i];
+                if (step < totalCount && step > 0)
+                {
+                    runIterationNumber *= step;
+                }
+                else
+                {
+                    runIterationNumber *= totalCount;
+                }
+                
+            }
+
+            
+
+            //if (domains.Count >0)
+            //{
+            //    foreach (var item in domains)
+            //    {
+            //        var isIncluded = item.Value.IncludesParameter(runIterationNumber);
+            //        if (isIncluded)
+            //        {
+
+            //        }
+            //    }
+            //}
+
+
+            messages = "ITERATION NUMBER \nTotal: "+ totalIterations + "\nSelected: " + runIterationNumber;
+            
+            return messages;
+            
+        }
+
         #endregion
 
-        #region Checking before fly
+        #region Check Aggregator before fly
+
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
@@ -620,8 +707,22 @@ namespace Colibri.Grasshopper
             
         }
 
-        
+
         #endregion
+
+
+        //private IteratorSelection getSelection()
+        //{
+        //    var selections = new IteratorSelection();
+        //    if (this.Params.Input.Last().Sources.Any())
+        //    {
+        //        var inputSel = this.Params.Input.Last().VolatileData.AllData(true).First() as IteratorSelection;
+        //        selections = inputSel;
+        //    }
+            
+        //    MessageBox.Show("Test"+ selections.Steps.Count);
+        //    return selections;
+        //}
 
     }
 

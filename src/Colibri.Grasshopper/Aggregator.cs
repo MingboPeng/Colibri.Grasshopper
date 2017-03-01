@@ -24,7 +24,7 @@ namespace Colibri.Grasshopper
         /// new tabs/panels will automatically be created.
         /// </summary>
         public Aggregator()
-          : base("Aggregator", "Aggregator",
+          : base("Colibri Aggregator", "Aggregator",
               "Aggregates design input and output data, image & Spectacles filemanes into a data.csv file that Design Explorer can open.",
               "TT Toolbox", "Colibri")
         {
