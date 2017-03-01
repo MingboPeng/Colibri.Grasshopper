@@ -10,12 +10,28 @@ namespace Colibri.Grasshopper
     public class IteratorSelection
     {
         public bool IsDefined { get; private set; }
-        public List<int> Steps { get; private set; }
+
+        private List<int> _positions;
+        private List<List<int>> allParamsSteps;
+        private List<List<int>> selParamsSteps;
+
+
+        public List<int> Positions
+        {
+            get { return _positions; }
+            private set { _positions = value; }
+        }
+        public List<List<int>> AllParamsSelectedSteps
+        {
+            get { return selParamsSteps; }
+            private set { }
+        }
+
+
         public List<GH_Interval> Domains { get; private set; }
         public int SelectedCounts { get; private set; }
         public int TotalCounts { get; private set; }
-
-        private List<List<int>> allParamsSteps;
+        
 
         //Construction
         public IteratorSelection()
@@ -25,48 +41,79 @@ namespace Colibri.Grasshopper
         public IteratorSelection(List<int> Steps, List<GH_Interval> Domains)
         {
             this.IsDefined = true;
-            this.Steps = Steps;
+            this._positions = Steps;
             this.Domains = Domains;
             //this.SelectedCounts = calSelectedCounts(Steps, Domains);
         }
 
+        
+
         //Method
-        public int MatchSelectionFrom (List<ColibriParam> ColibriParams)
+
+        //this.Steps checked
+        //this.SelectedCounts checked
+        public void MatchSelectionFrom (List<ColibriParam> ColibriParams)
         {
-            iniColibriParams(ColibriParams);
-            this.Steps = iniSteps(this.Steps, ColibriParams);
+            this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
+            this.allParamsSteps = ColibriBase.AllParamsStepsIndex(ColibriParams);
+            this._positions = iniSteps(this._positions, ColibriParams);
+            this.selParamsSteps = calSelectedParamsSteps(this.allParamsSteps, this._positions, ColibriParams);
 
-            var fullSteps = new List<int>();
-            foreach (var item in this.allParamsSteps)
-            {
-                fullSteps.Add(item.Count);
+            this.SelectedCounts = calSelectedTotalCount(this.selParamsSteps);
 
-            }
+        }
 
+        //private void iniColibriParams(List<ColibriParam> ColibriParams)
+        //{
+            
+        //}
+
+        private int calSelectedTotalCount(List<List<int>> SelAllParamsSteps)
+        {
+            var selAllParamsSteps = SelAllParamsSteps;
+            //var fullSteps = new List<int>();
+            //foreach (var item in this.allParamsSteps)
+            //{
+            //    fullSteps.Add(item.Count);
+
+            //}
 
             int runIterationNumber = 1;
 
-            if (this.Steps.Count == fullSteps.Count)
+            //OLd
+
+            //if (Steps.Count == fullSteps.Count)
+            //{
+
+            //    for (int i = 0; i < fullSteps.Count; i++)
+            //    {
+            //        //todo: cal steps to match  ColibriParams numbers
+
+            //        //cal run numbers
+            //        int step = Steps[i];
+            //        int fullStep = fullSteps[i];
+
+            //        if (step < fullStep && step > 0)
+            //        {
+            //            runIterationNumber *= step;
+            //        }
+            //        else
+            //        {
+            //            runIterationNumber *= fullStep;
+            //        }
+
+            //    }
+            //}
+            //else
+            //{
+            //    runIterationNumber = this.TotalCounts;
+            //}
+
+            if (selAllParamsSteps.Count == this.allParamsSteps.Count)
             {
-                
-
-                for (int i = 0; i < fullSteps.Count; i++)
+                foreach (var item in selAllParamsSteps)
                 {
-                    //todo: cal steps to match  ColibriParams numbers
-                    
-                    //cal run numbers
-                    int step = Steps[i];
-                    int fullStep = fullSteps[i];
-
-                    if (step < fullStep && step > 0)
-                    {
-                        runIterationNumber *= step;
-                    }
-                    else
-                    {
-                        runIterationNumber *= fullStep;
-                    }
-                        
+                    runIterationNumber *= item.Count;
                 }
             }
             else
@@ -74,27 +121,79 @@ namespace Colibri.Grasshopper
                 runIterationNumber = this.TotalCounts;
             }
 
+
+
             return runIterationNumber;
-
         }
 
-        private void iniColibriParams(List<ColibriParam> ColibriParams)
+        private List<List<int>> calSelectedParamsSteps(List<List<int>> ParamsPositions, List<int> Positions, List<ColibriParam> ColibriParams)
         {
-            this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
-            this.allParamsSteps = ColibriBase.AllParamsStepsIndex(ColibriParams);
-            
+            int paramCounts = ParamsPositions.Count;
+            var selParamsStepIndex = new List<List<int>>();
+
+            for (int p = 0; p < paramCounts; p++)
+            {
+                //var selStepIndex = new List<int>();
+                int step = Positions[p];
+                var stepIndexList = ParamsPositions[p];
+                int totalSteps = stepIndexList.Count;
+
+                //if 0 to run all
+                if (step ==0)
+                {
+                    selParamsStepIndex.Add(ParamsPositions[p]);
+                    continue;
+                }
+
+                //if 1 to run the current
+                if (step == 1)
+                {
+                    var currentPositon = new List<int>() { ColibriParams[p].Position };
+                    selParamsStepIndex.Add(currentPositon);
+                    continue;
+                }
+
+                int stepMax = totalSteps - 1;
+                int stepMid = stepMax / 2;
+                double numAdd = (double)stepMax / (step - 1);
+
+                var thisStepIndex = new List<int>(step);
+                thisStepIndex.Add(0);
+
+                for (int i = 0; i < step - 1; i++)
+                {
+                    int nextPosition = 0;
+                    if (thisStepIndex[i] + numAdd >= stepMid)
+                    {
+                        nextPosition = (int)Math.Ceiling(numAdd + thisStepIndex[i]);
+                    }
+                    else
+                    {
+                        nextPosition = (int)Math.Floor(numAdd + thisStepIndex[i]);
+                    }
+
+                    thisStepIndex.Add(nextPosition);
+
+                }
+
+                thisStepIndex[step - 1] = stepMax;
+
+                selParamsStepIndex.Add(thisStepIndex);
+            }
+
+            return selParamsStepIndex;
         }
 
-        private List<int> iniSteps(List<int> Steps, List<ColibriParam> ColibriParams)
+        private List<int> iniSteps(List<int> positions, List<ColibriParam> colibriParams)
         {
             var steps = new List<int>();
-            if (Steps == null)
+            if (positions == null || !positions.Any())
             {
-                steps = Enumerable.Repeat(0, ColibriParams.Count()).ToList();
+                steps = Enumerable.Repeat(0, colibriParams.Count()).ToList();
             }
             else
             {
-                steps = Steps;
+                steps = positions;
             }
             return steps;
             
@@ -115,6 +214,10 @@ namespace Colibri.Grasshopper
         //    return 0;
         //}
 
+
+
+
+
         //override
         public override string ToString()
         {
@@ -124,9 +227,9 @@ namespace Colibri.Grasshopper
             }
 
             string outString = "";
-            if (Steps.Count != 0)
+            if (_positions.Count != 0)
             {
-                outString += "Take:" + Steps.Count + "\n";
+                outString += "Take:" + _positions.Count + "\n";
             }
 
             if (Domains.Count != 0)

@@ -57,11 +57,12 @@ namespace Colibri.Grasshopper
 
             foreach (var item in ranges)
             {
-                if (item.Value.Min<0)
+                if (item.Value.Min<0 ||item.Value.Max ==0)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Selection domain should starts from 0!");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Selection domain should within or equal (min:0 TO max:total)");
                     return;
                 }
+
             }
             var selections = new IteratorSelection(steps, ranges);
 

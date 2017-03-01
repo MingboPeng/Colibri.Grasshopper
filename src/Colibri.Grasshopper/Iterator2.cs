@@ -24,6 +24,9 @@ namespace Colibri.Grasshopper
         private bool isTestFly = false;
         private string StudyFolder = "";
 
+        int _totalCount = 0;
+        int _selectedCount = 0;
+
         private IteratorSelection Selections = new IteratorSelection();
 
 
@@ -365,8 +368,8 @@ namespace Colibri.Grasshopper
             }
 
             
-            int testIterationNumber = flyParam.TotalIterations;
-            int totalIterationNumber = flyParam.TotalIterations;
+            int testIterationNumber = _totalCount;
+            int totalIterationNumber = _selectedCount;
             if (isTestFly)
             {
                 testIterationNumber = 3;
@@ -550,51 +553,52 @@ namespace Colibri.Grasshopper
                 return null;
             }
             
-            int totalIterations = 1;
-            int runIterationNumber = 1;
+            
             var steps = new List<int>();
             var domains = new List<GH_Interval>();
             string messages = "";
 
             if (Selections.IsDefined)
             {
-                steps = Selections.Steps;
+                steps = Selections.Positions;
                 domains = Selections.Domains;
 
-                if (steps.Count != ColibriParams.Count)
+                if (steps.Count != 0 && steps.Count != ColibriParams.Count)
                 {
-                    runIterationNumber = totalIterations;
+                    //_selectedCount = _totalCount;
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
                 }
             }
 
-            runIterationNumber = Selections.MatchSelectionFrom(ColibriParams);
+            Selections.MatchSelectionFrom(ColibriParams);
+            _totalCount = Selections.TotalCounts;
+            _selectedCount = Selections.SelectedCounts;
 
             //todo: cal steps to match  ColibriParams numbers
-            for (int i = 0; i < ColibriParams.Count; i++)
-            {
-                //Cal total number of iterations
-                int totalCount = ColibriParams[i].TotalCount>0 ? ColibriParams[i].TotalCount:0;
-                totalIterations *= totalCount;
+            //for (int i = 0; i < ColibriParams.Count; i++)
+            //{
+            //    //Cal total number of iterations
+            //    int totalCount = ColibriParams[i].TotalCount>0 ? ColibriParams[i].TotalCount:0;
+            //    totalIterations *= totalCount;
 
-                //cal run numbers
-                if (steps.Count != ColibriParams.Count)
-                {
-                    runIterationNumber = totalIterations;
-                    continue;
-                }
+            //    //cal run numbers
+            //    if (steps.Count != ColibriParams.Count)
+            //    {
+            //        runIterationNumber = totalIterations;
+            //        continue;
+            //    }
 
-                int step = steps[i];
-                if (step < totalCount && step > 0)
-                {
-                    runIterationNumber *= step;
-                }
-                else
-                {
-                    runIterationNumber *= totalCount;
-                }
+            //    int step = steps[i];
+            //    if (step < totalCount && step > 0)
+            //    {
+            //        runIterationNumber *= step;
+            //    }
+            //    else
+            //    {
+            //        runIterationNumber *= totalCount;
+            //    }
                 
-            }
+            //}
 
             
 
@@ -611,7 +615,7 @@ namespace Colibri.Grasshopper
             //}
 
 
-            messages = "ITERATION NUMBER \nTotal: "+ totalIterations + "\nSelected: " + runIterationNumber;
+            messages = "ITERATION NUMBER \nTotal: "+ _totalCount + "\nSelected: " + _selectedCount;
             
             return messages;
             

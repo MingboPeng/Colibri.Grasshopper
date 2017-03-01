@@ -12,18 +12,19 @@ namespace Colibri.Grasshopper
     {
 
         //InputParams objects List
-        private List<ColibriParam> inputParams;
+        private List<ColibriParam> _inputParams;
 
         public List<ColibriParam> InputParams
         {
-            get { return inputParams; }
-            set { inputParams = value; }
+            get { return _inputParams; }
+            set { _inputParams = value; }
         }
 
 
         //List of each input param's all steps index
-        private List<List<int>> allParamsSteps;
-
+        private List<List<int>> _allPositions;
+        private List<List<int>> _allSelectedPositions;
+        private int _selectedCounts;
         //public List<List<int>> InputParamsStepLists
         //{
         //    get { return inputParamsStepLists; }
@@ -31,32 +32,35 @@ namespace Colibri.Grasshopper
         //}
 
         //current each position
-        private List<int> currentStepPositions { get; set; }
+        private List<int> currentPositionsIndex { get; set; }
 
         //current counts
         public static int Count { get; private set; }
        
         // Total Iteration number int
-        public int TotalIterations { get; private set; }
+        public int _totalCounts { get; private set; }
+        
 
         private string watchFilePath { get; set; }
 
-        private IteratorSelection selections { get; set; }
+        private IteratorSelection _selections { get; set; }
 
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> SourceParams, IteratorSelection Selection, string StudyFolder)
+        public IteratorFlyParam(List<ColibriParam> sourceParams, IteratorSelection selections, string studyFolder)
         {
-            this.inputParams = SourceParams;
-            this.selections = Selection == null? new IteratorSelection():Selection;
+            this._inputParams = sourceParams;
+            this._selections = selections == null? new IteratorSelection(): selections;
 
-            this.TotalIterations = ColibriBase.CalTotalCounts(this.inputParams);
-            this.allParamsSteps = ColibriBase.AllParamsStepsIndex(this.inputParams);
-            this.currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
+            this._totalCounts = ColibriBase.CalTotalCounts(this._inputParams);
+            this._selectedCounts = _selections.SelectedCounts > 0 ? _selections.SelectedCounts : _totalCounts;
+            this._allPositions = ColibriBase.AllParamsStepsIndex(this._inputParams);
+            this._allSelectedPositions = _selections.AllParamsSelectedSteps == null? this._allPositions : _selections.AllParamsSelectedSteps;
+            this.currentPositionsIndex = Enumerable.Repeat(0, _inputParams.Count()).ToList();
             Count = 0;
             
-            createWatchFile(StudyFolder);
+            createWatchFile(studyFolder);
 
         }
 
@@ -124,27 +128,7 @@ namespace Colibri.Grasshopper
             }
         }
 
-        private bool ifInSelection(IteratorSelection Selections, int CurrentCount)
-        {
-            //Selections undefined, so all is in seleciton
-            if (!Selections.IsDefined)
-            {
-                return true;
-            }
-
-            var currentCount = (double)CurrentCount;
-            bool isInSelection = true;
-
-            if (Selections.Domains.Any())
-            {
-                foreach (var item in Selections.Domains)
-                {
-                    isInSelection = item.Value.IncludesParameter(currentCount);
-                }
-            }
-            return isInSelection;
-
-        }
+        
 
         public void FlyAll(GH_SolutionEventArgs e)
         {
@@ -158,7 +142,7 @@ namespace Colibri.Grasshopper
                 bool isRunning = true;
 
                 //watch the selection
-                bool isInSelection = ifInSelection(selections, Count);
+                bool isInSelection = ifInSelection(_selections, Count);
                 if (isInSelection)
                 {
                     //move to the next set of slider positions
@@ -172,27 +156,11 @@ namespace Colibri.Grasshopper
                 Count++;
 
 
-                isRunning = Count < TotalIterations;
-                
-                
-                
+                isRunning = Count < _selectedCounts;
+
+
+
                 //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
-
-                if (!isRunning )
-                {
-                    // study is over!
-                    try
-                    {
-                       File.Delete(watchFilePath);
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
-
-                    break;
-                }
 
                 //watch the file to stop
                 if (!string.IsNullOrEmpty(watchFilePath))
@@ -200,12 +168,21 @@ namespace Colibri.Grasshopper
                     if (!File.Exists(watchFilePath))
                     {
                         // watch file was deleted by user
-                        break;
+                        isRunning = false;
                     }
                 }
 
+                if (!isRunning )
+                {
+                    // study is over!
+                    
+                    if (File.Exists(watchFilePath))
+                    {
+                        File.Delete(watchFilePath);
+                    }
 
-                
+                    break;
+                }
                 
             }
             
@@ -213,7 +190,7 @@ namespace Colibri.Grasshopper
         public void FlyTest(GH_SolutionEventArgs e, int testNumber)
         {
             
-            if (TotalIterations<= testNumber)
+            if (_totalCounts <= testNumber)
             {
                 FlyAll(e);
                 return;
@@ -221,7 +198,7 @@ namespace Colibri.Grasshopper
 
             FirstResetAll();
 
-            int totalParamCount = inputParams.Count;
+            int totalParamCount = _inputParams.Count;
             var random = new Random();
 
             var flewID = new HashSet<string>();
@@ -230,7 +207,7 @@ namespace Colibri.Grasshopper
             {
                 //pick random input param
                 int randomParamIndex = random.Next(totalParamCount);
-                var currentInputParam = inputParams[randomParamIndex];
+                var currentInputParam = _inputParams[randomParamIndex];
 
                 //pick random step of param
                 int randomStepIndex = random.Next(currentInputParam.TotalCount);
@@ -261,16 +238,17 @@ namespace Colibri.Grasshopper
         {
 
            
-            if (MoveToParamIndex >= inputParams.Count)
+            if (MoveToParamIndex >= _inputParams.Count)
                 return false;
             
-            var currentParam = inputParams[MoveToParamIndex];
-            int currentStep = currentStepPositions[MoveToParamIndex];
-            //int nextStepPosition = currentStepPositions[MoveToParamIndex] + 1; //old
+            var currentParam = _inputParams[MoveToParamIndex];
+            var thisSelectedPositions = _allSelectedPositions[MoveToParamIndex];
+            //int currentStepPosition = currentStepPositionsIndex[MoveToParamIndex];
 
-            int nextStepPosition = allParamsSteps[MoveToParamIndex][currentStep] + 1;
+            int nextPositionIndex = currentPositionsIndex[MoveToParamIndex] + 1; 
             
-            if (nextStepPosition < currentParam.TotalCount)
+
+            if (nextPositionIndex < thisSelectedPositions.Count)
             {
                 //Figure out which step to fly to...
 
@@ -279,29 +257,28 @@ namespace Colibri.Grasshopper
 
                 //calClosestTick();
 
-
+                int nextPosition = thisSelectedPositions[nextPositionIndex];
                 //The current component is already at the maximum value. Reset it back to zero.
-                currentParam.SetParamTo(nextStepPosition);
+                currentParam.SetParamTo(nextPosition);
                 //currentInputParam.SetToNext();
 
                 //Increment the current step position
-                this.currentStepPositions[MoveToParamIndex]++;
+                this.currentPositionsIndex[MoveToParamIndex]++ ;
                 
                 return true;
             }else
             {
-
-                currentParam.Reset();
-                
+                //currentParam.Reset();
+                currentParam.SetParamTo(thisSelectedPositions.First());
 
                 ////set our slider steps position back to 0
-                this.currentStepPositions[MoveToParamIndex] = 0;
+                this.currentPositionsIndex[MoveToParamIndex] = 0;
 
                 //// Move on to the next slider.
                 MoveToParamIndex++;
                 //System.Windows.Forms.MessageBox.Show("index++"+MoveToIndex.ToString());
                 //// If we've run out of sliders to modify, we're done permutatin'
-                if (MoveToParamIndex >= inputParams.Count)
+                if (MoveToParamIndex >= _inputParams.Count)
                     return false;
                 
                 return MoveToNextPermutation(ref MoveToParamIndex);
@@ -332,11 +309,33 @@ namespace Colibri.Grasshopper
             return 0;
         }
 
-        private bool isInSelection(List<int> FlyIndexID)
+        private bool ifInSelection(IteratorSelection Selections, int CurrentCount)
         {
+            //Selections undefined, so all is in seleciton
+            if (!Selections.IsDefined)
+            {
+                return true;
+            }
 
-            return true;
+            var currentCount = (double)CurrentCount;
+            bool isInSelection = true;
+
+            if (Selections.Domains.Any())
+            {
+                foreach (var item in Selections.Domains)
+                {
+                    isInSelection = item.Value.IncludesParameter(currentCount);
+                }
+            }
+            return isInSelection;
+
         }
+
+        //private bool isInSelection(List<int> FlyIndexID)
+        //{
+
+        //    return true;
+        //}
 
         #endregion
 
