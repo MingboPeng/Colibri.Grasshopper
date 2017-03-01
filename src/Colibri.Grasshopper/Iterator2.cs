@@ -346,6 +346,7 @@ namespace Colibri.Grasshopper
             filteredSources.RemoveAll(item => item == null);
             filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
 
+            
             //checked if Aggregator is recording and the last
             if (!isAggregatorReady())
             {
