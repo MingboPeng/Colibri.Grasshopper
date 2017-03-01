@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace Colibri.Grasshopper
 {
-    public class ColibriParameterAttributes : GH_ComponentAttributes
+    public class IteratorAttributes : GH_ComponentAttributes
     {
         
         //public string btnText;
@@ -61,7 +61,7 @@ namespace Colibri.Grasshopper
         }
 
 
-        public ColibriParameterAttributes(GH_Component owner):base(owner)
+        public IteratorAttributes(GH_Component owner):base(owner)
         {
             this.btnText = "Settings";
         }

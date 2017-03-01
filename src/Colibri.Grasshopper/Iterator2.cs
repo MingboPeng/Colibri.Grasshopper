@@ -134,7 +134,7 @@ namespace Colibri.Grasshopper
         {
             isTestFly = !isTestFly;
 
-            var att = this.Attributes as ColibriParameterAttributes;
+            var att = this.Attributes as IteratorAttributes;
             if (isTestFly)
             {
                 att.ButtonText = "Fly Test";            }
@@ -323,7 +323,7 @@ namespace Colibri.Grasshopper
         
         public override void CreateAttributes()
         {
-            var newButtonAttribute = new ColibriParameterAttributes(this) { ButtonText = "Fly"};
+            var newButtonAttribute = new IteratorAttributes(this) { ButtonText = "Fly"};
             newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
             m_attributes = newButtonAttribute;
             
@@ -568,6 +568,7 @@ namespace Colibri.Grasshopper
                 }
             }
 
+            runIterationNumber = Selections.MatchSelectionFrom(ColibriParams);
 
             //todo: cal steps to match  ColibriParams numbers
             for (int i = 0; i < ColibriParams.Count; i++)

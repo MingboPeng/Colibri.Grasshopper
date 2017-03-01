@@ -58,5 +58,45 @@ namespace Colibri.Grasshopper
             return DesignExplorerData;
 
         }
+
+
+        public static int CalTotalCounts(List<ColibriParam> ColibriParams)
+        {
+            int totalIterations = 1;
+
+            foreach (var item in ColibriParams)
+            {
+                //Cal total number of iterations
+                int count = item.TotalCount;
+
+                if (count > 0)
+                {
+                    totalIterations *= count;
+                }
+
+            }
+
+            return totalIterations;
+        }
+
+        //to get all params' all steps' indexes 
+        public static List<List<int>> AllParamsStepsIndex(List<ColibriParam> ColibriParams)
+        {
+            var stepsList = new List<List<int>>();
+            foreach (var item in ColibriParams)
+            {
+                int totalCount = item.TotalCount;
+                if (totalCount > 0)
+                {
+                    var SetpList = Enumerable.Range(0, totalCount).ToList();
+                    stepsList.Add(SetpList);
+                }
+            }
+            return stepsList;
+            //inputParamsStepLists = stepLists;
+        }
+
+
     }
+    
 }

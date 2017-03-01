@@ -51,8 +51,8 @@ namespace Colibri.Grasshopper
             this.inputParams = SourceParams;
             this.selections = Selection == null? new IteratorSelection():Selection;
 
-            this.TotalIterations = calTotalIterations(this.inputParams);
-            this.allParamsSteps = iniAllParamsStepsList(this.inputParams);
+            this.TotalIterations = ColibriBase.CalTotalCounts(this.inputParams);
+            this.allParamsSteps = ColibriBase.AllParamsStepsIndex(this.inputParams);
             this.currentStepPositions = Enumerable.Repeat(0, inputParams.Count()).ToList();
             Count = 0;
             
@@ -64,39 +64,39 @@ namespace Colibri.Grasshopper
         #region Methods
 
         //to get all params' all steps' indexes 
-        private List<List<int>> iniAllParamsStepsList(List<ColibriParam> ColibriParams)
-        {
-            var stepsList = new List<List<int>>();
-            foreach (var item in ColibriParams)
-            {
-                int totalCount = item.TotalCount;
-                if (totalCount >0)
-                {
-                    var SetpList = Enumerable.Range(0, totalCount).ToList();
-                    stepsList.Add(SetpList);
-                }
-            }
-            return stepsList;
-            //inputParamsStepLists = stepLists;
-        }
+        //private List<List<int>> iniAllParamsStepsList(List<ColibriParam> ColibriParams)
+        //{
+        //    var stepsList = new List<List<int>>();
+        //    foreach (var item in ColibriParams)
+        //    {
+        //        int totalCount = item.TotalCount;
+        //        if (totalCount >0)
+        //        {
+        //            var SetpList = Enumerable.Range(0, totalCount).ToList();
+        //            stepsList.Add(SetpList);
+        //        }
+        //    }
+        //    return stepsList;
+        //    //inputParamsStepLists = stepLists;
+        //}
 
-        private int calTotalIterations(List<ColibriParam> ColibriParams)
-        {
+        //private int calTotalIterations(List<ColibriParam> ColibriParams)
+        //{
             
-            int countSum = 1;
+        //    int countSum = 1;
             
-            foreach (var item in ColibriParams)
-            {
-                int totalCount = item.TotalCount;
-                if (totalCount > 0)
-                {
-                    countSum *= totalCount;
-                }
-            }
+        //    foreach (var item in ColibriParams)
+        //    {
+        //        int totalCount = item.TotalCount;
+        //        if (totalCount > 0)
+        //        {
+        //            countSum *= totalCount;
+        //        }
+        //    }
 
-            return countSum;
+        //    return countSum;
 
-        }
+        //}
         
         //create a watch file 
         private void createWatchFile(string FolderPath)

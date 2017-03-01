@@ -7,67 +7,7 @@ using Grasshopper.Kernel.Types;
 
 namespace Colibri.Grasshopper
 {
-    public class IteratorSelection
-    {
-        public bool IsDefined { get; private set; }
-        public List<int>Steps { get; private set; }
-        public List<GH_Interval> Domains { get; private set; }
-        public int SelectedCounts { get; private set; }
-
-        //Construction
-        public IteratorSelection()
-        {
-            this.IsDefined = false;
-        }
-        public IteratorSelection(List<int> Steps, List<GH_Interval> Domains)
-        {
-            this.IsDefined = true;
-            this.Steps = Steps;
-            this.Domains = Domains;
-            //this.SelectedCounts = calSelectedCounts(Steps, Domains);
-        }
-
-        //Method
-        //private int calSelectedCounts(List<int> Steps, List<GH_Interval> Domains)
-        //{
-        //    int totalIterations = 1;
-
-        //    foreach (var item in Steps)
-        //    {
-        //        int totalCount = item.TotalCount;
-        //        if (totalCount > 0)
-        //        {
-        //            totalIterations *= totalCount;
-        //        }
-        //    }
-        //    return 0;
-        //}
-
-        //override
-        public override string ToString()
-        {
-            if (!IsDefined)
-            {
-                return null;
-            }
-
-            string outString="";
-            if (Steps.Count!=0)
-            {
-                outString += "Take:" + Steps.Count+"\n";
-            }
-
-            if (Domains.Count != 0)
-            {
-                outString += "\nDomain:" + Domains.Count + "\n"; ;
-            }
-
-            return outString;
-
-        }
-
-    }
-
+    
     public class SetSelection : GH_Component
     {
         /// <summary>
