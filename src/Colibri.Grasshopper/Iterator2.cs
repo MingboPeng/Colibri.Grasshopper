@@ -558,64 +558,26 @@ namespace Colibri.Grasshopper
             var domains = new List<GH_Interval>();
             string messages = "";
 
-            if (Selections.IsDefined)
+            if (Selections.IsDefinedInSel)
             {
-                steps = Selections.Positions;
+                steps = Selections.PositionNumbers;
                 domains = Selections.Domains;
 
                 if (steps.Count != 0 && steps.Count != ColibriParams.Count)
                 {
                     //_selectedCount = _totalCount;
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
+                    return null;
+
                 }
+                
             }
 
             Selections.MatchSelectionFrom(ColibriParams);
             _totalCount = Selections.TotalCounts;
             _selectedCount = Selections.SelectedCounts;
-
-            //todo: cal steps to match  ColibriParams numbers
-            //for (int i = 0; i < ColibriParams.Count; i++)
-            //{
-            //    //Cal total number of iterations
-            //    int totalCount = ColibriParams[i].TotalCount>0 ? ColibriParams[i].TotalCount:0;
-            //    totalIterations *= totalCount;
-
-            //    //cal run numbers
-            //    if (steps.Count != ColibriParams.Count)
-            //    {
-            //        runIterationNumber = totalIterations;
-            //        continue;
-            //    }
-
-            //    int step = steps[i];
-            //    if (step < totalCount && step > 0)
-            //    {
-            //        runIterationNumber *= step;
-            //    }
-            //    else
-            //    {
-            //        runIterationNumber *= totalCount;
-            //    }
-                
-            //}
-
             
-
-            //if (domains.Count >0)
-            //{
-            //    foreach (var item in domains)
-            //    {
-            //        var isIncluded = item.Value.IncludesParameter(runIterationNumber);
-            //        if (isIncluded)
-            //        {
-
-            //        }
-            //    }
-            //}
-
-
-            messages = "ITERATION NUMBER \nTotal: "+ _totalCount + "\nSelected: " + _selectedCount;
+            messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
             
             return messages;
             

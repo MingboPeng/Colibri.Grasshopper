@@ -27,11 +27,12 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Take", "Take", "Number of steps to TAKE on each Slider, ValueList or Panel.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\nIf no input data is provided, we'll use every tick on every slider as a step.", GH_ParamAccess.list);
+            pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iterations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntervalParameter("Domains", "Domains", "Ranges for the Iterator selection, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Take", "Take", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\nIf no input data is provided, we'll use every tick on every slider as a step.", GH_ParamAccess.list);
             pManager[1].Optional = true;
+            
         }
 
         /// <summary>
@@ -48,23 +49,23 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var steps = new List<int>();
+            var positions = new List<int>();
             var ranges = new List<GH_Interval>();
 
             //get Data
-            DA.GetDataList(0, steps);
-            DA.GetDataList(1, ranges);
+            DA.GetDataList(1, positions);
+            DA.GetDataList(0, ranges);
 
             foreach (var item in ranges)
             {
                 if (item.Value.Min<0 ||item.Value.Max ==0)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Selection domain should within or equal (min:0 TO max:total)");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Domain should within or equal (min:0 TO max:total)");
                     return;
                 }
 
             }
-            var selections = new IteratorSelection(steps, ranges);
+            var selections = new IteratorSelection(positions, ranges);
 
             //set Data
             DA.SetData(0, selections);

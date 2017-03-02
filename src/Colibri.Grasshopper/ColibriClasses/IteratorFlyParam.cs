@@ -56,7 +56,7 @@ namespace Colibri.Grasshopper
             this._totalCounts = ColibriBase.CalTotalCounts(this._inputParams);
             this._selectedCounts = _selections.SelectedCounts > 0 ? _selections.SelectedCounts : _totalCounts;
             this._allPositions = ColibriBase.AllParamsStepsIndex(this._inputParams);
-            this._allSelectedPositions = _selections.AllParamsSelectedSteps == null? this._allPositions : _selections.AllParamsSelectedSteps;
+            this._allSelectedPositions = _selections.ParamsSelectedPositions == null? this._allPositions : _selections.ParamsSelectedPositions;
             this.currentPositionsIndex = Enumerable.Repeat(0, _inputParams.Count()).ToList();
             Count = 0;
             
@@ -312,7 +312,7 @@ namespace Colibri.Grasshopper
         private bool ifInSelection(IteratorSelection Selections, int CurrentCount)
         {
             //Selections undefined, so all is in seleciton
-            if (!Selections.IsDefined)
+            if (!Selections.IsDefinedInSel)
             {
                 return true;
             }
