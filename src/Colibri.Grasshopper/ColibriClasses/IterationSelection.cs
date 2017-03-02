@@ -10,20 +10,19 @@ namespace Colibri.Grasshopper
     public class IteratorSelection
     {
         public bool IsDefinedInSel { get; private set; }
-
         
         public int SelectedCounts { get; private set; }
         public int TotalCounts { get; private set; }
 
-        public List<int> PositionNumbers
+        public List<int> ParamsPositionNumbers
         {
-            get { return _positionNumbers; }
-            private set { _positionNumbers = value; }
+            get { return _paramsPositionNumbers; }
+            private set { _paramsPositionNumbers = value; }
         }
         public List<GH_Interval> Domains
         {
             get { return _domains; }
-            private set { _domains = value; }
+            set { _domains = value; }
         }
         public List<List<int>> ParamsSelectedPositions
         {
@@ -31,10 +30,14 @@ namespace Colibri.Grasshopper
             private set { }
         }
 
-        private List<int> _positionNumbers;
+        private List<int> _paramsPositionNumbers;
         private List<GH_Interval> _domains;
         private List<List<int>> _paramsPositions;
         private List<List<int>> _paramsSelectedPositions;
+
+        //the entire range domain, from 0 the last
+        private GH_Interval _totalDomain;
+
 
         //Construction
         public IteratorSelection()
@@ -45,7 +48,7 @@ namespace Colibri.Grasshopper
         {
             //is defined in Selection component
             this.IsDefinedInSel = true;
-            this._positionNumbers = takeNumbers;
+            this._paramsPositionNumbers = takeNumbers;
             this._domains = domains;
         }
 
@@ -57,9 +60,12 @@ namespace Colibri.Grasshopper
         {
             this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
 
+            this._totalDomain = new GH_Interval(new Rhino.Geometry.Interval(0,this.TotalCounts));
+            this._domains = iniDomains(this._domains, this._totalDomain);
+
             this._paramsPositions = ColibriBase.AllParamsStepsIndex(ColibriParams);
-            this._positionNumbers = iniPositionNumbers(this._positionNumbers, ColibriParams);
-            this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._positionNumbers, ColibriParams);
+            this._paramsPositionNumbers = iniPositionNumbers(this._paramsPositionNumbers, ColibriParams);
+            this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsPositionNumbers, ColibriParams);
 
             this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions);
         }
@@ -129,6 +135,7 @@ namespace Colibri.Grasshopper
 
         private List<List<int>> calParamsSelectedPositions(List<List<int>> paramsPositions, List<int> selectedPositionNumbers, List<ColibriParam> ColibriParams)
         {
+            
             int paramCounts = paramsPositions.Count;
             var paramsSelectedPositions = new List<List<int>>();
 
@@ -204,6 +211,22 @@ namespace Colibri.Grasshopper
             return positionNumbers;
             
         }
+        private List<GH_Interval> iniDomains(List<GH_Interval> oldDomains, GH_Interval totalDomain)
+        {
+            var domains = new List<GH_Interval>();
+            if (oldDomains == null || !oldDomains.Any())
+            {
+                domains.Add(totalDomain);
+            }
+            else
+            {
+                domains = oldDomains;
+            }
+
+            
+            return domains;
+
+        }
 
         //private int calSelectedCounts(List<int> Steps, List<GH_Interval> Domains)
         //{
@@ -230,9 +253,9 @@ namespace Colibri.Grasshopper
             }
 
             string outString = "";
-            if (_positionNumbers.Count != 0)
+            if (_paramsPositionNumbers.Count != 0)
             {
-                outString += "Take:" + _positionNumbers.Count + "\n";
+                outString += "Take:" + _paramsPositionNumbers.Count + "\n";
             }
 
             if (Domains.Count != 0)

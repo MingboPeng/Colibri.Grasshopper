@@ -368,14 +368,15 @@ namespace Colibri.Grasshopper
             }
 
             
-            int testIterationNumber = _totalCount;
-            int totalIterationNumber = _selectedCount;
+            int testIterationNumber = _selectedCount;
+            //int totalIterationNumber = _totalCount;
+
             if (isTestFly)
             {
                 testIterationNumber = 3;
             }
             var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
-                  "\n\n" + testIterationNumber + " (out of "+ totalIterationNumber + ") iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
+                  "\n\n" + testIterationNumber + " (out of "+ _totalCount + ") iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
 
             if (userClick == DialogResult.Yes)
             {
@@ -552,35 +553,76 @@ namespace Colibri.Grasshopper
             {
                 return null;
             }
-            
-            
-            var steps = new List<int>();
-            var domains = new List<GH_Interval>();
+
+            _totalCount = ColibriBase.CalTotalCounts(ColibriParams);
             string messages = "";
-
-            if (Selections.IsDefinedInSel)
+            
+            //Check selections
+            var isSelectionOK = checkSelections(Selections, ColibriParams.Count, _totalCount);
+            if (!isSelectionOK)
             {
-                steps = Selections.PositionNumbers;
-                domains = Selections.Domains;
-
-                if (steps.Count != 0 && steps.Count != ColibriParams.Count)
-                {
-                    //_selectedCount = _totalCount;
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
-                    return null;
-
-                }
-                
+                return null;
             }
 
+
+            //this will check and add take_numbers and domains
             Selections.MatchSelectionFrom(ColibriParams);
-            _totalCount = Selections.TotalCounts;
+            //_totalCount = Selections.TotalCounts;
             _selectedCount = Selections.SelectedCounts;
-            
+
             messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
             
             return messages;
             
+        }
+
+        private bool checkSelections(IteratorSelection selections,int inputSourceCount, int totalCount)
+        {
+            var takeNumbers = new List<int>();
+            var domains = new List<GH_Interval>();
+
+            if (Selections.IsDefinedInSel)
+            {
+                takeNumbers = Selections.ParamsPositionNumbers;
+                domains = Selections.Domains;
+
+                //check take numbers for each parameters
+                if (takeNumbers.Any() && takeNumbers.Count != inputSourceCount)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
+                    return false;
+                }
+
+
+                //Check domains if any of their max is out of range (the min is checked in Selection component)
+                if (domains.Any())
+                {
+                    var checkedDomains = new List<GH_Interval>();
+                    foreach (var item in domains)
+                    {
+
+                        if (item.Value.Max > totalCount - 1)
+                        {
+
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "One of domains' max number cannot be greater than the total number.\n But Colibri has fixed it.");
+                            var newDomain = new GH_Interval(new Rhino.Geometry.Interval(item.Value.Min, totalCount - 1));
+                            checkedDomains.Add(newDomain);
+                        }
+                        else
+                        {
+                            checkedDomains.Add(item);
+                        }
+
+
+                    }
+                }
+
+            }
+
+
+            return true;
+
+
         }
 
         #endregion
