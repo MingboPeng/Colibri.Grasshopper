@@ -87,9 +87,9 @@ namespace Colibri.Grasshopper
 
             if (filteredSources.Count >0 && !Running)
             {
+                this.Selections = null;
                 var selections = new IteratorSelection();
                 DA.GetData(this.Params.Input.Count-1,ref selections);
-
                 this.Selections = selections;
                 this.Message = updateComponentMsg(filteredSources, selections);
             }

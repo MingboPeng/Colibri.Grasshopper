@@ -67,6 +67,7 @@ namespace Colibri.Grasshopper
             this._paramsPositionNumbers = iniPositionNumbers(this._paramsPositionNumbers, ColibriParams);
             this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsPositionNumbers, ColibriParams);
 
+           
             this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions);
         }
 
@@ -133,17 +134,50 @@ namespace Colibri.Grasshopper
             return runIterationNumber;
         }
 
+        
+
+        private List<int> iniPositionNumbers(List<int> oldPositionNumbers, List<ColibriParam> colibriParams)
+        {
+            var positionNumbers = new List<int>();
+            if (oldPositionNumbers == null || !oldPositionNumbers.Any())
+            {
+                positionNumbers = Enumerable.Repeat(0, colibriParams.Count()).ToList();
+            }
+            else
+            {
+                positionNumbers = oldPositionNumbers;
+            }
+            return positionNumbers;
+            
+        }
+        private List<GH_Interval> iniDomains(List<GH_Interval> oldDomains, GH_Interval totalDomain)
+        {
+            var domains = new List<GH_Interval>();
+            if (oldDomains == null || !oldDomains.Any())
+            {
+                domains.Add(totalDomain);
+            }
+            else
+            {
+                domains = oldDomains;
+            }
+
+            
+            return domains;
+
+        }
+
         private List<List<int>> calParamsSelectedPositions(List<List<int>> paramsPositions, List<int> selectedPositionNumbers, List<ColibriParam> ColibriParams)
         {
-            
+
             int paramCounts = paramsPositions.Count;
             var paramsSelectedPositions = new List<List<int>>();
 
             for (int p = 0; p < paramCounts; p++)
             {
                 //var selStepIndex = new List<int>();
-                
-                
+
+
                 var positionList = paramsPositions[p];
                 int totalPositionNumber = positionList.Count;
                 int positionNumber = Math.Min(selectedPositionNumbers[p], totalPositionNumber);
@@ -197,36 +231,45 @@ namespace Colibri.Grasshopper
             return paramsSelectedPositions;
         }
 
-        private List<int> iniPositionNumbers(List<int> oldPositionNumbers, List<ColibriParam> colibriParams)
-        {
-            var positionNumbers = new List<int>();
-            if (oldPositionNumbers == null || !oldPositionNumbers.Any())
-            {
-                positionNumbers = Enumerable.Repeat(0, colibriParams.Count()).ToList();
-            }
-            else
-            {
-                positionNumbers = oldPositionNumbers;
-            }
-            return positionNumbers;
-            
-        }
-        private List<GH_Interval> iniDomains(List<GH_Interval> oldDomains, GH_Interval totalDomain)
-        {
-            var domains = new List<GH_Interval>();
-            if (oldDomains == null || !oldDomains.Any())
-            {
-                domains.Add(totalDomain);
-            }
-            else
-            {
-                domains = oldDomains;
-            }
+        //private List<List<int>> calPatamsPositionsOnDomains(List<List<int>> paramsPositions, List<GH_Interval> domains)
+        //{
+        //    int count = 0;
+        //    var rangedParamsPositions = new List<List<int>>();
 
-            
-            return domains;
+        //    foreach (var paramPositions in paramsPositions)
+        //    {
 
-        }
+
+        //        rangedParamsPositions.Add(new List<int>());
+        //        foreach (var position in paramPositions)
+        //        {
+
+        //            //check each position in each domain
+        //            foreach (var domain in domains)
+        //            {
+        //                if (domain.Value.IncludesParameter(position))
+        //                {
+        //                    rangedParamsPositions.Last().Add(position);
+        //                }
+        //            }
+
+
+
+        //            count++;
+        //        }
+
+
+
+
+
+        //    }
+
+
+
+        //    return rangedParamsPositions;
+        //}
+
+
 
         //private int calSelectedCounts(List<int> Steps, List<GH_Interval> Domains)
         //{
@@ -242,7 +285,7 @@ namespace Colibri.Grasshopper
         //    }
         //    return 0;
         //}
-        
+
 
         //override
         public override string ToString()

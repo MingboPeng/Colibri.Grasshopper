@@ -66,41 +66,6 @@ namespace Colibri.Grasshopper
 
 
         #region Methods
-
-        //to get all params' all steps' indexes 
-        //private List<List<int>> iniAllParamsStepsList(List<ColibriParam> ColibriParams)
-        //{
-        //    var stepsList = new List<List<int>>();
-        //    foreach (var item in ColibriParams)
-        //    {
-        //        int totalCount = item.TotalCount;
-        //        if (totalCount >0)
-        //        {
-        //            var SetpList = Enumerable.Range(0, totalCount).ToList();
-        //            stepsList.Add(SetpList);
-        //        }
-        //    }
-        //    return stepsList;
-        //    //inputParamsStepLists = stepLists;
-        //}
-
-        //private int calTotalIterations(List<ColibriParam> ColibriParams)
-        //{
-            
-        //    int countSum = 1;
-            
-        //    foreach (var item in ColibriParams)
-        //    {
-        //        int totalCount = item.TotalCount;
-        //        if (totalCount > 0)
-        //        {
-        //            countSum *= totalCount;
-        //        }
-        //    }
-
-        //    return countSum;
-
-        //}
         
         //create a watch file 
         private void createWatchFile(string FolderPath)
@@ -141,13 +106,14 @@ namespace Colibri.Grasshopper
                 int currentParamIndex = 0;
                 bool isRunning = true;
 
+                
+                //move to the next set of slider positions
+                isRunning = MoveToNextPermutation(ref currentParamIndex);
+
                 //watch the selection
-                bool isInSelection = ifInSelection(_selections, Count);
+                bool isInSelection = ifInSelectionDomains(_selections, Count);
                 if (isInSelection)
                 {
-                    //move to the next set of slider positions
-                    isRunning = MoveToNextPermutation(ref currentParamIndex);
-                    
 
                     // We've just got a new valid permutation. Solve the new solution.
                     e.Document.NewSolution(false);
@@ -180,7 +146,7 @@ namespace Colibri.Grasshopper
                     {
                         File.Delete(watchFilePath);
                     }
-
+                    e.Document.NewSolution(false);
                     break;
                 }
                 
@@ -258,9 +224,15 @@ namespace Colibri.Grasshopper
                 //calClosestTick();
 
                 int nextPosition = thisSelectedPositions[nextPositionIndex];
-                //The current component is already at the maximum value. Reset it back to zero.
-                currentParam.SetParamTo(nextPosition);
-                //currentInputParam.SetToNext();
+
+                
+                    //The current component is already at the maximum value. Reset it back to zero.
+
+                    currentParam.SetParamTo(nextPosition);
+                    //currentInputParam.SetToNext();
+                
+
+
 
                 //Increment the current step position
                 this.currentPositionsIndex[MoveToParamIndex]++ ;
@@ -309,7 +281,7 @@ namespace Colibri.Grasshopper
             return 0;
         }
 
-        private bool ifInSelection(IteratorSelection Selections, int CurrentCount)
+        private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
         {
             //Selections undefined, so all is in seleciton
             if (!Selections.IsDefinedInSel)
@@ -322,9 +294,9 @@ namespace Colibri.Grasshopper
 
             if (Selections.Domains.Any())
             {
-                foreach (var item in Selections.Domains)
+                foreach (var domain in Selections.Domains)
                 {
-                    isInSelection = item.Value.IncludesParameter(currentCount);
+                    isInSelection = domain.Value.IncludesParameter(currentCount);
                 }
             }
             return isInSelection;
