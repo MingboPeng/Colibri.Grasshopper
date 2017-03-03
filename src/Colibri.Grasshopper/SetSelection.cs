@@ -14,7 +14,7 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the IteratorSelection class.
         /// </summary>
         public SetSelection()
-          : base("Fly Selection", "Sel",
+          : base("Iteration Selection", "Sel",
               "Generates iteration selections for Iterator.",
               "TT Toolbox", "Colibri")
         {
@@ -30,7 +30,7 @@ namespace Colibri.Grasshopper
             pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iterations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntegerParameter("Take", "Take", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\nIf no input data is provided, we'll use every tick on every slider as a step.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\n 0.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
@@ -40,7 +40,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Selections", "Sel", "Selections for Iterator", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Selections", "Selec", "Selections for Iterator", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -49,11 +49,11 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var positions = new List<int>();
+            var takeNumbers = new List<int>();
             var ranges = new List<GH_Interval>();
 
             //get Data
-            DA.GetDataList(1, positions);
+            DA.GetDataList(1, takeNumbers);
             DA.GetDataList(0, ranges);
 
             foreach (var item in ranges)
@@ -65,7 +65,19 @@ namespace Colibri.Grasshopper
                 }
 
             }
-            var selections = new IteratorSelection(positions, ranges);
+
+            //Both two Domain and Take are set by user
+            //give a warning, and remove take
+            if (!takeNumbers.IsNullOrEmpty() && !ranges.IsNullOrEmpty())
+            {
+                
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "I am confused by what your settings, please use either Domain or Take, (Not both). \n  But Colibri will remove \"Take\" settings to keep the entire workflow runs successfully.");
+
+                //remove takeNumbers
+                takeNumbers = new List<int>();
+            }
+
+            var selections = new IteratorSelection(takeNumbers, ranges);
 
             //set Data
             DA.SetData(0, selections);

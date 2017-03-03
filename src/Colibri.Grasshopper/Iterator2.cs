@@ -50,7 +50,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter("Selections", "Sel", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Selections", "Selec", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 
@@ -73,7 +73,9 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            
+            this.Selections = new IteratorSelection();
+            DA.GetData(this.Params.Input.Count - 1, ref this.Selections);
+
             //var filteredSources = FilterSources();
 
             //Dictionary<string, string> FlyID = new Dictionary<string, string>();
@@ -85,13 +87,9 @@ namespace Colibri.Grasshopper
                 filteredSources = gatherSources();
             }
 
-            if (filteredSources.Count >0 && !Running)
+            if (!Running)
             {
-                this.Selections = null;
-                var selections = new IteratorSelection();
-                DA.GetData(this.Params.Input.Count-1,ref selections);
-                this.Selections = selections;
-                this.Message = updateComponentMsg(filteredSources, selections);
+                this.Message = updateComponentMsg(filteredSources, this.Selections);
             }
             
             //bool isRunning = Run || Running;
@@ -503,8 +501,7 @@ namespace Colibri.Grasshopper
                 {
                     return;
                 }
-
-
+                
                 // add a new input param while the second last input is not empty
                 if (!isSecondLastEmptySource)
                 {
@@ -549,12 +546,17 @@ namespace Colibri.Grasshopper
 
         private string updateComponentMsg(List<ColibriParam> ColibriParams, IteratorSelection Selections)
         {
-            if (ColibriParams == null)
+            
+            if (ColibriParams.IsNullOrEmpty())
             {
                 return null;
             }
+            
 
-            _totalCount = ColibriBase.CalTotalCounts(ColibriParams);
+            //this will check and add take_numbers and domains
+            Selections.MatchSelectionFrom(ColibriParams);
+            _totalCount = Selections.TotalCounts;
+            _selectedCount = Selections.SelectedCounts;
             string messages = "";
             
             //Check selections
@@ -563,15 +565,19 @@ namespace Colibri.Grasshopper
             {
                 return null;
             }
-
-
-            //this will check and add take_numbers and domains
-            Selections.MatchSelectionFrom(ColibriParams);
-            //_totalCount = Selections.TotalCounts;
-            _selectedCount = Selections.SelectedCounts;
-
-            messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
             
+            messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
+
+            if (Selections.IsDefinedInSel)
+            {
+                messages += "\n\n-----SELECTION-----\n";
+                messages += Selections.ToString(true);
+            }
+            
+
+
+
+
             return messages;
             
         }
@@ -579,42 +585,35 @@ namespace Colibri.Grasshopper
         private bool checkSelections(IteratorSelection selections,int inputSourceCount, int totalCount)
         {
             var takeNumbers = new List<int>();
-            var domains = new List<GH_Interval>();
+            var userDomains = new List<GH_Interval>();
 
             if (Selections.IsDefinedInSel)
             {
                 takeNumbers = Selections.ParamsPositionNumbers;
-                domains = Selections.Domains;
+                userDomains = Selections.UserDomains;
 
                 //check take numbers for each parameters
                 if (takeNumbers.Any() && takeNumbers.Count != inputSourceCount)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "The number of connected sliders must be equal to the number of items in the Steps input list.\n But Colibri will run all iterations in this case.");
                     return false;
                 }
 
 
                 //Check domains if any of their max is out of range (the min is checked in Selection component)
-                if (domains.Any())
+                if (userDomains.Any())
                 {
-                    var checkedDomains = new List<GH_Interval>();
-                    foreach (var item in domains)
+                    foreach (var item in userDomains)
                     {
 
-                        if (item.Value.Max > totalCount - 1)
+                        if (item.Value.Max > totalCount-1)
                         {
-
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "One of domains' max number cannot be greater than the total number.\n But Colibri has fixed it.");
-                            var newDomain = new GH_Interval(new Rhino.Geometry.Interval(item.Value.Min, totalCount - 1));
-                            checkedDomains.Add(newDomain);
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Domains' max number should be smaller than the total number " + totalCount + ".\n Colibri has fixed it for you.");
                         }
-                        else
-                        {
-                            checkedDomains.Add(item);
-                        }
-
-
+                        
                     }
+
+                   
                 }
 
             }

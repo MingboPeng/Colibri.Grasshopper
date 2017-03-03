@@ -24,11 +24,13 @@ namespace Colibri.Grasshopper
             get { return _domains; }
             set { _domains = value; }
         }
+        
         public List<List<int>> ParamsSelectedPositions
         {
             get { return _paramsSelectedPositions; }
             private set { }
         }
+
 
         private List<int> _paramsPositionNumbers;
         private List<GH_Interval> _domains;
@@ -38,6 +40,10 @@ namespace Colibri.Grasshopper
         //the entire range domain, from 0 the last
         private GH_Interval _totalDomain;
 
+        //User inputs
+        public List<GH_Interval> UserDomains { get { return _userDomains; } private set { } }
+        private List<GH_Interval> _userDomains;
+        private List<int> _userParamsPositionNumbers;
 
         //Construction
         public IteratorSelection()
@@ -47,9 +53,21 @@ namespace Colibri.Grasshopper
         public IteratorSelection(List<int> takeNumbers, List<GH_Interval> domains)
         {
             //is defined in Selection component
-            this.IsDefinedInSel = true;
-            this._paramsPositionNumbers = takeNumbers;
-            this._domains = domains;
+            
+            this._userParamsPositionNumbers = takeNumbers;
+            this._userDomains = domains;
+
+            //Both are empty 
+            if (_userParamsPositionNumbers.IsNullOrEmpty() && _userDomains.IsNullOrEmpty())
+            {
+                this.IsDefinedInSel = false;
+            }
+            else
+            {
+                //this._paramsPositionNumbers = _userParamsPositionNumbers;
+                //this._domains = _userDomains;
+                this.IsDefinedInSel = true;
+            }
         }
 
         
@@ -60,15 +78,15 @@ namespace Colibri.Grasshopper
         {
             this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
 
-            this._totalDomain = new GH_Interval(new Rhino.Geometry.Interval(0,this.TotalCounts));
-            this._domains = iniDomains(this._domains, this._totalDomain);
+            this._totalDomain = new GH_Interval(new Rhino.Geometry.Interval(0,this.TotalCounts-1));
+            this._domains = iniDomains(this._userDomains, this._totalDomain);
 
             this._paramsPositions = ColibriBase.AllParamsStepsIndex(ColibriParams);
-            this._paramsPositionNumbers = iniPositionNumbers(this._paramsPositionNumbers, ColibriParams);
+            this._paramsPositionNumbers = iniPositionNumbers(this._userParamsPositionNumbers, ColibriParams);
             this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsPositionNumbers, ColibriParams);
 
            
-            this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions);
+            this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions, this._domains);
         }
 
         //private void iniColibriParams(List<ColibriParam> ColibriParams)
@@ -76,50 +94,24 @@ namespace Colibri.Grasshopper
             
         //}
 
-        private int calSelectedTotalCount(List<List<int>> SelAllParamsSteps)
+        private int calSelectedTotalCount(List<List<int>> allParamsSelectedPositions, List<GH_Interval> domains)
         {
-            var selAllParamsSteps = SelAllParamsSteps;
-            //var fullSteps = new List<int>();
-            //foreach (var item in this.allParamsSteps)
-            //{
-            //    fullSteps.Add(item.Count);
+            int selectedTotal = 0;
 
-            //}
-
-            int runIterationNumber = 1;
-
-            //OLd
-
-            //if (Steps.Count == fullSteps.Count)
-            //{
-
-            //    for (int i = 0; i < fullSteps.Count; i++)
-            //    {
-            //        //todo: cal steps to match  ColibriParams numbers
-
-            //        //cal run numbers
-            //        int step = Steps[i];
-            //        int fullStep = fullSteps[i];
-
-            //        if (step < fullStep && step > 0)
-            //        {
-            //            runIterationNumber *= step;
-            //        }
-            //        else
-            //        {
-            //            runIterationNumber *= fullStep;
-            //        }
-
-            //    }
-            //}
-            //else
-            //{
-            //    runIterationNumber = this.TotalCounts;
-            //}
-
-            if (selAllParamsSteps.Count == this._paramsPositions.Count)
+            //Total count from Domains
+            int totalDomainsLength = 0;
+            foreach (var item in domains)
             {
-                foreach (var item in selAllParamsSteps)
+                totalDomainsLength += (int)item.Value.Length + 1;
+
+            }
+
+            //Total count from params positions
+            int runIterationNumber = 1;
+            
+            if (allParamsSelectedPositions.Count == this._paramsPositions.Count)
+            {
+                foreach (var item in allParamsSelectedPositions)
                 {
                     runIterationNumber *= item.Count;
                 }
@@ -129,9 +121,10 @@ namespace Colibri.Grasshopper
                 runIterationNumber = this.TotalCounts;
             }
 
+            selectedTotal = Math.Min(totalDomainsLength, runIterationNumber);
 
 
-            return runIterationNumber;
+            return selectedTotal;
         }
 
         
@@ -150,20 +143,72 @@ namespace Colibri.Grasshopper
             return positionNumbers;
             
         }
+
         private List<GH_Interval> iniDomains(List<GH_Interval> oldDomains, GH_Interval totalDomain)
         {
             var domains = new List<GH_Interval>();
-            if (oldDomains == null || !oldDomains.Any())
+
+            var checkedOldDomain = trimDomains(oldDomains, totalDomain);
+            
+            if (checkedOldDomain.IsNullOrEmpty())
             {
                 domains.Add(totalDomain);
             }
             else
             {
-                domains = oldDomains;
+                domains = checkedOldDomain;
             }
 
             
             return domains;
+
+        }
+
+        private List<GH_Interval> trimDomains(List<GH_Interval> oldDomains, GH_Interval totalDomain)
+        {
+            if (oldDomains.IsNullOrEmpty())
+            {
+                return null;
+            }
+
+            var newDomains = new List<GH_Interval>();
+            foreach (var item in oldDomains)
+            {
+                double min = 0;
+                double max = 0;
+
+                //Check the T0 side
+                if (item.Value.Min < 0)
+                {
+                    min = 0;
+                }
+                else
+                {
+                    min = item.Value.Min;
+                }
+
+                //Check the T1 side
+                if (item.Value.Max > totalDomain.Value.Max)
+                {
+                    max = totalDomain.Value.Max;
+                }
+                else
+                {
+                    max = item.Value.Max;
+                }
+
+                var newIterval = new Rhino.Geometry.Interval(min, max);
+
+                if (totalDomain.Value.IncludesInterval(newIterval))
+                {
+                    newDomains.Add(new GH_Interval(newIterval));
+                }
+                
+
+            }
+
+            return newDomains;
+
 
         }
 
@@ -173,6 +218,12 @@ namespace Colibri.Grasshopper
             int paramCounts = paramsPositions.Count;
             var paramsSelectedPositions = new List<List<int>>();
 
+            if (selectedPositionNumbers.Count ==1)
+            {
+                return paramsPositions;
+            }
+
+            
             for (int p = 0; p < paramCounts; p++)
             {
                 //var selStepIndex = new List<int>();
@@ -294,16 +345,70 @@ namespace Colibri.Grasshopper
             {
                 return null;
             }
+            var domains = _userDomains;
+            var takes = _userParamsPositionNumbers;
 
             string outString = "";
-            if (_paramsPositionNumbers.Count != 0)
+            if (takes.Count != 0)
             {
-                outString += "Take:" + _paramsPositionNumbers.Count + "\n";
+                outString += "Take of each:\n";
+                foreach (var item in takes)
+                {
+                    outString += item + "\n";
+                }
             }
 
-            if (Domains.Count != 0)
+            if (domains.Count != 0)
             {
-                outString += "Domain:" + _domains.Count + "\n"; ;
+                outString += "Domain:\n";
+                foreach (var item in domains)
+                {
+                    outString += (int)item.Value.Min + " TO "+ (int)item.Value.Max + "\n";
+                }
+            }
+
+            return outString;
+
+        }
+
+        //this is for the real selection setting that iterator will use for fly
+        public string ToString(bool allInfo)
+        {
+            if (!IsDefinedInSel)
+            {
+                return null;
+            }
+            var domains = _domains;
+            var takes = _paramsSelectedPositions;
+
+            var userDomains = _userDomains;
+            var userTakes = _userParamsPositionNumbers;
+            string outString = "";
+
+            //get the sumup domain length
+            //double totalDomainsLength = 0;
+            //foreach (var item in _domains)
+            //{
+            //    totalDomainsLength += item.Value.Length;
+            //}
+
+            if (userTakes.Count != 0)
+            {
+                outString += "Take\n";
+                foreach (var item in takes)
+                {
+                    outString += " ["+item.Count + "]";
+                }
+            }
+
+            if (userDomains.Count != 0)
+            {
+                outString += "Domain\n";
+                foreach (var item in domains)
+                {
+                    int length = (int)item.Value.Length + 1;
+                    outString += (int)item.Value.Min + " TO " + (int)item.Value.Max  + " ["+ length +"]\n";
+                }
             }
 
             return outString;

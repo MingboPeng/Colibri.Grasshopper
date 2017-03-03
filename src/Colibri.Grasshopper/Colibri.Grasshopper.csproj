@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
     <Compile Include="Colibri3DParam.cs" />
+    <Compile Include="ColibriClasses\Extensions.cs" />
     <Compile Include="ColibriClasses\ImgParam.cs" />
     <Compile Include="ColibriClasses\IterationSelection.cs" />
     <Compile Include="ColibriClasses\ThreeDParam.cs" />

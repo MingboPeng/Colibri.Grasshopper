@@ -117,13 +117,12 @@ namespace Colibri.Grasshopper
 
                     // We've just got a new valid permutation. Solve the new solution.
                     e.Document.NewSolution(false);
+                    
                 }
-                
+
+
                 Count++;
-
-
-                isRunning = Count < _selectedCounts;
-
+                //isRunning = Count < _selectedCounts;
 
 
                 //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
