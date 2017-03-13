@@ -55,7 +55,7 @@ namespace Colibri.Grasshopper
 
             this._totalCounts = ColibriBase.CalTotalCounts(this._inputParams);
             this._selectedCounts = _selections.SelectedCounts > 0 ? _selections.SelectedCounts : _totalCounts;
-            this._allPositions = ColibriBase.AllParamsStepsIndex(this._inputParams);
+            this._allPositions = ColibriBase.AllParamsPositions(this._inputParams);
             this._allSelectedPositions = _selections.ParamsSelectedPositions == null? this._allPositions : _selections.ParamsSelectedPositions;
             this.currentPositionsIndex = Enumerable.Repeat(0, _inputParams.Count()).ToList();
             Count = 0;

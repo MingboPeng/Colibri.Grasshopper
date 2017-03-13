@@ -264,10 +264,17 @@ namespace Colibri.Grasshopper
 
             }
             return imgName;
+            
+        }
 
-
-
-
+        public void setWriteFileToFalse()
+        {
+            
+            if (this.Params.Input.Last().Sources.Any())
+            {
+                var writeFile = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;
+                writeFile.Value = false;
+            }
         }
 
         //public bool isGoodToSeeAllView()

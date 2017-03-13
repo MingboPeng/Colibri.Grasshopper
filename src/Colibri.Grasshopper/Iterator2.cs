@@ -73,22 +73,23 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            this.Selections = new IteratorSelection();
-            DA.GetData(this.Params.Input.Count - 1, ref this.Selections);
-
+            var userSelections = new IteratorSelection();
+            DA.GetData(this.Params.Input.Count - 1, ref userSelections);
+            
             //var filteredSources = FilterSources();
 
             //Dictionary<string, string> FlyID = new Dictionary<string, string>();
             var FlyID = new List<object>();
             //Get current value
 
-            if (filteredSources == null)
+            if (filteredSources.IsNullOrEmpty())
             {
                 filteredSources = gatherSources();
             }
 
             if (!Running)
             {
+                this.Selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
                 this.Message = updateComponentMsg(filteredSources, this.Selections);
             }
             
@@ -187,6 +188,7 @@ namespace Colibri.Grasshopper
             {
                 // Always make sure that _running is switched off.
                 Running = false;
+                aggObj.setWriteFileToFalse();
 
             }
 
@@ -552,20 +554,15 @@ namespace Colibri.Grasshopper
                 return null;
             }
             
-
             //this will check and add take_numbers and domains
             Selections.MatchSelectionFrom(ColibriParams);
             _totalCount = Selections.TotalCounts;
             _selectedCount = Selections.SelectedCounts;
             string messages = "";
-            
+
             //Check selections
-            var isSelectionOK = checkSelections(Selections, ColibriParams.Count, _totalCount);
-            if (!isSelectionOK)
-            {
-                return null;
-            }
-            
+            checkSelections(Selections, ColibriParams, _totalCount);
+
             messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
 
             if (Selections.IsDefinedInSel)
@@ -574,29 +571,26 @@ namespace Colibri.Grasshopper
                 messages += Selections.ToString(true);
             }
             
-
-
-
-
+            
             return messages;
             
         }
 
-        private bool checkSelections(IteratorSelection selections,int inputSourceCount, int totalCount)
+        private void checkSelections(IteratorSelection Selections, List<ColibriParam> ColibriParam, int totalCount)
         {
             var takeNumbers = new List<int>();
             var userDomains = new List<GH_Interval>();
+            
 
             if (Selections.IsDefinedInSel)
             {
-                takeNumbers = Selections.ParamsPositionNumbers;
+                takeNumbers = Selections.UserTakes;
                 userDomains = Selections.UserDomains;
-
                 //check take numbers for each parameters
-                if (takeNumbers.Any() && takeNumbers.Count != inputSourceCount)
+                if (takeNumbers.Any() && takeNumbers.Count != ColibriParam.Count)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "The number of connected sliders must be equal to the number of items in the Steps input list.\n But Colibri will run all iterations in this case.");
-                    return false;
+                    
                 }
 
 
@@ -612,22 +606,18 @@ namespace Colibri.Grasshopper
                         }
                         
                     }
-
-                   
+                    
                 }
 
             }
-
-
-            return true;
-
+            
 
         }
 
         #endregion
 
         #region Check Aggregator before fly
-
+        Aggregator aggObj = null;
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
@@ -635,7 +625,7 @@ namespace Colibri.Grasshopper
             var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
             var folder = "";
             bool isReady = true;
-            Aggregator aggObj = aggregatorObj(aggregatorID);
+            aggObj = aggregatorObj(aggregatorID);
             
             
             if (aggObj != null)
@@ -657,7 +647,7 @@ namespace Colibri.Grasshopper
 
         private Aggregator aggregatorObj(Guid guid)
         {
-            Aggregator aggObj = null;
+            aggObj = null;
 
             // only check Recipients of FlyID
             var flyIDRecipients = this.Params.Output.Last().Recipients;

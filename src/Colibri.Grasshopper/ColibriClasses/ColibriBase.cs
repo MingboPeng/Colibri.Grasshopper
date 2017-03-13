@@ -10,7 +10,12 @@ namespace Colibri.Grasshopper
 
     static class ColibriBase
     {
-        public static Dictionary<string, string> ConvertBactToDictionary (List<string> StringLikeDictionary)
+        public static Dictionary<string, string> ConvertToDictionary(Dictionary<string, string> Dictionary)
+        {
+            return Dictionary;
+        }
+
+        public static Dictionary<string, string> ConvertToDictionary (List<string> StringLikeDictionary)
         {
             var newDictionary = new Dictionary<string, string>();
 
@@ -36,7 +41,7 @@ namespace Colibri.Grasshopper
 		public static Dictionary<string, string> FormatDataToCSVstring(List<string> StringLikeDictionary, string Prefix)
         {
             string newCSVstring = string.Empty;
-            var convertedDictionary = ConvertBactToDictionary(StringLikeDictionary);
+            var convertedDictionary = ConvertToDictionary(StringLikeDictionary);
 
             var DesignExplorerData = new Dictionary<string , string>();
 
@@ -80,19 +85,19 @@ namespace Colibri.Grasshopper
         }
 
         //to get all params' all steps' indexes 
-        public static List<List<int>> AllParamsStepsIndex(List<ColibriParam> ColibriParams)
+        public static List<List<int>> AllParamsPositions(List<ColibriParam> ColibriParams)
         {
-            var stepsList = new List<List<int>>();
+            var positionsList = new List<List<int>>();
             foreach (var item in ColibriParams)
             {
                 int totalCount = item.TotalCount;
                 if (totalCount > 0)
                 {
                     var SetpList = Enumerable.Range(0, totalCount).ToList();
-                    stepsList.Add(SetpList);
+                    positionsList.Add(SetpList);
                 }
             }
-            return stepsList;
+            return positionsList;
             //inputParamsStepLists = stepLists;
         }
         
