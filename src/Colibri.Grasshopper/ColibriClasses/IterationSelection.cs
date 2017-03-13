@@ -351,7 +351,7 @@ namespace Colibri.Grasshopper
             var domains = _userDomains;
             var takes = _userParamsTakeNumbers;
 
-            string outString = "";
+            string outString = null;
             if (takes.Count != 0)
             {
                 outString += "Take:\n";
@@ -385,7 +385,7 @@ namespace Colibri.Grasshopper
 
             var userDomains = _userDomains;
             var userTakes = _userParamsTakeNumbers;
-            string outString = "";
+            string outString = null;
 
             if (userTakes.Count != 0)
             {

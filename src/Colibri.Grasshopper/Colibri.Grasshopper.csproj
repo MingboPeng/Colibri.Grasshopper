@@ -85,29 +85,18 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ColibriClasses\ColibriBase.cs" />
-    <None Include="Resources\Colibri_logobase_1.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_2.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_3.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_4.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_5.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Aggregator.png" />
     <Content Include="Resources\imgParam.png" />
     <Content Include="Resources\Iterator.png" />
     <Content Include="Resources\Output.png" />
+    <Content Include="Resources\Selection.png" />
     <Content Include="Resources\staticInput.png" />
     <None Include="Resources\threeDParam.png" />
   </ItemGroup>

@@ -30,7 +30,7 @@ namespace Colibri.Grasshopper
             pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iterations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\n 0.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers of the same length as the list of inputs plugged into the Iterator.\n\n 0:All \n 1:Current value \n >1:Evenly picked number.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
@@ -40,7 +40,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Selections", "Selec", "Selections for Iterator", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Selection", "Selection", "Selections for Iterator", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Colibri.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Properties.Resources.Selection;
             }
         }
 

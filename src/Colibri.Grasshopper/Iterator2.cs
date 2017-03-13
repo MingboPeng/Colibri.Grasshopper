@@ -34,7 +34,7 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public Iterator2()
-          : base("Colibri Iterator2(fly)", "Iterator2",
+          : base("Colibri Iterator(fly)", "Iterator",
               "Generates design iterations from a collection of sliders.",
               "TT Toolbox", "Colibri")
         {
@@ -50,7 +50,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter("Selections", "Selec", "Optional input if you want to run all possible iterations.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Selection", "Selection", "Optional input if you want to run partial iterations.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 

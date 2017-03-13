@@ -21,7 +21,7 @@ namespace Colibri.Grasshopper
         {
         }
 
-        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
+        public override GH_Exposure Exposure { get { return GH_Exposure.hidden; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.
