@@ -29,7 +29,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("ImageSaveName", "saveName", "Overwrite the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
+            pManager.AddTextParameter("ImageSaveAsName", "saveAs", "Overwrite the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
             pManager.AddTextParameter("RhinoViewNames", "views", "Optional input for the Rhino viewport name which you would like to take a snapshot of.  Acceptable inputs include \"Perspective\", \"Top\", \"Bottom\", etc or any view name that you have already saved within the Rhino file (note that you do not need to input quotations).  If no text is input here, the default will be an image of the active viewport (or the last viewport in which you navigated).", GH_ParamAccess.list);
             pManager[1].Optional = true;
             pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 400);

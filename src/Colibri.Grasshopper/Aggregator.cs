@@ -52,8 +52,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
-                "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
+            pManager.AddTextParameter("out", "ReadMe",
+                "...", GH_ParamAccess.item);
 
         }
 

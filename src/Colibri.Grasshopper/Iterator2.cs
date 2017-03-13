@@ -35,7 +35,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public Iterator2()
           : base("Colibri Iterator(fly)", "Iterator",
-              "Generates design iterations from a collection of sliders.",
+              "Generates design iterations from a collection of sliders, panels, or valueLists.",
               "TT Toolbox", "Colibri")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
@@ -65,6 +65,7 @@ namespace Colibri.Grasshopper
             pManager.AddGenericParameter("Iteration ID", "FlyID", "connet to Aggregateor", GH_ParamAccess.list);
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
+            
         }
         
         /// <summary>
@@ -621,11 +622,9 @@ namespace Colibri.Grasshopper
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
-            
-            var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
             var folder = "";
             bool isReady = true;
-            aggObj = aggregatorObj(aggregatorID);
+            aggObj = aggregatorObj();
             
             
             if (aggObj != null)
@@ -645,16 +644,17 @@ namespace Colibri.Grasshopper
             
         }
 
-        private Aggregator aggregatorObj(Guid guid)
+        private Aggregator aggregatorObj()
         {
             aggObj = null;
+            var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
 
             // only check Recipients of FlyID
             var flyIDRecipients = this.Params.Output.Last().Recipients;
             foreach (var item in flyIDRecipients)
             {
                 var recipientParent = item.Attributes.GetTopLevel.DocObject;
-                if (recipientParent.ComponentGuid.Equals(guid))
+                if (recipientParent.ComponentGuid.Equals(aggregatorID))
                 {
                     aggObj = recipientParent as Aggregator;
                 }
