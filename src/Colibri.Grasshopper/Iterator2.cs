@@ -178,7 +178,9 @@ namespace Colibri.Grasshopper
                 {
                     flyParam.FlyAll(e);
                 }
-                
+
+                aggObj.setWriteFileToFalse();
+
             }
             catch (Exception ex)
             {
@@ -189,7 +191,7 @@ namespace Colibri.Grasshopper
             {
                 // Always make sure that _running is switched off.
                 Running = false;
-                aggObj.setWriteFileToFalse();
+                
 
             }
 
@@ -383,7 +385,7 @@ namespace Colibri.Grasshopper
             {
                 Run = true;
                 doc.SolutionEnd += OnSolutionEnd;
-
+                
                 // only recompute those are expired flagged
                 doc.NewSolution(false);
             }

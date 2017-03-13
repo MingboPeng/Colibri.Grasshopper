@@ -274,6 +274,7 @@ namespace Colibri.Grasshopper
             {
                 var writeFile = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;
                 writeFile.Value = false;
+                writeFile.ExpireSolution(true);
             }
         }
 
