@@ -110,6 +110,8 @@ namespace Colibri.Grasshopper
                 //move to the next set of slider positions
                 isRunning = MoveToNextPermutation(ref currentParamIndex);
 
+                Count++;
+
                 //watch the selection
                 bool isInSelection = ifInSelectionDomains(_selections, Count);
                 if (isInSelection)
@@ -120,8 +122,9 @@ namespace Colibri.Grasshopper
                     
                 }
 
+                //todo: check the First 0 position which would be execulted at the end.
 
-                Count++;
+                
                 //isRunning = Count < _selectedCounts;
 
 
@@ -204,13 +207,18 @@ namespace Colibri.Grasshopper
 
            
             if (MoveToParamIndex >= _inputParams.Count)
+            {
                 return false;
+            }
+
+            //System.Windows.Forms.MessageBox.Show(Count.ToString());
             
+
             var currentParam = _inputParams[MoveToParamIndex];
             var thisSelectedPositions = _allSelectedPositions[MoveToParamIndex];
             //int currentStepPosition = currentStepPositionsIndex[MoveToParamIndex];
 
-            int nextPositionIndex = currentPositionsIndex[MoveToParamIndex] + 1; 
+            int nextPositionIndex = currentPositionsIndex[MoveToParamIndex]+1; 
             
 
             if (nextPositionIndex < thisSelectedPositions.Count)
@@ -225,20 +233,19 @@ namespace Colibri.Grasshopper
                 int nextPosition = thisSelectedPositions[nextPositionIndex];
 
                 
-                    //The current component is already at the maximum value. Reset it back to zero.
+                //The current component is already at the maximum value. Reset it back to zero.
 
-                    currentParam.SetParamTo(nextPosition);
-                    //currentInputParam.SetToNext();
+                currentParam.SetParamTo(nextPosition);
+                //currentInputParam.SetToNext();
                 
-
-
-
+                
                 //Increment the current step position
                 this.currentPositionsIndex[MoveToParamIndex]++ ;
                 
                 return true;
             }else
             {
+                
                 //currentParam.Reset();
                 currentParam.SetParamTo(thisSelectedPositions.First());
 
@@ -247,38 +254,43 @@ namespace Colibri.Grasshopper
 
                 //// Move on to the next slider.
                 MoveToParamIndex++;
-                //System.Windows.Forms.MessageBox.Show("index++"+MoveToIndex.ToString());
+                //System.Windows.Forms.MessageBox.Show("index++" + MoveToParamIndex.ToString());
                 //// If we've run out of sliders to modify, we're done permutatin'
                 if (MoveToParamIndex >= _inputParams.Count)
+                {
                     return false;
+                }
+                    
                 
                 return MoveToNextPermutation(ref MoveToParamIndex);
             }
+
+
         }
 
 
-        private static int calClosestTick()
-        {
-            //int totalNumberOfSteps = sliderSteps[index];
-            //int currentSliderStepsPosition = sliderStepsPositions[index];
-            //int sliderMidStep = slider.TickCount / 2;
-            //int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
-            //double numTicksToAddAsDouble = (double)slider.TickCount / (double)totalNumberOfSteps;
+        //private static int calClosestTick()
+        //{
+        //    //int totalNumberOfSteps = sliderSteps[index];
+        //    //int currentSliderStepsPosition = sliderStepsPositions[index];
+        //    //int sliderMidStep = slider.TickCount / 2;
+        //    //int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
+        //    //double numTicksToAddAsDouble = (double)slider.TickCount / (double)totalNumberOfSteps;
 
-            ////find the closest tick
-            //int closestTick = 0;
-            //if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
-            //{
-            //    closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition);
-            //}
-            //else
-            //{
-            //    closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
-            //}
+        //    ////find the closest tick
+        //    //int closestTick = 0;
+        //    //if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
+        //    //{
+        //    //    closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition);
+        //    //}
+        //    //else
+        //    //{
+        //    //    closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
+        //    //}
 
-            //return closestTick;
-            return 0;
-        }
+        //    //return closestTick;
+        //    return 0;
+        //}
 
         private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
         {
@@ -294,7 +306,7 @@ namespace Colibri.Grasshopper
             if (Selections.Domains.Any())
             {
                 foreach (var domain in Selections.Domains)
-                {
+                { //todo: bug, the following will override the isInselection if the current count is inclued in previous domain.
                     isInSelection = domain.Value.IncludesParameter(currentCount);
                 }
             }

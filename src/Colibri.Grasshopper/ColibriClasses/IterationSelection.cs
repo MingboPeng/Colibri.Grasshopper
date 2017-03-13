@@ -218,10 +218,11 @@ namespace Colibri.Grasshopper
             int paramCounts = paramsPositions.Count;
             var paramsSelectedPositions = new List<List<int>>();
 
-            if (selectedPositionNumbers.Count ==1)
-            {
-                return paramsPositions;
-            }
+            //if (selectedPositionNumbers.Count ==1)
+            //{
+            //    return paramsPositions;
+            //}
+
 
             
             for (int p = 0; p < paramCounts; p++)
