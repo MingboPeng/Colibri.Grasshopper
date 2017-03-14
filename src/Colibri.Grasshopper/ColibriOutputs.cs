@@ -15,7 +15,7 @@ namespace Colibri.Grasshopper
         /// ne	w tabs/panels will automatically be created.
         /// </summary>
         public ColibriOutputs()
-          : base("Colibri Outputs", "Colibri Outputs",
+          : base("Colibri FlyResults", "FlyResults",
               "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
               "TT Toolbox", "Colibri")
         {
@@ -28,9 +28,9 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Names", "Names", "Output names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Names", "Names", "Result names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
             pManager[0].DataMapping = GH_DataMapping.Flatten;
-            pManager.AddTextParameter("Values", "Values", "Output Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Values", "Values", "Result Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
             pManager[1].DataMapping = GH_DataMapping.Flatten;
         }
 
@@ -39,7 +39,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("FlyResults(Outputs)", "FlyResults", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("FlyResults(Outputs)", "FlyResults", "Colibri's FlyResults object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>

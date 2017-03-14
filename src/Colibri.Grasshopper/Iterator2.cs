@@ -77,34 +77,34 @@ namespace Colibri.Grasshopper
             var userSelections = new IteratorSelection();
             DA.GetData(this.Params.Input.Count - 1, ref userSelections);
             
-            //var filteredSources = FilterSources();
-
             //Dictionary<string, string> FlyID = new Dictionary<string, string>();
             var FlyID = new List<object>();
-            //Get current value
-
-            if (filteredSources.IsNullOrEmpty())
+            
+            //flyParam only exists when flying
+            if (!Running && flyParam == null)
             {
+                
                 filteredSources = gatherSources();
-            }
+                checkAllNames(filteredSources);
 
-            if (!Running)
-            {
                 this.Selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
                 this.Message = updateComponentMsg(filteredSources, this.Selections);
+                
             }
-            
-            //bool isRunning = Run || Running;
+
+
+            //Get current value
             foreach (var item in filteredSources)
             {
                 DA.SetData(item.AtIteratorPosition, item.CurrentValue());
                 FlyID.Add(item.ToString(true));
             }
-
+            
             DA.SetDataList(Params.Output.Count-1,FlyID);
             
         }
-        
+
+       
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
@@ -191,7 +191,7 @@ namespace Colibri.Grasshopper
             {
                 // Always make sure that _running is switched off.
                 Running = false;
-                
+                this.flyParam = null;
 
             }
 
@@ -213,7 +213,7 @@ namespace Colibri.Grasshopper
             ColibriParam colibriParam = new ColibriParam(component, AtIteratorPosition);
             if (colibriParam.GHType == InputType.Unsupported)
             {
-                MessageBox.Show("Please check all inputs! \nSlider, ValueList, or Panel are only supported!");
+                
                 return null;
             }
             else
@@ -276,26 +276,41 @@ namespace Colibri.Grasshopper
         private List<ColibriParam> gatherSources()
         {
             var filtedSources = new List<ColibriParam>();
-            //var validindexList = new List<int>();
-            for (int i = 0; i < this.Params.Input.Count; i++)
+            // exclude the last input which is "Selection"
+            
+            for (int i = 0; i < this.Params.Input.Count-1; i++)
             {
                 //Check if it is fly or empty source param
-                bool isFly = i == this.Params.Input.Count - 1 ? true : false;
+                //bool isFly = i == this.Params.Input.Count - 1 ? true : false;
                 var source = this.Params.Input[i].Sources;
-                bool ifAny = source.Any();
+                //bool ifAny = source.Any();
 
-                if (!isFly && ifAny)
+                if (source.Any() && source.Count==1)
                 {
-                    //if something's connected,and get the first connected
-                    var colibriParam = ConvertToColibriParam(source[0], i);
+                    //if something's connected,and get the last connected
+                    var colibriParam = ConvertToColibriParam(source.Last(), i);
+
                     //null  added if input is unsupported type
                     if (colibriParam != null)
                     {
                         colibriParam.Param.ObjectChanged += Source_ObjectChanged;
                         filtedSources.Add(colibriParam);
-                        
+                    }
+                    else
+                    {
+                        //throw new ArgumentException("Unsupported component!\nPlease use Slider, ValueList, or Panel!");
+                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Unsupported component!\nPlease use Slider, ValueList, or Panel!");
+                        break;
+                        //return null;
                     }
                     
+                }
+                else if(source.Count > 1)
+                {
+                    //throw new ArgumentException("Please connect one component per grip!");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please connect one component per grip!");
+                    break;
+                    //return null;
                 }
             }
             
@@ -342,9 +357,14 @@ namespace Colibri.Grasshopper
                 doc = GH.Instances.ActiveCanvas.Document;
             }
 
+            if (this.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error)
+            {
+                return;
+            }
+
             //Clean first
             this.flyParam = null;
-            //this.filteredSources.Clear();
+
 
             //recollect all params 
             filteredSources = gatherSources();
@@ -358,7 +378,7 @@ namespace Colibri.Grasshopper
             {
                 return;
             }
-
+            
             //check if any vaild input source connected to Iteratior
             if (filteredSources.Count() > 0)
             {
@@ -366,7 +386,7 @@ namespace Colibri.Grasshopper
             }
             else
             {
-                MessageBox.Show("No Valid Slider, ValueList, or Panel connected!");
+                MessageBox.Show("No Slider, ValueList, or Panel connected!");
                 return;
             }
 
@@ -418,7 +438,7 @@ namespace Colibri.Grasshopper
         {
             bool isInputSide = (side == GH_ParameterSide.Input)? true : false;
             bool isTheFlyButton = (index == this.Params.Input.Count-1) ? true : false;
-            bool isTheOnlyInput = (index == 0) ? true : false;
+            bool isTheOnlyInput = (index == 0)&&(this.Params.Input.Count<=2) ? true : false;
 
 
             //can only remove from the input and non Fly? or the first Slider
@@ -436,10 +456,9 @@ namespace Colibri.Grasshopper
 
         public IGH_Param CreateParameter(GH_ParameterSide side, int index)
         {
-            var output = new Param_GenericObject();
-            output.NickName = String.Empty;
-            output.Access = GH_ParamAccess.item;
-            Params.RegisterOutputParam(output, index);
+            var outParam = new Param_GenericObject();
+            outParam.NickName = String.Empty;
+            Params.RegisterOutputParam(outParam, index);
 
             var param = new Param_GenericObject();
             param.NickName = String.Empty;
@@ -462,25 +481,25 @@ namespace Colibri.Grasshopper
             for (int i = 0; i < this.Params.Input.Count-1; i++)
             {
                 // create inputs
-                var param = this.Params.Input[i];
-                if (param.NickName == String.Empty) {
-                    string formatedUniqueNickName = "Input[N]";
-                    param.NickName= formatedUniqueNickName;
+                var inParam = this.Params.Input[i];
+                if (inParam.NickName == String.Empty) {
+                    inParam.NickName= "Input[N]";
                 }
-                param.Name = "Input";
-                param.Description = "Please connect a Slider, Panel, or ValueList";
-                param.Access = GH_ParamAccess.list;
-                param.Optional = true;
-                param.MutableNickName = false;
+                inParam.Name = "Input";
+                inParam.Description = "Please connect a Slider, Panel, or ValueList";
+                inParam.Access = GH_ParamAccess.item;
+                inParam.Optional = true;
+                inParam.MutableNickName = false;
+                inParam.WireDisplay = GH_ParamWireDisplay.faint;
 
-                var paramOutput = this.Params.Output[i];
-                if (paramOutput.NickName == String.Empty)
+                var outParam = this.Params.Output[i];
+                if (outParam.NickName == String.Empty)
                 {
-
-                    paramOutput.NickName = param.NickName.Replace("Input","Value");
-                    paramOutput.Name = "Item";
-                    paramOutput.Description = "This item is one of values from " + param.NickName;
-                    paramOutput.MutableNickName = false;
+                    outParam.NickName = inParam.NickName.Replace("Input","Value");
+                    outParam.Description = "This item is one of values from " + inParam.NickName;
+                    outParam.Access = GH_ParamAccess.item;
+                    outParam.Name = "Item";
+                    outParam.MutableNickName = false;
                 }
             }
             
@@ -496,41 +515,37 @@ namespace Colibri.Grasshopper
         private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
             
+
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
             bool isSelection = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
-            bool isSecondLastEmptySource = Params.Input[this.Params.Input.Count - 2].SourceCount == 0 ? true : false;
+            bool isSecondLastSourceFull = Params.Input[this.Params.Input.Count - 2].Sources.Any();
 
-            if (!isSelection)
+
+            if (isSelection)
             {
-                if (!isInputSide)
-                {
-                    return;
-                }
-                
-                // add a new input param while the second last input is not empty
-                if (!isSecondLastEmptySource)
-                {
-
-                    IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
-                    Params.RegisterInputParam(newParam, Params.Input.Count - 1);
-                    VariableParameterMaintenance();
-                    this.Params.OnParametersChanged();
-
-                }
-
-
-                //recollecting the filteredSources and rename while any source changed
-                filteredSources = gatherSources();
-                checkAllNames(filteredSources);
-                //this.ExpireSolution(true);
+                return;
             }
             
-            //this.Message = updateComponentMsg(filteredSources, this.Selections);
+            if (!isInputSide)
+            {
+                return;
+            }
+                
+            // add a new input param while the second last input is full
+            if (isSecondLastSourceFull)
+            {
+                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
+                Params.RegisterInputParam(newParam, Params.Input.Count - 1);
+                VariableParameterMaintenance();
+                this.Params.OnParametersChanged();
+            }
+
+            ////recollecting the filteredSources and rename while any source changed
+            //filteredSources = gatherSources();
+            //checkAllNames(filteredSources);
 
         }
         
-        //todo: check inputnumbers, or one source to multi inputs
-
         //This is for if any source name changed, NOTE: cannot deteck the edited
         private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
@@ -539,7 +554,6 @@ namespace Colibri.Grasshopper
             if (isExist)
             {
                 checkAllNames(filteredSources);
-                //this.ExpireSolution(true);
             }
             else
             {
@@ -621,8 +635,7 @@ namespace Colibri.Grasshopper
 
         #region Check Aggregator before fly
         Aggregator aggObj = null;
-
-
+        
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {

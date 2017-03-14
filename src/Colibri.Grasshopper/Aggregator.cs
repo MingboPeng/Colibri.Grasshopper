@@ -42,8 +42,10 @@ namespace Colibri.Grasshopper
             pManager.AddTextParameter("FlyResults(Outputs)", "FlyResults", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
+            pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
             pManager.AddGenericParameter("3DParams", "3DParams", "Optional input from the Colibri 3DParameters component.", GH_ParamAccess.item);
             pManager[4].Optional = true;
+            pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
         }
 
