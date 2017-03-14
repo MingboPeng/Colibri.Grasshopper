@@ -34,7 +34,7 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public Iterator2()
-          : base("Colibri Iterator(fly)", "Iterator",
+          : base("Colibri FlyID (Iterator)", "Iterator",
               "Generates design iterations from a collection of sliders, panels, or valueLists.",
               "TT Toolbox", "Colibri")
         {

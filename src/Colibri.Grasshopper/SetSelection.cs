@@ -30,7 +30,7 @@ namespace Colibri.Grasshopper
             pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iterations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Slider, ValueList or Panel.  This should be a list of integers of the same length as the list of inputs plugged into the Iterator.\n\n 0:All \n 1:Current value \n >1:Evenly picked number.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Iterator input.  This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all \n 1: for current position \n >1: numbers to be picked.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
@@ -71,7 +71,7 @@ namespace Colibri.Grasshopper
             if (!takeNumbers.IsNullOrEmpty() && !ranges.IsNullOrEmpty())
             {
                 
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "I am confused by what your settings, please use either Domain or Take, (Not both). \n  But Colibri will remove \"Take\" settings to keep the entire workflow runs successfully.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Please use either Domain or Take.");
 
                 //remove takeNumbers
                 takeNumbers = new List<int>();
