@@ -129,7 +129,7 @@ namespace Colibri.Grasshopper
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Fly Test", Menu_DoClick);
+            Menu_AppendItem(menu, "Fly Test", Menu_DoClick,true,isTestFly);
             Menu_AppendSeparator(menu);
         }
         

@@ -189,7 +189,7 @@ namespace Colibri.Grasshopper
             var random = new Random();
 
             var flewID = new HashSet<string>();
-
+            
             while (true)
             {
                 //pick random input param
@@ -213,6 +213,10 @@ namespace Colibri.Grasshopper
                     if (flewID.Count >= testNumber)
                     {
                         // study is over!
+                        if (File.Exists(watchFilePath))
+                        {
+                            File.Delete(watchFilePath);
+                        }
                         break;
                     }
 
