@@ -621,30 +621,46 @@ namespace Colibri.Grasshopper
 
         #region Check Aggregator before fly
         Aggregator aggObj = null;
+
+
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
             var folder = "";
             bool isReady = true;
             aggObj = aggregatorObj();
-            
-            
+            var checkingMsg = new List<string>();
+
             if (aggObj != null)
             {
-                isReady = isAggregatorRecordingChecked(aggObj);
-                folder = aggObj.folder;
-                //check if Aggregator is the last 
-                if (isReady)
+                checkingMsg = aggObj.CheckAggregatorIfReady();
+                if (checkingMsg.IsNullOrEmpty())
                 {
-                    isReady = isAggregatorLastChecked(aggObj.InstanceGuid);
+                    isReady = true;
+                }
+                else
+                {
+                    string warningMsg = "";
+                    foreach (var item in checkingMsg)
+                    {
+                        warningMsg += "\n\n"+item;
+                    }
+                    var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n" + warningMsg, "Attention", MessageBoxButtons.YesNo);
+                    if (userClick == DialogResult.No)
+                    {
+                        // user doesn't want ot continue! set isReady to false to stop
+                        isReady = false;
+                    }
                 }
                 
+                folder = aggObj.folder;
             }
 
             StudyFolder = folder;
             return isReady;
-            
+
         }
+        
 
         private Aggregator aggregatorObj()
         {
@@ -664,66 +680,10 @@ namespace Colibri.Grasshopper
             return aggObj;
         }
 
-        private bool isAggregatorLastChecked(Guid instanceGuid)
-        {
-            if (doc == null)
-            {
-                doc = GH.Instances.ActiveCanvas.Document;
-            }
-
-            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(instanceGuid);
-            bool isAggReady = true;
-            if (!isAggregatorLast)
-            {
-                var userClickNo = MessageBox.Show("Aggregator might not capture all objects that you see in Rhino view. \nStill continue?" + "\n\n (Click No, select Aggregator and press Ctrl+F can save your life!)", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
-                if (userClickNo)
-                {
-                    // user doesn't want ot continue! set isReady to false to stop
-                    isAggReady = false;
-                }
-                
-            }
-            
-            return isAggReady;
-        }
-
-        private bool isAggregatorRecordingChecked(Aggregator aggregator)
-        {
-            var isRecording = aggregator.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
-            bool isAggReady = true;
-            if (!isRecording.Value)
-            {
-                var userClickNo = MessageBox.Show("Aggregator is not writing the data. \nStill continue? \n\n (Click No, set Aggregator's write? to true)", "Attention", MessageBoxButtons.YesNo) == DialogResult.No;
-                if (userClickNo)
-                {
-                    // user doesn't want ot continue! set isRecordingChecked to false to stop
-                    isAggReady = false;
-                }
-                
-                // if user clicked Yes, then keep isRecordingChecked to true to continue.
-                    
-            }
-
-            return isAggReady;
-            
-        }
-
-
+       
         #endregion
 
 
-        //private IteratorSelection getSelection()
-        //{
-        //    var selections = new IteratorSelection();
-        //    if (this.Params.Input.Last().Sources.Any())
-        //    {
-        //        var inputSel = this.Params.Input.Last().VolatileData.AllData(true).First() as IteratorSelection;
-        //        selections = inputSel;
-        //    }
-            
-        //    MessageBox.Show("Test"+ selections.Steps.Count);
-        //    return selections;
-        //}
 
     }
 

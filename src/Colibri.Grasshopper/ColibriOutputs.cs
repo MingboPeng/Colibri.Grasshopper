@@ -39,7 +39,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Outputs", "Outputs", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("FlyResults(Outputs)", "FlyResults", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
         }
 
         /// <summary>

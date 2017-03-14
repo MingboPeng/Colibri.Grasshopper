@@ -38,8 +38,8 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
-            pManager.AddTextParameter("FlyID(inputs)", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
+            pManager.AddTextParameter("FlyID(Inputs)", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
+            pManager.AddTextParameter("FlyResults(Outputs)", "FlyResults", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager.AddGenericParameter("3DParams", "3DParams", "Optional input from the Colibri 3DParameters component.", GH_ParamAccess.item);
@@ -278,42 +278,46 @@ namespace Colibri.Grasshopper
             }
         }
 
-        //public bool isGoodToSeeAllView()
-        //{
-        //    if (doc == null)
-        //    {
-        //        doc = GH.Instances.ActiveCanvas.Document;
-        //    }
-        //    int totalObjs = doc.ObjectCount;
-        //    int executePosition = 0;
-        //    //var runList = new List<string>();
-
-        //    //foreach (IGH_DocumentObject obj in doc.Objects)
-        //    //{
-        //    //    runList.Add(obj.NickName + " (" + obj.Name + ")" + " (" + obj.Category + ")");
-        //    //}
-        //    for (int i = 0; i < totalObjs; i++)
-        //    {
-        //        //Aggregator's ID
-        //        bool isAggregator = doc.Objects[i].ComponentGuid.Equals(new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"));
-        //        if (isAggregator)
-        //        {
-        //            executePosition = i;
-        //        }
-        //    }
 
 
-        //    if (executePosition == totalObjs-1)
-        //    {
-        //        //Aggregator is at the last position to be execulted, so can capture all previewed objs
-        //        return true;
-        //    }
-        //    else
-        //    {
-        //        return false;
-        //    }
+        //Check if Aggregator exist, and if it is at the last
+        public List<string> CheckAggregatorIfReady()
+        {
             
-        //}
+            var checkingMsg = new List<string>();
+            checkingMsg = checkIfRecording(checkingMsg);
+            checkingMsg = checkIfLast(checkingMsg);
+            return checkingMsg;
+
+        }
+        
+        private List<string> checkIfLast(List<string> msg)
+        {
+            string warningMsg = "  Aggregator might not capture all objects that you see in Rhino view.\n\t[SOLUTION]: select Aggregator and press Ctrl+F can save your life!";
+            var doc = GH.Instances.ActiveCanvas.Document;
+            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
+
+            if (!isAggregatorLast)
+            {
+                msg.Add(warningMsg);
+            }
+
+            return msg;
+        }
+
+        private List<string> checkIfRecording(List<string> msg)
+        {
+            string warningMsg = "  Aggregator is not writing the data.\n\t[SOLUTION]: set Aggregator's \"write?\" to true.";
+            var isRecording = this.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
+
+            if (!isRecording.Value)
+            {
+                msg.Add(warningMsg);
+            }
+
+            return msg;
+
+        }
 
 
     }
