@@ -107,6 +107,7 @@ namespace Colibri.Grasshopper
 
             
             bool run = writeFile;
+            //iniWrite = writeFile;
             
             
             string writeInData = "";
@@ -123,15 +124,11 @@ namespace Colibri.Grasshopper
             
                 //if we are told to run and we haven't written this line yet, do so
 
-            if (run && !alreadyWrittenLines.Contains(valueReady))
+            if (run)
             {
-                
-                //add this line to our list of already written lines
-                alreadyWrittenLines.Add(valueReady);
-
                 //Check folder if existed
-                Directory.CreateDirectory(folder);
-
+                checkStudyFolder(folder);
+                
                 //save img
                 keyReady += ",img";
                 string imgFileName = captureViews(imgParams, flyID);
@@ -155,8 +152,14 @@ namespace Colibri.Grasshopper
                 }
 
                 //save csv
-                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
-                File.AppendAllText(csvPath, writeInData);
+                if (!alreadyWrittenLines.Contains(valueReady))
+                {
+                    writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
+                    File.AppendAllText(csvPath, writeInData);
+
+                    //add this line to our list of already written lines
+                    alreadyWrittenLines.Add(valueReady);
+                }
                 
             }
             
@@ -309,7 +312,7 @@ namespace Colibri.Grasshopper
 
         private List<string> checkIfRecording(List<string> msg)
         {
-            string warningMsg = "  Aggregator is not writing the data.\n\t[SOLUTION]: set Aggregator's \"write?\" to true.";
+            string warningMsg = "  Aggregator is not recording the data.\n\t[SOLUTION]: set Aggregator's \"write?\" to true.";
             var isRecording = this.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
 
             if (!isRecording.Value)
@@ -318,6 +321,53 @@ namespace Colibri.Grasshopper
             }
 
             return msg;
+
+        }
+
+        //bool iniWrite = false;
+        private void checkStudyFolder(string StudyFolderPath)
+        {
+            string warningMsg = "Study folder is not empty, do you want to override everything inside!";
+            var isRecording = this.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
+            string csvFilePath = StudyFolderPath + "\\data.csv";
+
+            if (!isRecording.Value)
+            {
+                return;
+            }
+
+            if (!Directory.Exists(StudyFolderPath))
+            {
+                Directory.CreateDirectory(StudyFolderPath);
+                return;
+            }
+
+            //if (!File.Exists(csvFilePath))
+            //{
+            //    return;
+            //}
+            
+            if (!alreadyWrittenLines.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            //iniWrite = false;
+            var userClick = MessageBox.Show(warningMsg, "Attention", MessageBoxButtons.YesNo);
+            if (userClick == DialogResult.Yes)
+            {
+                try
+                {
+                    Array.ForEach(Directory.GetFiles(StudyFolderPath), File.Delete);
+                    
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+                
+            }
 
         }
 
