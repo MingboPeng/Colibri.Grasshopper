@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel.Data;
 using System.Windows.Forms;
 using Grasshopper.Kernel.Types;
+using GH_IO.Serialization;
 
 namespace Colibri.Grasshopper
 {
@@ -22,6 +23,7 @@ namespace Colibri.Grasshopper
         private List<ColibriParam> filteredSources;
         private IteratorFlyParam flyParam;
         private bool isTestFly = false;
+        private bool ignoreAllWarningMsg = false;
         private string StudyFolder = "";
 
         int _totalCount = 0;
@@ -126,35 +128,62 @@ namespace Colibri.Grasshopper
             get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
         }
 
+        public override bool Read(GH_IReader reader)
+        {
+
+            if (reader.ItemExists("ignoreAllWarningMsg"))
+            {
+                ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
+            }
+
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetBoolean("ignoreAllWarningMsg", ignoreAllWarningMsg);
+            return base.Write(writer);
+        }
+
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Fly Test", Menu_DoClick,true,isTestFly);
+            Menu_AppendItem(menu, "Fly Test", runFlyTest);
+            //Menu_AppendSeparator(menu);
+
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg,true,ignoreAllWarningMsg);
             Menu_AppendSeparator(menu);
         }
         
-        private void Menu_DoClick(object sender, EventArgs e)
+        private void ignoreWarningMsg(object sender, EventArgs e)
         {
-            setToFlyTestOrNot(!isTestFly);
+            ignoreAllWarningMsg = !ignoreAllWarningMsg;
         }
 
-        private void setToFlyTestOrNot(bool setToFlyTest)
+        private void runFlyTest(object sender, EventArgs e)
         {
-            isTestFly = setToFlyTest;
-            var att = this.Attributes as IteratorAttributes;
-            if (isTestFly)
-            {
-                att.ButtonText = "Fly Test";
-            }
-            else
-            {
-                att.ButtonText = "Fly";
-            }
-            //this.m_attributes.ExpireLayout();
-            //this.OnPingDocument().DestroyAttributeCache();
-            //this.m_attributes
-            this.ExpireSolution(true);
+            isTestFly = true;
+            this.OnMouseDownEvent(sender);
         }
+
+        //private void setToFlyTestOrNot(bool setToFlyTest)
+        //{
+        //    isTestFly = setToFlyTest;
+        //    var att = this.Attributes as IteratorAttributes;
+        //    if (isTestFly)
+        //    {
+        //        att.ButtonText = "Fly Test";
+        //    }
+        //    else
+        //    {
+        //        att.ButtonText = "Fly";
+        //    }
+        //    //this.m_attributes.ExpireLayout();
+        //    //this.OnPingDocument().DestroyAttributeCache();
+        //    //this.m_attributes
+        //    this.ExpireSolution(true);
+        //}
         
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
@@ -173,6 +202,7 @@ namespace Colibri.Grasshopper
             {
                 if (isTestFly)
                 {
+                    isTestFly = false;
                     flyParam.FlyTest(e, 3);
                 }
                 else
@@ -184,9 +214,7 @@ namespace Colibri.Grasshopper
                 {
                     aggObj.setWriteFileToFalse();
                 }
-
-                setToFlyTestOrNot(false);
-
+                
             }
             catch (Exception ex)
             {
@@ -642,6 +670,7 @@ namespace Colibri.Grasshopper
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
+            
             var folder = "";
             bool isReady = true;
             aggObj = aggregatorObj();
@@ -650,7 +679,7 @@ namespace Colibri.Grasshopper
             if (aggObj != null)
             {
                 checkingMsg = aggObj.CheckAggregatorIfReady();
-                if (checkingMsg.IsNullOrEmpty())
+                if (checkingMsg.IsNullOrEmpty() || ignoreAllWarningMsg)
                 {
                     isReady = true;
                 }
