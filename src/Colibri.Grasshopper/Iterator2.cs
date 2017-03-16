@@ -241,7 +241,8 @@ namespace Colibri.Grasshopper
             {
                 //MessageBox.Show("Test"+ colibriParam.NickName);
                 colibriParam.NickName = "RenamePlz";
-                colibriParam.Param.ExpireSolution(false);
+                //colibriParam.Param.ExpireSolution(false);
+                colibriParam.Param.OnSolutionExpired(false);
             }
             
         }

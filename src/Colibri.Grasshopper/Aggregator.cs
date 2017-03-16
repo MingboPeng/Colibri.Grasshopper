@@ -7,6 +7,7 @@ using GH = Grasshopper;
 using Grasshopper.Kernel;
 using System.Windows.Forms;
 using System.Linq;
+using GH_IO.Serialization;
 
 namespace Colibri.Grasshopper
 {
@@ -15,6 +16,10 @@ namespace Colibri.Grasshopper
     {
         bool writeFile = false;
         public string folder = "";
+        //variable to keep track of what lines have been written during a colibri flight
+        private List<string> alreadyWrittenLines = new List<string>();
+
+        bool isFirstTimeOpen = true;
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -59,9 +64,7 @@ namespace Colibri.Grasshopper
 
         }
 
-        //variable to keep track of what lines have been written during a colibri flight
-        private List<string> alreadyWrittenLines = new List<string>();
-
+        
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -69,8 +72,9 @@ namespace Colibri.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //input variables
             
+
+            //input variables
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
             //List<string> imgParams = new List<string>();
@@ -126,6 +130,16 @@ namespace Colibri.Grasshopper
 
             if (run)
             {
+                //first open check
+                if (isFirstTimeOpen)
+                {
+                    isFirstTimeOpen = false;
+                    setWriteFileToFalse();
+                    return;
+
+                }
+
+
                 //Check folder if existed
                 checkStudyFolder(folder);
                 
@@ -277,9 +291,13 @@ namespace Colibri.Grasshopper
             
             if (this.Params.Input.Last().Sources.Any())
             {
-                var writeFile = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;
-                writeFile.Value = false;
-                writeFile.ExpireSolution(true);
+                var writeFileToggle = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;
+                if (writeFileToggle != null)
+                {
+                    writeFileToggle.Value = false;
+                    writeFileToggle.ExpireSolution(true);
+                }
+                
             }
         }
 
