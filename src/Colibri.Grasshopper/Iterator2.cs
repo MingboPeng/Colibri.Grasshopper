@@ -196,10 +196,8 @@ namespace Colibri.Grasshopper
                 Running = false;
                 this.flyParam = null;
                 
-
             }
-
-
+            
         }
         
 

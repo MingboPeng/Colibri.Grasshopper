@@ -20,6 +20,7 @@ namespace Colibri.Grasshopper
         private List<string> alreadyWrittenLines = new List<string>();
 
         bool isFirstTimeOpen = true;
+        bool isAlwaysOverrideFolder = false;
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -42,7 +43,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
             pManager.AddTextParameter("FlyID(Inputs)", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
             pManager.AddTextParameter("FlyResults(Outputs)", "FlyResults", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
@@ -117,9 +118,7 @@ namespace Colibri.Grasshopper
             string writeInData = "";
             //var ViewNames = new List<string>();
             
-
             
-
             //if we aren't told to write, clean out the list of already written items
             if (!run)
             {
@@ -204,6 +203,35 @@ namespace Colibri.Grasshopper
         public override Guid ComponentGuid
         {
             get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
+        }
+
+        public override bool Read(GH_IReader reader)
+        {
+
+            if (reader.ItemExists("isAlwaysOverrideFolder"))
+            {
+                isAlwaysOverrideFolder = reader.GetBoolean("isAlwaysOverrideFolder");
+            }
+                
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetBoolean("isAlwaysOverrideFolder", isAlwaysOverrideFolder);
+            return base.Write(writer);  
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick, true, isAlwaysOverrideFolder);
+            Menu_AppendSeparator(menu);
+        }
+
+        private void Menu_DoClick(object sender, EventArgs e)
+        {
+            isAlwaysOverrideFolder = !isAlwaysOverrideFolder;
         }
 
         private string captureViews(ImgParam imgParams,string flyID)
@@ -306,26 +334,33 @@ namespace Colibri.Grasshopper
         //Check if Aggregator exist, and if it is at the last
         public List<string> CheckAggregatorIfReady()
         {
-            
+            setToLast();
             var checkingMsg = new List<string>();
             checkingMsg = checkIfRecording(checkingMsg);
-            checkingMsg = checkIfLast(checkingMsg);
+            //checkingMsg = checkIfLast(checkingMsg);
             return checkingMsg;
 
         }
         
-        private List<string> checkIfLast(List<string> msg)
+        private void setToLast()
         {
-            string warningMsg = "  Aggregator might not capture all objects that you see in Rhino view.\n\t[SOLUTION]: select Aggregator and press Ctrl+F can save your life!";
-            var doc = GH.Instances.ActiveCanvas.Document;
-            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
+            //string warningMsg = "  Aggregator might not capture all objects that you see in Rhino view.\n\t[SOLUTION]: select Aggregator and press Ctrl+F can save your life!";
+            //var doc = GH.Instances.ActiveCanvas.Document;
+            //bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
 
-            if (!isAggregatorLast)
-            {
-                msg.Add(warningMsg);
-            }
+            //if (!isAggregatorLast)
+            //{
+            //    msg.Add(warningMsg);
 
-            return msg;
+            //}
+
+            //return msg;
+
+            this.OnPingDocument().DeselectAll();
+            this.Attributes.Selected = true;
+            this.OnPingDocument().BringSelectionToTop();
+            this.Attributes.Selected = false;
+
         }
 
         private List<string> checkIfRecording(List<string> msg)
@@ -337,56 +372,76 @@ namespace Colibri.Grasshopper
             {
                 msg.Add(warningMsg);
             }
-
+            
             return msg;
 
         }
-
+        
         //bool iniWrite = false;
         private void checkStudyFolder(string StudyFolderPath)
         {
             string warningMsg = "Study folder is not empty, do you want to override everything inside!";
-            var isRecording = this.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
             string csvFilePath = StudyFolderPath + "\\data.csv";
-
-            if (!isRecording.Value)
-            {
-                return;
-            }
+            
 
             if (!Directory.Exists(StudyFolderPath))
             {
-                Directory.CreateDirectory(StudyFolderPath);
+                try
+                {
+                    Directory.CreateDirectory(StudyFolderPath);
+                    
+                }
+                catch (Exception ex)
+                {
+
+                    throw ex;
+                }
+
                 return;
             }
 
-            //if (!File.Exists(csvFilePath))
-            //{
-            //    return;
-            //}
             
             if (!alreadyWrittenLines.IsNullOrEmpty())
             {
                 return;
             }
 
-            //iniWrite = false;
-            var userClick = MessageBox.Show(warningMsg, "Attention", MessageBoxButtons.YesNo);
-            if (userClick == DialogResult.Yes)
+            
+            if (isAlwaysOverrideFolder)
             {
-                try
+                cleanTheFolder(StudyFolderPath);
+            }
+            else if(Directory.GetFiles(StudyFolderPath).Any())
+            {
+                //popup msg box and ask user
+                var userClick = MessageBox.Show(warningMsg, "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.Yes)
                 {
-                    Array.ForEach(Directory.GetFiles(StudyFolderPath), File.Delete);
-                    
-                }
-                catch (Exception)
-                {
-
-                    throw;
+                    cleanTheFolder(StudyFolderPath);
                 }
                 
             }
+            
 
+        }
+
+        private void cleanTheFolder(string FolderPath)
+        {
+            if (!Directory.Exists(FolderPath))
+            {
+                return;
+            }
+
+            try
+            {
+                Array.ForEach(Directory.GetFiles(FolderPath), File.Delete);
+
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
         }
 
 
