@@ -150,6 +150,9 @@ namespace Colibri.Grasshopper
             {
                 att.ButtonText = "Fly";
             }
+            //this.m_attributes.ExpireLayout();
+            //this.OnPingDocument().DestroyAttributeCache();
+            //this.m_attributes
             this.ExpireSolution(true);
         }
         
@@ -234,17 +237,14 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Change Iterator's NickName
         /// </summary>   
-        private void checkSourceNickname(ColibriParam colibriParam)
+        private void checkSourceParamNickname(ColibriParam colibriParam)
         {
             
             //Check if nickname exists
             var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
             if (isNicknameEmpty)
             {
-                //MessageBox.Show("Test"+ colibriParam.NickName);
                 colibriParam.NickName = "RenamePlz";
-                //colibriParam.Param.ExpireSolution(false);
-                colibriParam.Param.OnSolutionExpired(false);
             }
             
         }
@@ -252,7 +252,7 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Change Iterator's input and output NickName
         /// </summary>   
-        private void checkParamNickname(ColibriParam ValidSourceParam)
+        private void checkInputParamNickname(ColibriParam ValidSourceParam)
         {
 
             if (ValidSourceParam != null)
@@ -268,7 +268,8 @@ namespace Colibri.Grasshopper
                 inputParam.NickName = newNickname;
                 outputParam.NickName = newNickname;
                 outputParam.Description = "This item is one of values from " + colibriParam.GHType.ToString() + "_" + newNickname;
-                
+
+                this.Attributes.ExpireLayout();
             }
             
         }
@@ -333,8 +334,8 @@ namespace Colibri.Grasshopper
             }
             foreach (var item in validColibriParams)
             {
-                checkSourceNickname(item);
-                checkParamNickname(item);
+                checkSourceParamNickname(item);
+                checkInputParamNickname(item);
             }
         }
 
@@ -518,7 +519,6 @@ namespace Colibri.Grasshopper
         private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
             
-
             bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
             bool isSelection = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
             bool isSecondLastSourceFull = Params.Input[this.Params.Input.Count - 2].Sources.Any();

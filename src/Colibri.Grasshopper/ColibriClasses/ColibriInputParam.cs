@@ -31,6 +31,7 @@ namespace Colibri.Grasshopper
             {
                 nickName = value;
                 Param.NickName = nickName;
+                Param.Attributes.ExpireLayout();
             }
         }
 

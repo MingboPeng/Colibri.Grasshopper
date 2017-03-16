@@ -93,11 +93,7 @@ namespace Colibri.Grasshopper
                 button.Dispose();
             }
         }
-
-        private void drawButton()
-        {
-            
-        }
+        
         public override GH_ObjectResponse RespondToMouseDown(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
             if (e.Button == MouseButtons.Left && this.MouseDownEvent != null)
