@@ -135,24 +135,22 @@ namespace Colibri.Grasshopper
         
         private void Menu_DoClick(object sender, EventArgs e)
         {
-            isTestFly = !isTestFly;
+            setToFlyTestOrNot(!isTestFly);
+        }
 
+        private void setToFlyTestOrNot(bool setToFlyTest)
+        {
+            isTestFly = setToFlyTest;
             var att = this.Attributes as IteratorAttributes;
             if (isTestFly)
             {
-                att.ButtonText = "Fly Test";            }
+                att.ButtonText = "Fly Test";
+            }
             else
             {
                 att.ButtonText = "Fly";
             }
             this.ExpireSolution(true);
-            //att.PerformLayout();
-            //this.Attributes.ExpireLayout();
-
-            //MessageBox.Show("Test:"+ myBool);
-            //att.Selected = false;
-            //this.OnPingDocument();
-            
         }
         
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
@@ -179,7 +177,12 @@ namespace Colibri.Grasshopper
                     flyParam.FlyAll(e);
                 }
 
-                aggObj.setWriteFileToFalse();
+                if (aggObj!=null)
+                {
+                    aggObj.setWriteFileToFalse();
+                }
+
+                setToFlyTestOrNot(false);
 
             }
             catch (Exception ex)
@@ -192,6 +195,7 @@ namespace Colibri.Grasshopper
                 // Always make sure that _running is switched off.
                 Running = false;
                 this.flyParam = null;
+                
 
             }
 
