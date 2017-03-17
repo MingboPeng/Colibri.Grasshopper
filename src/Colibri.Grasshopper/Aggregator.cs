@@ -190,7 +190,7 @@ namespace Colibri.Grasshopper
 
                 }
                 
-                _printOutStrings=_alreadyWrittenLines;
+                _printOutStrings = _alreadyWrittenLines;
                 this.Message = "Start recording\n" + (_printOutStrings.Count-1).ToString() + " new data added";
 
 

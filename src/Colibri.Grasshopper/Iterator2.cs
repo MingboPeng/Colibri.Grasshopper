@@ -569,15 +569,16 @@ namespace Colibri.Grasshopper
                 if (e.Type == GH_ObjectEventType.NickName)
                 {
                     checkAllNames(_filteredSources);
+                    //this.ExpireSolution(true);
 
-                    //edit the Fly output without expire this component's solution, 
-                    // only expire the downstream components which connected to the last output "FlyID"
-                    this.Params.Output.Last().ClearData();
-                    this.Params.Output.Last().AddVolatileDataList(new GH_Path(0,0), getFlyID());
-                    foreach (var item in this.Params.Output.Last().Recipients)
-                    {
-                        item.ExpireSolution(true);
-                    }
+                    ////edit the Fly output without expire this component's solution, 
+                    //// only expire the downstream components which connected to the last output "FlyID"
+                    //this.Params.Output.Last().ClearData();
+                    //this.Params.Output.Last().AddVolatileDataList(new GH_Path(0,0), getFlyID());
+                    //foreach (var item in this.Params.Output.Last().Recipients)
+                    //{
+                    //    item.ExpireSolution(true);
+                    //}
 
                 }
 
@@ -620,10 +621,11 @@ namespace Colibri.Grasshopper
             //Check selections
             checkSelections(Selections, ColibriParams, _totalCount);
 
-            messages = "ITERATION NUMBER \nTotal: " + _totalCount + "\nSelected: " + _selectedCount;
+            messages = "ITERATION NUMBER \nTotal: " + _totalCount;
 
             if (Selections.IsDefinedInSel)
             {
+                messages += "\nSelected: " + _selectedCount;
                 messages += "\n\n-----SELECTION-----\n";
                 messages += Selections.ToString(true);
             }
@@ -726,23 +728,27 @@ namespace Colibri.Grasshopper
             // only check Recipients of FlyID
             var flyIDRecipients = this.Params.Output.Last().Recipients;
 
-            _aggObj = flyIDRecipients.Where(
-                _ => _.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
-                ).First().Attributes.GetTopLevel.DocObject as Aggregator;
+            if (flyIDRecipients.IsNullOrEmpty()) return null;
+
+            //var aggObj = flyIDRecipients.Where(
+            //    _ => _.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
+            //    ).FirstOrDefault();
+
+            //_aggObj = aggObj.Attributes.GetTopLevel.DocObject as Aggregator;
 
             //_aggObj = (from item in flyIDRecipients
             //           where item.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
             //           select item.Attributes.GetTopLevel.DocObject)
             //           .First() as Aggregator;
 
-            //foreach (var item in flyIDRecipients)
-            //{
-            //    var recipientParent = item.Attributes.GetTopLevel.DocObject;
-            //    if (recipientParent.ComponentGuid.Equals(aggregatorID))
-            //    {
-            //        _aggObj = recipientParent as Aggregator;
-            //    }
-            //}
+            foreach (var item in flyIDRecipients)
+            {
+                var recipientParent = item.Attributes.GetTopLevel.DocObject;
+                if (recipientParent.ComponentGuid.Equals(aggregatorID))
+                {
+                    _aggObj = recipientParent as Aggregator;
+                }
+            }
             return _aggObj;
         }
 
