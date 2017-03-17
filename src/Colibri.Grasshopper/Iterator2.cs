@@ -17,19 +17,19 @@ namespace Colibri.Grasshopper
     public class Iterator2 : GH_Component, IGH_VariableParameterComponent
     {
         
-        GH_Document doc = null;
-        private bool Run = false;
-        private bool Running = false;
-        private List<ColibriParam> filteredSources;
-        private IteratorFlyParam flyParam;
-        private bool isTestFly = false;
-        private bool ignoreAllWarningMsg = false;
-        private string StudyFolder = "";
+        private GH_Document _doc = null;
+        private bool _run = false;
+        private bool _running = false;
+        private List<ColibriParam> _filteredSources;
+        private IteratorFlyParam _flyParam;
+        private bool _isTestFly = false;
+        private bool _ignoreAllWarningMsg = false;
+        private string _studyFolder = "";
 
-        int _totalCount = 0;
-        int _selectedCount = 0;
+        private int _totalCount = 0;
+        private int _selectedCount = 0;
 
-        private IteratorSelection Selections = new IteratorSelection();
+        private IteratorSelection _selections = new IteratorSelection();
 
 
         /// <summary>
@@ -41,6 +41,7 @@ namespace Colibri.Grasshopper
               "TT Toolbox", "Colibri")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
+            
         }
         
         /// <summary>
@@ -83,20 +84,19 @@ namespace Colibri.Grasshopper
             var FlyID = new List<object>();
             
             //flyParam only exists when flying
-            if (!Running && flyParam == null)
+            if (!_running && _flyParam == null)
             {
                 
-                filteredSources = gatherSources();
-                checkAllNames(filteredSources);
+                _filteredSources = gatherSources();
+                checkAllNames(_filteredSources);
 
-                this.Selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
-                this.Message = updateComponentMsg(filteredSources, this.Selections);
+                this._selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
+                this.Message = updateComponentMsg(_filteredSources, this._selections);
                 
             }
-
-
+            
             //Get current value
-            foreach (var item in filteredSources)
+            foreach (var item in _filteredSources)
             {
                 DA.SetData(item.AtIteratorPosition, item.CurrentValue());
                 FlyID.Add(item.ToString(true));
@@ -133,7 +133,7 @@ namespace Colibri.Grasshopper
 
             if (reader.ItemExists("ignoreAllWarningMsg"))
             {
-                ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
+                _ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
             }
 
             return base.Read(reader);
@@ -141,7 +141,7 @@ namespace Colibri.Grasshopper
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetBoolean("ignoreAllWarningMsg", ignoreAllWarningMsg);
+            writer.SetBoolean("ignoreAllWarningMsg", _ignoreAllWarningMsg);
             return base.Write(writer);
         }
 
@@ -152,38 +152,21 @@ namespace Colibri.Grasshopper
             //Menu_AppendSeparator(menu);
 
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg,true,ignoreAllWarningMsg);
+            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg,true,_ignoreAllWarningMsg);
             Menu_AppendSeparator(menu);
         }
         
         private void ignoreWarningMsg(object sender, EventArgs e)
         {
-            ignoreAllWarningMsg = !ignoreAllWarningMsg;
+            _ignoreAllWarningMsg = !_ignoreAllWarningMsg;
         }
 
         private void runFlyTest(object sender, EventArgs e)
         {
-            isTestFly = true;
+            _isTestFly = true;
             this.OnMouseDownEvent(sender);
         }
-
-        //private void setToFlyTestOrNot(bool setToFlyTest)
-        //{
-        //    isTestFly = setToFlyTest;
-        //    var att = this.Attributes as IteratorAttributes;
-        //    if (isTestFly)
-        //    {
-        //        att.ButtonText = "Fly Test";
-        //    }
-        //    else
-        //    {
-        //        att.ButtonText = "Fly";
-        //    }
-        //    //this.m_attributes.ExpireLayout();
-        //    //this.OnPingDocument().DestroyAttributeCache();
-        //    //this.m_attributes
-        //    this.ExpireSolution(true);
-        //}
+        
         
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
@@ -191,28 +174,28 @@ namespace Colibri.Grasshopper
             e.Document.SolutionEnd -= OnSolutionEnd;
 
             // If we're not supposed to run, abort now.
-            if (!Run || Running)
+            if (!_run || _running)
                 return;
 
             // Reset run and running states.
-            Run = false;
-            Running = true;
+            _run = false;
+            _running = true;
 
             try
             {
-                if (isTestFly)
+                if (_isTestFly)
                 {
-                    isTestFly = false;
-                    flyParam.FlyTest(e, 3);
+                    _isTestFly = false;
+                    _flyParam.FlyTest(e, 3);
                 }
                 else
                 {
-                    flyParam.FlyAll(e);
+                    _flyParam.FlyAll(e);
                 }
 
-                if (aggObj!=null)
+                if (_aggObj!=null)
                 {
-                    aggObj.setWriteFileToFalse();
+                    _aggObj.setWriteFileToFalse();
                 }
                 
             }
@@ -224,8 +207,8 @@ namespace Colibri.Grasshopper
             finally
             {
                 // Always make sure that _running is switched off.
-                Running = false;
-                this.flyParam = null;
+                _running = false;
+                this._flyParam = null;
                 
             }
             
@@ -239,26 +222,25 @@ namespace Colibri.Grasshopper
         /// </summary>   
         private ColibriParam ConvertToColibriParam(IGH_Param SelectedSource, int AtIteratorPosition)
         {
-            // Find the Guid for connected Slide or Panel
-
-            var component = SelectedSource; //list of things connected on this input
             
-            ColibriParam colibriParam = new ColibriParam(component, AtIteratorPosition);
-            if (colibriParam.GHType == InputType.Unsupported)
-            {
-                
-                return null;
-            }
-            else
-            {
+            //var component = SelectedSource; //list of things connected on this input
+            
+            ColibriParam colibriParam = new ColibriParam(SelectedSource, AtIteratorPosition);
+
+            //if (colibriParam.GHType == InputType.Unsupported)
+            //{
+            //    return null;
+            //}
+            //else
+            //{
                 //Flatten the Panel's data just in case 
                 if (colibriParam.GHType == InputType.Panel)
                 {
-                    component.VolatileData.Flatten();
+                    SelectedSource.VolatileData.Flatten();
                 }
                 
                 return colibriParam;
-            }
+            //}
             
         }
 
@@ -308,8 +290,8 @@ namespace Colibri.Grasshopper
         private List<ColibriParam> gatherSources()
         {
             var filtedSources = new List<ColibriParam>();
-            // exclude the last input which is "Selection"
             
+            // exclude the last input which is "Selection"
             for (int i = 0; i < this.Params.Input.Count-1; i++)
             {
                 //Check if it is fly or empty source param
@@ -323,9 +305,9 @@ namespace Colibri.Grasshopper
                     var colibriParam = ConvertToColibriParam(source.Last(), i);
 
                     //null  added if input is unsupported type
-                    if (colibriParam != null)
+                    if (colibriParam.GHType != InputType.Unsupported)
                     {
-                        colibriParam.Param.ObjectChanged += Source_ObjectChanged;
+                        colibriParam.RawParam.ObjectChanged += OnSource_ObjectChanged;
                         filtedSources.Add(colibriParam);
                     }
                     else
@@ -384,37 +366,31 @@ namespace Colibri.Grasshopper
         // response to Button event
         private void OnMouseDownEvent(object sender)
         {
-            if (doc == null)
+            if (_doc == null)
             {
-                doc = GH.Instances.ActiveCanvas.Document;
+                _doc = GH.Instances.ActiveCanvas.Document;
             }
 
-            if (this.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error)
-            {
-                return;
-            }
-
+            if (this.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error) return;
+           
             //Clean first
-            this.flyParam = null;
+            this._flyParam = null;
 
 
             //recollect all params 
-            filteredSources = gatherSources();
+            _filteredSources = gatherSources();
 
-            filteredSources.RemoveAll(item => item == null);
-            filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
+            _filteredSources.RemoveAll(item => item == null);
+            _filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
 
             
             //checked if Aggregator is recording and the last
-            if (!isAggregatorReady())
-            {
-                return;
-            }
-            
+            if (!isAggregatorReady()) return;
+           
             //check if any vaild input source connected to Iteratior
-            if (filteredSources.Count() > 0)
+            if (_filteredSources.Count() > 0)
             {
-                this.flyParam = new IteratorFlyParam(filteredSources,this.Selections,this.StudyFolder);
+                this._flyParam = new IteratorFlyParam(_filteredSources,this._selections,this._studyFolder);
             }
             else
             {
@@ -426,21 +402,29 @@ namespace Colibri.Grasshopper
             int testIterationNumber = _selectedCount;
             //int totalIterationNumber = _totalCount;
 
-            if (isTestFly)
+            if (_isTestFly)
             {
                 testIterationNumber = 3;
             }
-            var userClick = MessageBox.Show(flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
+
+            var userClick = MessageBox.Show(_flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
                   "\n\n" + testIterationNumber + " (out of "+ _totalCount + ") iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
 
             if (userClick == DialogResult.Yes)
             {
-                Run = true;
-                doc.SolutionEnd += OnSolutionEnd;
+                _run = true;
+                _doc.SolutionEnd += OnSolutionEnd;
                 
                 // only recompute those are expired flagged
-                doc.NewSolution(false);
+                _doc.NewSolution(false);
             }
+            else
+            {
+                _run = false;
+                _isTestFly = false;
+            }
+
+
         }
 
         #endregion
@@ -551,17 +535,14 @@ namespace Colibri.Grasshopper
             bool isSelection = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
             bool isSecondLastSourceFull = Params.Input[this.Params.Input.Count - 2].Sources.Any();
 
-
-            if (isSelection)
-            {
-                return;
-            }
             
-            if (!isInputSide)
-            {
-                return;
-            }
-                
+            //check input side only
+            if (!isInputSide) return;
+
+            //check if is Selection setting only
+            if (isSelection) return;
+
+
             // add a new input param while the second last input is full
             if (isSecondLastSourceFull)
             {
@@ -571,29 +552,57 @@ namespace Colibri.Grasshopper
                 this.Params.OnParametersChanged();
             }
 
+
             ////recollecting the filteredSources and rename while any source changed
-            //filteredSources = gatherSources();
+            //_filteredSources = gatherSources();
             //checkAllNames(filteredSources);
 
         }
         
         //This is for if any source name changed, NOTE: cannot deteck the edited
-        private void Source_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
+        private void OnSource_ObjectChanged(IGH_DocumentObject sender,GH_ObjectChangedEventArgs e)
         {
             
-            bool isExist = filteredSources.Exists(_ => _.Param.Equals(sender));
+            bool isExist = _filteredSources.Exists(_ => _.RawParam.Equals(sender));
             if (isExist)
             {
-                checkAllNames(filteredSources);
+                if (e.Type == GH_ObjectEventType.NickName)
+                {
+                    checkAllNames(_filteredSources);
+
+                    //edit the Fly output without expire this component's solution, 
+                    // only expire the downstream components which connected to the last output "FlyID"
+                    this.Params.Output.Last().ClearData();
+                    this.Params.Output.Last().AddVolatileDataList(new GH_Path(0,0), getFlyID());
+                    foreach (var item in this.Params.Output.Last().Recipients)
+                    {
+                        item.ExpireSolution(true);
+                    }
+
+                }
+
             }
+
             else
             {
-                sender.ObjectChanged -= Source_ObjectChanged;
+                sender.ObjectChanged -= OnSource_ObjectChanged;
             }
-
-
+            
         }
 
+        private List<string> getFlyID()
+        {
+            if (_filteredSources.IsNullOrEmpty()) return new List<string>();
+
+            var FlyID = new List<string>();
+            foreach (var item in _filteredSources)
+            {
+                FlyID.Add(item.ToString(true));
+            }
+
+            return FlyID;
+        }
+       
         private string updateComponentMsg(List<ColibriParam> ColibriParams, IteratorSelection Selections)
         {
             
@@ -665,7 +674,7 @@ namespace Colibri.Grasshopper
         #endregion
 
         #region Check Aggregator before fly
-        Aggregator aggObj = null;
+        private Aggregator _aggObj = null;
         
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
@@ -673,56 +682,68 @@ namespace Colibri.Grasshopper
             
             var folder = "";
             bool isReady = true;
-            aggObj = aggregatorObj();
+            _aggObj = aggregatorObj();
             var checkingMsg = new List<string>();
 
-            if (aggObj != null)
-            {
-                checkingMsg = aggObj.CheckAggregatorIfReady();
-                if (checkingMsg.IsNullOrEmpty() || ignoreAllWarningMsg)
-                {
-                    isReady = true;
-                }
-                else
-                {
-                    string warningMsg = "";
-                    foreach (var item in checkingMsg)
-                    {
-                        warningMsg += "\n\n"+item;
-                    }
-                    var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n" + warningMsg, "Attention", MessageBoxButtons.YesNo);
-                    if (userClick == DialogResult.No)
-                    {
-                        // user doesn't want ot continue! set isReady to false to stop
-                        isReady = false;
-                    }
-                }
-                
-                folder = aggObj.folder;
-            }
+            //is aggregator is not connected 
+            if (_aggObj == null) return isReady;
+            
+            //check aggregator 
+            checkingMsg = _aggObj.CheckAggregatorIfReady();
 
-            StudyFolder = folder;
+            if (checkingMsg.IsNullOrEmpty() || _ignoreAllWarningMsg)
+            {
+                isReady = true;
+            }
+            else
+            {
+                string warningMsg = "";
+                foreach (var item in checkingMsg)
+                {
+                    warningMsg += "\n\n"+item;
+                }
+                var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n" + warningMsg, "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.No)
+                {
+                    // user doesn't want ot continue! set isReady to false to stop
+                    isReady = false;
+                }
+            }
+                
+            folder = _aggObj.Folder;
+            
+
+            _studyFolder = folder;
             return isReady;
 
         }
         
-
         private Aggregator aggregatorObj()
         {
-            aggObj = null;
+            _aggObj = null;
             var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
 
             // only check Recipients of FlyID
             var flyIDRecipients = this.Params.Output.Last().Recipients;
-            foreach (var item in flyIDRecipients)
-            {
-                var recipientParent = item.Attributes.GetTopLevel.DocObject;
-                if (recipientParent.ComponentGuid.Equals(aggregatorID))
-                {
-                    aggObj = recipientParent as Aggregator;
-                }
-            }
-            return aggObj;
+
+            _aggObj = flyIDRecipients.Where(
+                _ => _.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
+                ).First().Attributes.GetTopLevel.DocObject as Aggregator;
+
+            //_aggObj = (from item in flyIDRecipients
+            //           where item.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
+            //           select item.Attributes.GetTopLevel.DocObject)
+            //           .First() as Aggregator;
+
+            //foreach (var item in flyIDRecipients)
+            //{
+            //    var recipientParent = item.Attributes.GetTopLevel.DocObject;
+            //    if (recipientParent.ComponentGuid.Equals(aggregatorID))
+            //    {
+            //        _aggObj = recipientParent as Aggregator;
+            //    }
+            //}
+            return _aggObj;
         }
 
        

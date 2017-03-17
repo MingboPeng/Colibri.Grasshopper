@@ -14,13 +14,14 @@ namespace Colibri.Grasshopper
     
     public class Aggregator : GH_Component
     {
-        bool writeFile = false;
-        public string folder = "";
+        //private bool _writeFile = false;
+        public string Folder = "";
         //variable to keep track of what lines have been written during a colibri flight
-        private List<string> alreadyWrittenLines = new List<string>();
+        private List<string> _alreadyWrittenLines = new List<string>();
+        private List<string> _printOutStrings = new List<string>();
 
-        bool isFirstTimeOpen = true;
-        bool isAlwaysOverrideFolder = false;
+        private bool _isFirstTimeOpen = true;
+        private bool _isAlwaysOverrideFolder = false;
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -61,7 +62,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("out", "ReadMe",
-                "...", GH_ParamAccess.item);
+                "...", GH_ParamAccess.list);
 
         }
 
@@ -73,17 +74,19 @@ namespace Colibri.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            
+
+            bool writeFile = false;
 
             //input variables
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
-            //List<string> imgParams = new List<string>();
+            
+
             var JSON = new threeDParam();
             var imgParams = new ImgParam();
 
             //get data
-            DA.GetData(0, ref folder);
+            DA.GetData(0, ref Folder);
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
             DA.GetData(3, ref imgParams);
@@ -95,34 +98,32 @@ namespace Colibri.Grasshopper
             Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
             //Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
             
-            string csvPath = folder + "/data.csv";
-            var rawData = inputs;
-            int inDataLength = rawData.Count;
-            rawData.AddRange(outputs);
-            int allDataLength = rawData.Count;
+            string csvPath = Folder + @"\data.csv";
+            //var rawData = inputs;
+            //int inDataLength = rawData.Count;
+            //rawData.AddRange(outputs);
+            //int allDataLength = rawData.Count;
 
-            string flyID = String.Empty;
-            string keyReady = String.Empty;
-            string valueReady = String.Empty;
-            
             //Parsing data to csv format
-            keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
-            valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
-            flyID = inputCSVstrings["FlyID"];
+            string flyID = inputCSVstrings["FlyID"];
+            string keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
+            string valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
 
-            
+            string systemSafeFileName = flyID.Replace(" ", "");
+            systemSafeFileName = Path.GetInvalidFileNameChars()
+                                    .Aggregate(systemSafeFileName, (current, c) => current.Replace(c.ToString(),""));
+
+
             bool run = writeFile;
-            //iniWrite = writeFile;
             
-            
-            string writeInData = "";
             //var ViewNames = new List<string>();
             
             
             //if we aren't told to write, clean out the list of already written items
             if (!run)
             {
-                alreadyWrittenLines = new List<string>();
+                _alreadyWrittenLines = new List<string>();
+                this.Message = "Recording disabled\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
             }
             
                 //if we are told to run and we haven't written this line yet, do so
@@ -130,55 +131,75 @@ namespace Colibri.Grasshopper
             if (run)
             {
                 //first open check
-                if (isFirstTimeOpen)
+                if (_isFirstTimeOpen)
                 {
-                    isFirstTimeOpen = false;
+                    _isFirstTimeOpen = false;
                     setWriteFileToFalse();
                     return;
-
                 }
 
 
                 //Check folder if existed
-                checkStudyFolder(folder);
+                checkStudyFolder(Folder);
                 
-                //save img
+                
                 keyReady += ",img";
-                string imgFileName = captureViews(imgParams, flyID);
 
-                //save json
-                string jsonFileName = string.Empty;
-                string jsonFilePath = string.Empty;
                 if (JSON.IsDefined)
-                {
                     keyReady += ",threeD";
-                    jsonFileName = flyID + ".json";
-                    jsonFilePath = folder + @"\" + jsonFileName;
-                    File.WriteAllText(jsonFilePath, JSON.JsonSting);
-                }
+                
 
                 //check csv file
                 if (!File.Exists(csvPath))
                 {
+                    //clean out the list of already written items
+                    _printOutStrings = new List<string>();
+                    //add key lines 
                     keyReady += Environment.NewLine;
                     File.WriteAllText(csvPath, keyReady);
+                    _alreadyWrittenLines.Add("Title: "+keyReady);
                 }
-
-                //save csv
-                if (!alreadyWrittenLines.Contains(valueReady))
+                else
                 {
-                    writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
-                    File.AppendAllText(csvPath, writeInData);
+                    //add data lins
+                    if (!_alreadyWrittenLines.Contains("FlyID: " + flyID))
+                    {
+                        string writeInData = valueReady;
 
-                    //add this line to our list of already written lines
-                    alreadyWrittenLines.Add(valueReady);
+                        //save img
+                        string imgFileName = captureViews(imgParams, systemSafeFileName);
+                        writeInData += ","+imgFileName;
+
+                        //save json
+                        if (JSON.IsDefined)
+                        {
+                            string jsonFileName = systemSafeFileName + ".json";
+                            string jsonFilePath = Folder + @"\" + jsonFileName;
+                            File.WriteAllText(jsonFilePath, JSON.JsonSting);
+                            writeInData += "," + jsonFileName;
+                        }
+
+                        //save csv // add data at the end 
+                        //writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
+                        writeInData += "\n";
+                        File.AppendAllText(csvPath, writeInData);
+                        
+                        //add this line to our list of already written lines
+                        _alreadyWrittenLines.Add("FlyID: "+flyID);
+                    }
+
                 }
                 
+                _printOutStrings=_alreadyWrittenLines;
+                this.Message = "Start recording\n" + (_printOutStrings.Count-1).ToString() + " new data added";
+
+
             }
             
             //set output
-            DA.SetData(0, writeInData);
-
+            //DA.SetData(0, writeInData);
+            DA.SetDataList(0, _printOutStrings);
+            
         }
 
         /// <summary>
@@ -210,7 +231,7 @@ namespace Colibri.Grasshopper
 
             if (reader.ItemExists("isAlwaysOverrideFolder"))
             {
-                isAlwaysOverrideFolder = reader.GetBoolean("isAlwaysOverrideFolder");
+                _isAlwaysOverrideFolder = reader.GetBoolean("isAlwaysOverrideFolder");
             }
                 
             return base.Read(reader);
@@ -218,20 +239,20 @@ namespace Colibri.Grasshopper
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetBoolean("isAlwaysOverrideFolder", isAlwaysOverrideFolder);
+            writer.SetBoolean("isAlwaysOverrideFolder", _isAlwaysOverrideFolder);
             return base.Write(writer);  
         }
 
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick, true, isAlwaysOverrideFolder);
+            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick, true, _isAlwaysOverrideFolder);
             Menu_AppendSeparator(menu);
         }
 
         private void Menu_DoClick(object sender, EventArgs e)
         {
-            isAlwaysOverrideFolder = !isAlwaysOverrideFolder;
+            _isAlwaysOverrideFolder = !_isAlwaysOverrideFolder;
         }
 
         private string captureViews(ImgParam imgParams,string flyID)
@@ -263,7 +284,7 @@ namespace Colibri.Grasshopper
             if (!ViewNames.Any())
             {
                 imgName += ".png";
-                imgPath = folder + @"\" + imgName;
+                imgPath = Folder + @"\" + imgName;
 
                 activeView.Redraw();
                 var pic = activeView.CaptureToBitmap(imageSize);
@@ -301,7 +322,7 @@ namespace Colibri.Grasshopper
                 if (!string.IsNullOrEmpty(existViewName))
                 {
                     imgName += "_" + existViewName + ".png";
-                    imgPath = folder + @"\" + imgName;
+                    imgPath = Folder + @"\" + imgName;
                     //save imgs
                     activeView.Redraw();
                     var pic = activeView.CaptureToBitmap(imageSize);
@@ -329,8 +350,7 @@ namespace Colibri.Grasshopper
             }
         }
 
-
-
+        
         //Check if Aggregator exist, and if it is at the last
         public List<string> CheckAggregatorIfReady()
         {
@@ -401,13 +421,10 @@ namespace Colibri.Grasshopper
             }
 
             
-            if (!alreadyWrittenLines.IsNullOrEmpty())
-            {
-                return;
-            }
-
+            if (!_alreadyWrittenLines.IsNullOrEmpty()) return;
             
-            if (isAlwaysOverrideFolder)
+            
+            if (_isAlwaysOverrideFolder)
             {
                 cleanTheFolder(StudyFolderPath);
             }
@@ -427,20 +444,22 @@ namespace Colibri.Grasshopper
 
         private void cleanTheFolder(string FolderPath)
         {
-            if (!Directory.Exists(FolderPath))
-            {
-                return;
-            }
+            if (!Directory.Exists(FolderPath)) return;
+            
 
+            DirectoryInfo folderInfo = new DirectoryInfo(FolderPath);
             try
             {
-                Array.ForEach(Directory.GetFiles(FolderPath), File.Delete);
+                foreach (var item in folderInfo.GetFiles())
+                {
+                    item.Delete();
+                }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
-                throw ex;
+                //MessageBox.Show("Override the folder failed, please clean up the folder manually./n/n"+ex.ToString());
+                //throw ex;
             }
         }
 

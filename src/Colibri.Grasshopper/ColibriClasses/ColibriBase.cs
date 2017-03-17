@@ -10,10 +10,10 @@ namespace Colibri.Grasshopper
 
     static class ColibriBase
     {
-        public static Dictionary<string, string> ConvertToDictionary(Dictionary<string, string> Dictionary)
-        {
-            return Dictionary;
-        }
+        //public static Dictionary<string, string> ConvertToDictionary(Dictionary<string, string> Dictionary)
+        //{
+        //    return Dictionary;
+        //}
 
         public static Dictionary<string, string> ConvertToDictionary (List<string> StringLikeDictionary)
         {
@@ -21,7 +21,7 @@ namespace Colibri.Grasshopper
 
             foreach (var item in StringLikeDictionary)
             {
-                var cleanItem = item.ToString().Replace(" ", "");
+                var cleanItem = item.ToString();
                 cleanItem = cleanItem.Substring(1, cleanItem.Length - 2);
 				var cleanItemParts = cleanItem.Split(',');
 
@@ -48,6 +48,7 @@ namespace Colibri.Grasshopper
             string dataKey = string.Empty;
             string dataValue = string.Empty;
             string flyID = string.Empty;
+            
             foreach (var item in convertedDictionary)
             {
                 dataKey = String.IsNullOrEmpty(dataKey) ? Prefix + item.Key : dataKey + "," + Prefix + item.Key;
@@ -58,8 +59,7 @@ namespace Colibri.Grasshopper
             DesignExplorerData.Add("DataTitle", dataKey);
             DesignExplorerData.Add("DataValue", dataValue);
             DesignExplorerData.Add("FlyID", flyID);
-
-
+            
             return DesignExplorerData;
 
         }

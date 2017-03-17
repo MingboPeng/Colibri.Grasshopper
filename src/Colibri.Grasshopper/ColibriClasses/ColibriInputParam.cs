@@ -15,23 +15,23 @@ namespace Colibri.Grasshopper
         public InputType GHType { get; private set; }
 
 
-        private string nickName;
+        private string _nickName;
 
         public string NickName
         {
             get
             {
-                if (nickName != Param.NickName)
+                if (_nickName != RawParam.NickName)
                 {
-                    nickName = Param.NickName;
+                    _nickName = RawParam.NickName;
                 }
-                return nickName;
+                return _nickName;
             }
             set
             {
-                nickName = value;
-                Param.NickName = nickName;
-                Param.Attributes.ExpireLayout();
+                _nickName = value;
+                RawParam.NickName = _nickName;
+                RawParam.Attributes.ExpireLayout();
             }
         }
 
@@ -57,9 +57,9 @@ namespace Colibri.Grasshopper
             set { totalCount = value; }
         }
 
-        private List<string> panelValues = new List<string>();
+        private List<string> _panelValues = new List<string>();
 
-        public IGH_Param Param { get; private set; }
+        public IGH_Param RawParam { get; private set; }
 
         //for flyParam
         private int _iniPosition;
@@ -77,17 +77,17 @@ namespace Colibri.Grasshopper
         }
         public ColibriParam(IGH_Param RawParam, int atIteratorPosition)
         {
-            Param = RawParam;
+            this.RawParam = RawParam;
             AtIteratorPosition = atIteratorPosition;
 
 
             GHType = GetGHType();
-            nickName = Param.NickName;
+            _nickName = this.RawParam.NickName;
             
             if (GHType == InputType.Panel)
             {
-                var panel = this.Param as GH_Panel;
-                panelValues = getPanelValue(panel);
+                var panel = this.RawParam as GH_Panel;
+                _panelValues = getPanelValue(panel);
 
             }
 
@@ -96,9 +96,9 @@ namespace Colibri.Grasshopper
             //check slider's Implied Nickname
             if (GHType == InputType.Slider)
             {
-                var slider = this.Param as GH_NumberSlider;
-                nickName = String.IsNullOrEmpty(slider.NickName) && slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
-                slider.NickName = nickName;
+                var slider = this.RawParam as GH_NumberSlider;
+                _nickName = String.IsNullOrEmpty(slider.NickName) && slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
+                slider.NickName = _nickName;
             }
 
             CalIniPosition();
@@ -109,7 +109,7 @@ namespace Colibri.Grasshopper
         //Methods
         private InputType GetGHType()
         {
-            var rawParam = this.Param;
+            var rawParam = this.RawParam;
             //Check raw param if is null first
             if (rawParam == null)
             {
@@ -157,7 +157,7 @@ namespace Colibri.Grasshopper
 
         public string CurrentValue() {
 
-            var rawParam = this.Param;
+            var rawParam = this.RawParam;
             string currentValue = string.Empty;
 
             if (GHType == InputType.Slider)
@@ -168,8 +168,8 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                panelValues = getPanelValue(rawParam as GH_Panel);
-                currentValue = panelValues[_position];
+                _panelValues = getPanelValue(rawParam as GH_Panel);
+                currentValue = _panelValues[_position];
             }
             else if (GHType == InputType.ValueList)
             {
@@ -189,7 +189,7 @@ namespace Colibri.Grasshopper
         public string CurrentValue(bool isFlying)
         {
 
-            var rawParam = this.Param;
+            var rawParam = this.RawParam;
             string currentValue = string.Empty;
 
             if (GHType == InputType.Slider)
@@ -200,7 +200,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                currentValue = panelValues[_position];
+                currentValue = _panelValues[_position];
 
             }
             else if (GHType == InputType.ValueList)
@@ -229,7 +229,7 @@ namespace Colibri.Grasshopper
         private void CalIniPosition()
         {
 
-            var rawParam = this.Param;
+            var rawParam = this.RawParam;
             int position = this._position;
 
 
@@ -262,7 +262,7 @@ namespace Colibri.Grasshopper
         private int CountSteps()
         {
             
-            var param = this.Param;
+            var param = this.RawParam;
             var count = 0;
 
 
@@ -278,7 +278,7 @@ namespace Colibri.Grasshopper
             else if (GHType == InputType.Panel)
             {
                 
-                count = panelValues.Count();
+                count = _panelValues.Count();
 
             }
 
@@ -302,7 +302,7 @@ namespace Colibri.Grasshopper
         public void SetParamTo(int SetToStepIndex)
         {
 
-            var param = this.Param;
+            var param = this.RawParam;
             
             this._position = SetToStepIndex;
 
@@ -314,7 +314,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                this.Param.ExpireSolution(false);
+                this.RawParam.ExpireSolution(false);
             }
             else if (GHType == InputType.ValueList)
             {
@@ -328,7 +328,7 @@ namespace Colibri.Grasshopper
                 var valueList = param as GH_ValueList;
                 string state = indexToValueListState(_position);
                 valueList.LoadState(state);
-                this.Param.ExpireSolution(false);
+                this.RawParam.ExpireSolution(false);
 
             }
 
@@ -338,7 +338,7 @@ namespace Colibri.Grasshopper
         // todo: SetToNext() 
         public void SetToNext()
         {
-            var param = this.Param;
+            var param = this.RawParam;
             
             if (GHType == InputType.Slider)
             {
@@ -350,7 +350,7 @@ namespace Colibri.Grasshopper
             else if (GHType == InputType.Panel)
             {
                 _position++;
-                this.Param.ExpireSolution(false);
+                this.RawParam.ExpireSolution(false);
             }
             else if (GHType == InputType.ValueList)
             {
@@ -393,7 +393,7 @@ namespace Colibri.Grasshopper
         public string ToString (bool withNames)
         {
 
-            string currentValue = "[" +nickName+","+ CurrentValue()+ "]";
+            string currentValue = "[" +_nickName+","+ CurrentValue()+ "]";
 
             return currentValue;
         }
