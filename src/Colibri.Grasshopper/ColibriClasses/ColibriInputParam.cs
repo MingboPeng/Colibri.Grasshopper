@@ -13,21 +13,21 @@ namespace Colibri.Grasshopper
     {
         //Properties
         public InputType GHType { get; private set; }
-
-
+        
         private string _nickName;
 
         public string NickName
         {
             get
             {
-                if (_nickName != RawParam.NickName)
+                //in case source RawParam is updated by user
+                if (_nickName != this.RawParam.NickName)
                 {
-                    _nickName = RawParam.NickName;
+                    _nickName = checkNickname(this.RawParam);
                 }
                 return _nickName;
             }
-            set
+            private set
             {
                 _nickName = value;
                 RawParam.NickName = _nickName;
@@ -49,12 +49,12 @@ namespace Colibri.Grasshopper
         }
 
         public int AtIteratorPosition { get; set; }
-        private int totalCount;
+        private int _totalCount;
 
         public int TotalCount
         {
-            get { return totalCount; }
-            set { totalCount = value; }
+            get { return _totalCount; }
+            set { _totalCount = value; }
         }
 
         private List<string> _panelValues = new List<string>();
@@ -79,10 +79,9 @@ namespace Colibri.Grasshopper
         {
             this.RawParam = RawParam;
             AtIteratorPosition = atIteratorPosition;
-
-
-            GHType = GetGHType();
-            _nickName = this.RawParam.NickName;
+            
+            //check Type
+            this.GHType = GetGHType(this.RawParam);
             
             if (GHType == InputType.Panel)
             {
@@ -93,23 +92,37 @@ namespace Colibri.Grasshopper
 
             TotalCount = CountSteps();
 
-            //check slider's Implied Nickname
-            if (GHType == InputType.Slider)
-            {
-                var slider = this.RawParam as GH_NumberSlider;
-                _nickName = String.IsNullOrEmpty(slider.NickName) && slider.ImpliedNickName !="Input"? slider.ImpliedNickName: slider.NickName;
-                slider.NickName = _nickName;
-            }
+            this.NickName = checkNickname(this.RawParam);
+
+            RawParam.ObjectChanged += RawParam_ObjectChanged;
 
             CalIniPosition();
-
-
+            
         }
-        
-        //Methods
-        private InputType GetGHType()
+
+        public delegate void nameChangedHandler(ColibriParam sender);
+        public event nameChangedHandler ObjectNicknameChanged;
+
+
+        private void RawParam_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
         {
-            var rawParam = this.RawParam;
+            if (e.Type == GH_ObjectEventType.NickName)
+            {
+                _nickName = checkNickname(this.RawParam);
+
+                if (this.ObjectNicknameChanged !=null)
+                {
+                    this.ObjectNicknameChanged(this);
+                }
+                
+                
+            }
+        }
+
+        //Methods
+        private InputType GetGHType(IGH_Param RawParam)
+        {
+            var rawParam = RawParam;
             //Check raw param if is null first
             if (rawParam == null)
             {
@@ -132,6 +145,28 @@ namespace Colibri.Grasshopper
             {
                 return InputType.Unsupported;
             }
+        }
+
+        private string checkNickname(IGH_Param RawParam)
+        {
+            //Check nicknames
+            string nickName = RawParam.NickName;
+
+            //check slider's Implied Nickname
+            if (GHType == InputType.Slider)
+            {
+                var slider = RawParam as GH_NumberSlider;
+                nickName = String.IsNullOrEmpty(slider.NickName) ? slider.ImpliedNickName : slider.NickName;
+            }
+
+            //check if is empty
+            var isNicknameEmpty = String.IsNullOrEmpty(nickName) || nickName == "List" || nickName == "Input";
+            if (isNicknameEmpty)
+            {
+                nickName = "RenamePlz";
+            }
+
+            return nickName;
         }
 
         private List<string> getPanelValue(GH_Panel panel)
@@ -318,21 +353,14 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.ValueList)
             {
-                //var valueList = param as GH_ValueList;
-                //valueList.SelectItem(position);
-                //valueList.ToggleItem(SetToStepIndex);
                 
-                //this.Param.ExpireSolution(false);
-
-
                 var valueList = param as GH_ValueList;
                 string state = indexToValueListState(_position);
                 valueList.LoadState(state);
                 this.RawParam.ExpireSolution(false);
 
             }
-
-
+            
         }
 
         // todo: SetToNext() 
@@ -365,6 +393,7 @@ namespace Colibri.Grasshopper
 
             }
         }
+
         public void Reset()
         {
             SetParamTo(0);
@@ -373,8 +402,8 @@ namespace Colibri.Grasshopper
         //this convert current step position to ValueList state string.
         private string indexToValueListState(int positionIndex)
         {
-            int position = positionIndex < totalCount ? positionIndex : 0;
-            string state = new String('N', totalCount-1);
+            int position = positionIndex < _totalCount ? positionIndex : 0;
+            string state = new String('N', _totalCount-1);
             state = state.Substring(0, position) + "Y" + state.Substring(position);
             return state;
 
@@ -393,7 +422,7 @@ namespace Colibri.Grasshopper
         public string ToString (bool withNames)
         {
 
-            string currentValue = "[" +_nickName+","+ CurrentValue()+ "]";
+            string currentValue = "[" +this.NickName+","+ CurrentValue()+ "]";
 
             return currentValue;
         }
