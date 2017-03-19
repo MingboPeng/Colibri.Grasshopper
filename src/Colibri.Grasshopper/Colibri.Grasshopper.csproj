@@ -67,7 +67,7 @@
     <Compile Include="ColibriClasses\ThreeDParam.cs" />
     <Compile Include="ColibriInputs.cs" />
     <Compile Include="ColibriClasses\IteratorAttributes.cs" />
-    <Compile Include="ColibriClasses\ColibriInputParam.cs" />
+    <Compile Include="ColibriClasses\ColibriParam.cs" />
     <Compile Include="ImageParameters.cs" />
     <Compile Include="Iterator.cs" />
     <Compile Include="Colibri.GrasshopperInfo.cs" />

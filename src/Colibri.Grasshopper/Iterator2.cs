@@ -86,7 +86,6 @@ namespace Colibri.Grasshopper
             //flyParam only exists when flying
             if (!_running && _flyParam == null)
             {
-                
                 _filteredSources = gatherSources();
                 checkAllInputParamNames(_filteredSources);
 
@@ -106,7 +105,7 @@ namespace Colibri.Grasshopper
             
         }
 
-       
+        
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
@@ -175,53 +174,25 @@ namespace Colibri.Grasshopper
 
         }
         #endregion
-
-
         
         #region Collecting Source Params, and convert to Colibri Params
-
+        
         /// <summary>
         /// convert current selected source to ColibriParam
         /// </summary>   
         private ColibriParam ConvertToColibriParam(IGH_Param SelectedSource, int AtIteratorPosition)
         {
-            
             //var component = SelectedSource; //list of things connected on this input
-            
             ColibriParam colibriParam = new ColibriParam(SelectedSource, AtIteratorPosition);
-
-            //if (colibriParam.GHType == InputType.Unsupported)
-            //{
-            //    return null;
-            //}
-            //else
-            //{
-                //Flatten the Panel's data just in case 
-                if (colibriParam.GHType == InputType.Panel)
-                {
-                    SelectedSource.VolatileData.Flatten();
-                }
-                
-                return colibriParam;
-            //}
             
+            //Flatten the Panel's data just in case 
+            if (colibriParam.GHType == InputType.Panel)
+            {
+                SelectedSource.VolatileData.Flatten();
+            }
+            return colibriParam;
         }
-
-        ///// <summary>
-        ///// Change Iterator's NickName
-        ///// </summary>   
-        //private void checkSourceParamNickname(ColibriParam colibriParam)
-        //{
-            
-        //    //Check if nickname exists
-        //    var isNicknameEmpty = String.IsNullOrEmpty(colibriParam.NickName) || colibriParam.NickName == "List";
-        //    if (isNicknameEmpty)
-        //    {
-        //        colibriParam.NickName = "RenamePlz";
-        //    }
-            
-        //}
-
+        
         /// <summary>
         /// Change Iterator's input and output NickName
         /// </summary>   
@@ -331,7 +302,6 @@ namespace Colibri.Grasshopper
 
 
         #endregion
-
 
         #region Button Event on Iterator
 
@@ -457,7 +427,6 @@ namespace Colibri.Grasshopper
 
         #endregion
 
-
         #region Methods of IGH_VariableParameterComponent interface
 
         public bool CanInsertParameter(GH_ParameterSide side, int index)
@@ -551,7 +520,6 @@ namespace Colibri.Grasshopper
 
 
         #endregion
-
 
         #region Events for ParamSourcesChanged
         

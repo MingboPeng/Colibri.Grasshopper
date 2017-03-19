@@ -123,7 +123,14 @@ namespace Colibri.Grasshopper
             if (!run)
             {
                 _alreadyWrittenLines = new List<string>();
-                this.Message = "Recording disabled\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
+
+                //update msg
+                if (this.Params.Input.Last().Sources.Any())
+                {
+                    int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
+                    this.Message = "Recording disabled\n" + recordedCount + " new data added";
+                }
+                
             }
             
                 //if we are told to run and we haven't written this line yet, do so
@@ -157,12 +164,12 @@ namespace Colibri.Grasshopper
                     //add key lines 
                     keyReady += Environment.NewLine;
                     File.WriteAllText(csvPath, keyReady);
-                    _alreadyWrittenLines.Add("Title: "+keyReady);
+                    _alreadyWrittenLines.Add("[Title] "+keyReady);
                 }
                 else
                 {
                     //add data lins
-                    if (!_alreadyWrittenLines.Contains("FlyID: " + flyID))
+                    if (!_alreadyWrittenLines.Contains("[FlyID] " + flyID))
                     {
                         string writeInData = valueReady;
 
@@ -185,7 +192,7 @@ namespace Colibri.Grasshopper
                         File.AppendAllText(csvPath, writeInData);
                         
                         //add this line to our list of already written lines
-                        _alreadyWrittenLines.Add("FlyID: "+flyID);
+                        _alreadyWrittenLines.Add("[FlyID] "+flyID);
                     }
 
                 }
