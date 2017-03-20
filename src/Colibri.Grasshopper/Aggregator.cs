@@ -17,7 +17,7 @@ namespace Colibri.Grasshopper
         OverrideAll,
         AppendAllToTheEnd,
         FinishTheRest,
-        AskMe
+        AskEverytime
     }
 
     public class Aggregator : GH_Component
@@ -30,7 +30,7 @@ namespace Colibri.Grasshopper
 
         private bool _isFirstTimeOpen = true;
         private bool _isAlwaysOverrideFolder = false;
-        private RecordingMode _recordingMode = RecordingMode.AskMe;
+        private RecordingMode _recordingMode = RecordingMode.AskEverytime;
         private bool _write = false;
 
         /// <summary>
@@ -125,8 +125,15 @@ namespace Colibri.Grasshopper
             systemSafeFileName = Path.GetInvalidFileNameChars()
                                     .Aggregate(systemSafeFileName, (current, c) => current.Replace(c.ToString(),""));
 
-
-            this._write = writeFile;
+            //write only when toggle is connected
+            if (this.Params.Input.Last().Sources.Any())
+            {
+                this._write = writeFile;
+            }
+            else
+            {
+                this._write = false;
+            }
             
             //var ViewNames = new List<string>();
             
@@ -206,7 +213,6 @@ namespace Colibri.Grasshopper
                 
 
             }
-            this.Message = "Recording Mode\n" + _recordingMode.ToString();
             updateMsg();
             //set output
             //DA.SetData(0, writeInData);
@@ -240,18 +246,20 @@ namespace Colibri.Grasshopper
 
         public override bool Read(GH_IReader reader)
         {
+            int readValue = -1;
 
-            if (reader.ItemExists("isAlwaysOverrideFolder"))
+            if (reader.ItemExists("recordingMode"))
             {
-                _isAlwaysOverrideFolder = reader.GetBoolean("isAlwaysOverrideFolder");
+                reader.TryGetInt32("recordingMode", ref readValue);
+                _recordingMode = (RecordingMode)readValue;
             }
-                
+            
             return base.Read(reader);
         }
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetBoolean("isAlwaysOverrideFolder", _isAlwaysOverrideFolder);
+            writer.SetInt32("recordingMode", (int)_recordingMode);
             return base.Write(writer);  
         }
 
@@ -268,7 +276,7 @@ namespace Colibri.Grasshopper
             Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, _recordingMode == RecordingMode.FinishTheRest)
                 .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same)";
 
-            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, _recordingMode == RecordingMode.AskMe);
+            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, _recordingMode == RecordingMode.AskEverytime);
             
             Menu_AppendSeparator(menu);
         }
@@ -293,27 +301,26 @@ namespace Colibri.Grasshopper
 
         private void Menu_DoClick_Default(object sender, EventArgs e)
         {
-            //_isAlwaysOverrideFolder = !_isAlwaysOverrideFolder;
-            this._recordingMode = RecordingMode.AskMe;
+            this._recordingMode = RecordingMode.AskEverytime;
             updateMsg();
         }
 
         private void updateMsg()
         {
-            this.Message = "Recording Mode\n" + _recordingMode.ToString();
+            this.Message = "[OVERRIDE MODE]\n" + _recordingMode.ToString();
 
             if (_write)
             {
-                this.Message += "\nStart recording\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
+                this.Message += "\n---------------\n[RECORDING STARTED]\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
             }
             else if(this.Params.Input.Last().Sources.Any())
             {
                 int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
-                this.Message += "\nRecording disabled\n" + recordedCount + " new data added";
+                this.Message += "\n---------------\n[RECORDING DISABLED]\n" + recordedCount + " new data added";
             }
             else
             {
-                this.Message += "\nRecording disabled";
+                this.Message += "\n---------------\n[RECORDING DISABLED]";
             }
             this.ExpireSolution(true);
             
