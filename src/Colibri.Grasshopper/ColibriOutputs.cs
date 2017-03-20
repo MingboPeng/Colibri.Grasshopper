@@ -32,7 +32,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Results", "Results[1]", "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited 10 values max.\nNull or Empty value will be marked as \"NoData\"", GH_ParamAccess.list);
+            pManager.AddTextParameter("Result", "Result[1]", "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited 10 values max.\nNull or Empty value will be marked as \"NoData\"", GH_ParamAccess.list);
             pManager[0].DataMapping = GH_DataMapping.Flatten;
             pManager[0].Optional = true;
         }
@@ -52,49 +52,6 @@ namespace Colibri.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //Declare variables
-            //List<string> OutputNames = new List<string>();
-            //List<string> OutputValues = new List<string>();
-
-            //catch inputs from Grasshopper
-
-            //DA.GetDataList(0, OutputNames);
-            //DA.GetDataList(1, OutputValues);
-
-            ////defense
-            //if (OutputNames.Count != OutputValues.Count)
-            //{
-            //    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide equal numbers of Names and Values.");
-            //    return;
-            //}
-
-            ////dict to populate
-            //Dictionary<string, string> myDictionary = new Dictionary<string, string>();
-
-            ////loop over headings
-            //for (int i = 0; i < OutputNames.Count; i++)
-            //{
-            //    try
-            //    {
-            //        myDictionary.Add(OutputNames[i], OutputValues[i]);
-            //    }
-            //    catch (ArgumentException ex)
-            //    {
-            //        if (ex.ToString().Contains("key"))
-            //        {
-            //            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your Outputs must have unique names!  Set them all and try again.");
-            //            return;
-            //        }
-            //        else
-            //        {
-            //            throw ex;
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        throw ex;
-            //    }
-            //}
             //checkInputParamNickname();
             this.Message= updateComponentMsg();
             //set output data

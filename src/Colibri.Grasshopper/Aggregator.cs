@@ -8,10 +8,18 @@ using Grasshopper.Kernel;
 using System.Windows.Forms;
 using System.Linq;
 using GH_IO.Serialization;
+using Grasshopper.Kernel.Parameters;
 
 namespace Colibri.Grasshopper
 {
-    
+    enum RecordingMode
+    {
+        OverrideAll,
+        AppendAllToTheEnd,
+        FinishTheRest,
+        AskMe
+    }
+
     public class Aggregator : GH_Component
     {
         //private bool _writeFile = false;
@@ -22,6 +30,8 @@ namespace Colibri.Grasshopper
 
         private bool _isFirstTimeOpen = true;
         private bool _isAlwaysOverrideFolder = false;
+        private RecordingMode _recordingMode = RecordingMode.AskMe;
+        private bool _write = false;
 
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -54,6 +64,8 @@ namespace Colibri.Grasshopper
             pManager[4].Optional = true;
             pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
+            
+            
         }
 
         /// <summary>
@@ -114,28 +126,21 @@ namespace Colibri.Grasshopper
                                     .Aggregate(systemSafeFileName, (current, c) => current.Replace(c.ToString(),""));
 
 
-            bool run = writeFile;
+            this._write = writeFile;
             
             //var ViewNames = new List<string>();
             
             
             //if we aren't told to write, clean out the list of already written items
-            if (!run)
+            if (!_write)
             {
                 _alreadyWrittenLines = new List<string>();
-
-                //update msg
-                if (this.Params.Input.Last().Sources.Any())
-                {
-                    int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
-                    this.Message = "Recording disabled\n" + recordedCount + " new data added";
-                }
                 
             }
             
                 //if we are told to run and we haven't written this line yet, do so
 
-            if (run)
+            if (_write)
             {
                 //first open check
                 if (_isFirstTimeOpen)
@@ -198,11 +203,11 @@ namespace Colibri.Grasshopper
                 }
                 
                 _printOutStrings = _alreadyWrittenLines;
-                this.Message = "Start recording\n" + (_printOutStrings.Count-1).ToString() + " new data added";
-
+                
 
             }
-            
+            this.Message = "Recording Mode\n" + _recordingMode.ToString();
+            updateMsg();
             //set output
             //DA.SetData(0, writeInData);
             DA.SetDataList(0, _printOutStrings);
@@ -253,13 +258,65 @@ namespace Colibri.Grasshopper
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick, true, _isAlwaysOverrideFolder);
+
+            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick_Override, true, _recordingMode == RecordingMode.OverrideAll)
+                .ToolTipText = "This will clean the folder first, and then start from beginning.";
+
+            Menu_AppendItem(menu, "Append all data to the end", Menu_DoClick_AppendAll, true, _recordingMode == RecordingMode.AppendAllToTheEnd)
+                .ToolTipText ="Keep all data, and append all new data to the end of CSV.";
+
+            Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, _recordingMode == RecordingMode.FinishTheRest)
+                .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same)";
+
+            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, _recordingMode == RecordingMode.AskMe);
+            
             Menu_AppendSeparator(menu);
         }
 
-        private void Menu_DoClick(object sender, EventArgs e)
+        private void Menu_DoClick_FinishRest(object sender, EventArgs e)
         {
-            _isAlwaysOverrideFolder = !_isAlwaysOverrideFolder;
+            this._recordingMode = RecordingMode.FinishTheRest;
+            updateMsg();
+        }
+
+        private void Menu_DoClick_AppendAll(object sender, EventArgs e)
+        {
+            this._recordingMode = RecordingMode.AppendAllToTheEnd;
+            updateMsg();
+        }
+
+        private void Menu_DoClick_Override(object sender, EventArgs e)
+        {
+            this._recordingMode = RecordingMode.OverrideAll;
+            updateMsg();
+        }
+
+        private void Menu_DoClick_Default(object sender, EventArgs e)
+        {
+            //_isAlwaysOverrideFolder = !_isAlwaysOverrideFolder;
+            this._recordingMode = RecordingMode.AskMe;
+            updateMsg();
+        }
+
+        private void updateMsg()
+        {
+            this.Message = "Recording Mode\n" + _recordingMode.ToString();
+
+            if (_write)
+            {
+                this.Message += "\nStart recording\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
+            }
+            else if(this.Params.Input.Last().Sources.Any())
+            {
+                int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
+                this.Message += "\nRecording disabled\n" + recordedCount + " new data added";
+            }
+            else
+            {
+                this.Message += "\nRecording disabled";
+            }
+            this.ExpireSolution(true);
+            
         }
 
         private string captureViews(ImgParam imgParams,string flyID)
@@ -446,6 +503,20 @@ namespace Colibri.Grasshopper
                 
             }
             
+
+        }
+
+        private void getStudiedFlyIDFromCSV(string FolderPath)
+        {
+            string csvFilePath = FolderPath + @"\data.csv";
+            if (!File.Exists(csvFilePath)) return;
+            
+            var stringLines = File.ReadAllLines(csvFilePath).ToList();
+
+
+            MessageBox.Show(stringLines.FirstOrDefault());
+
+
 
         }
 
