@@ -25,6 +25,7 @@ namespace Colibri.Grasshopper
         private bool _isTestFly = false;
         private bool _ignoreAllWarningMsg = false;
         private string _studyFolder = "";
+        private OverrideMode _mode = OverrideMode.AskEverytime;
 
         private int _totalCount = 0;
         private int _selectedCount = 0;
@@ -331,7 +332,7 @@ namespace Colibri.Grasshopper
             //check if any vaild input source connected to Iteratior
             if (_filteredSources.Count() > 0)
             {
-                this._flyParam = new IteratorFlyParam(_filteredSources,this._selections,this._studyFolder);
+                this._flyParam = new IteratorFlyParam(_filteredSources,this._selections,this._studyFolder, this._mode);
             }
             else
             {
@@ -716,9 +717,8 @@ namespace Colibri.Grasshopper
             }
                 
             folder = _aggObj.Folder;
-            
-
-            _studyFolder = folder;
+            this._mode = _aggObj.OverrideTypes;
+            this._studyFolder = folder;
             return isReady;
 
         }

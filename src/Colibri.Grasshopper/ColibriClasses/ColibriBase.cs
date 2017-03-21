@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 namespace Colibri.Grasshopper
 {
     public enum InputType { Slider, Panel, ValueList, Unsupported }
-
+    public enum OverrideMode
+    {
+        OverrideAll,
+        AppendAllToTheEnd,
+        FinishTheRest,
+        AskEverytime
+    }
     static class ColibriBase
     {
         //public static Dictionary<string, string> ConvertToDictionary(Dictionary<string, string> Dictionary)

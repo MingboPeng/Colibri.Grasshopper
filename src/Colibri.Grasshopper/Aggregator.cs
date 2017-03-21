@@ -10,27 +10,23 @@ using System.Linq;
 using GH_IO.Serialization;
 using Grasshopper.Kernel.Parameters;
 
+
 namespace Colibri.Grasshopper
 {
-    enum RecordingMode
-    {
-        OverrideAll,
-        AppendAllToTheEnd,
-        FinishTheRest,
-        AskEverytime
-    }
+    
 
     public class Aggregator : GH_Component
     {
         //private bool _writeFile = false;
         public string Folder = "";
+        public OverrideMode OverrideTypes = OverrideMode.AskEverytime;
         //variable to keep track of what lines have been written during a colibri flight
         private List<string> _alreadyWrittenLines = new List<string>();
         private List<string> _printOutStrings = new List<string>();
 
         private bool _isFirstTimeOpen = true;
-        private bool _isAlwaysOverrideFolder = false;
-        private RecordingMode _recordingMode = RecordingMode.AskEverytime;
+        //private bool _isAlwaysOverrideFolder = false;
+        
         private bool _write = false;
 
         /// <summary>
@@ -251,7 +247,7 @@ namespace Colibri.Grasshopper
             if (reader.ItemExists("recordingMode"))
             {
                 reader.TryGetInt32("recordingMode", ref readValue);
-                _recordingMode = (RecordingMode)readValue;
+                OverrideTypes = (OverrideMode)readValue;
             }
             
             return base.Read(reader);
@@ -259,7 +255,7 @@ namespace Colibri.Grasshopper
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetInt32("recordingMode", (int)_recordingMode);
+            writer.SetInt32("recordingMode", (int)OverrideTypes);
             return base.Write(writer);  
         }
 
@@ -267,47 +263,48 @@ namespace Colibri.Grasshopper
         {
             base.AppendAdditionalComponentMenuItems(menu);
 
-            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick_Override, true, _recordingMode == RecordingMode.OverrideAll)
+            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
                 .ToolTipText = "This will clean the folder first, and then start from beginning.";
 
-            Menu_AppendItem(menu, "Append all data to the end", Menu_DoClick_AppendAll, true, _recordingMode == RecordingMode.AppendAllToTheEnd)
+            Menu_AppendItem(menu, "Append all data to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
                 .ToolTipText ="Keep all data, and append all new data to the end of CSV.";
 
-            Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, _recordingMode == RecordingMode.FinishTheRest)
+            Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
                 .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same)";
 
-            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, _recordingMode == RecordingMode.AskEverytime);
+            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, OverrideTypes == OverrideMode.AskEverytime);
             
             Menu_AppendSeparator(menu);
         }
 
         private void Menu_DoClick_FinishRest(object sender, EventArgs e)
         {
-            this._recordingMode = RecordingMode.FinishTheRest;
+            this.OverrideTypes = OverrideMode.FinishTheRest;
             updateMsg();
+            
         }
 
         private void Menu_DoClick_AppendAll(object sender, EventArgs e)
         {
-            this._recordingMode = RecordingMode.AppendAllToTheEnd;
+            this.OverrideTypes = OverrideMode.AppendAllToTheEnd;
             updateMsg();
         }
 
         private void Menu_DoClick_Override(object sender, EventArgs e)
         {
-            this._recordingMode = RecordingMode.OverrideAll;
+            this.OverrideTypes = OverrideMode.OverrideAll;
             updateMsg();
         }
 
         private void Menu_DoClick_Default(object sender, EventArgs e)
         {
-            this._recordingMode = RecordingMode.AskEverytime;
+            this.OverrideTypes = OverrideMode.AskEverytime;
             updateMsg();
         }
 
         private void updateMsg()
         {
-            this.Message = "[OVERRIDE MODE]\n" + _recordingMode.ToString();
+            this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString();
 
             if (_write)
             {
@@ -468,13 +465,12 @@ namespace Colibri.Grasshopper
 
         }
         
-        //bool iniWrite = false;
+
         private void checkStudyFolder(string StudyFolderPath)
         {
             string warningMsg = "Study folder is not empty, do you want to override everything inside!";
             string csvFilePath = StudyFolderPath + "\\data.csv";
             
-
             if (!Directory.Exists(StudyFolderPath))
             {
                 try
@@ -494,12 +490,16 @@ namespace Colibri.Grasshopper
             
             if (!_alreadyWrittenLines.IsNullOrEmpty()) return;
             
-            
-            if (_isAlwaysOverrideFolder)
+            //Check Mode
+            if (this.OverrideTypes == OverrideMode.OverrideAll)
             {
                 cleanTheFolder(StudyFolderPath);
             }
-            else if(Directory.GetFiles(StudyFolderPath).Any())
+            else if (this.OverrideTypes == OverrideMode.AppendAllToTheEnd || this.OverrideTypes == OverrideMode.FinishTheRest)
+            {
+                //do nothing, append the end
+            }
+            else if(Directory.GetFiles(StudyFolderPath).Any() && this.OverrideTypes == OverrideMode.AskEverytime)
             {
                 //popup msg box and ask user
                 var userClick = MessageBox.Show(warningMsg, "Attention", MessageBoxButtons.YesNo);
@@ -507,25 +507,21 @@ namespace Colibri.Grasshopper
                 {
                     cleanTheFolder(StudyFolderPath);
                 }
-                
+
             }
             
-
         }
 
-        private void getStudiedFlyIDFromCSV(string FolderPath)
-        {
-            string csvFilePath = FolderPath + @"\data.csv";
-            if (!File.Exists(csvFilePath)) return;
+        //private void getStudiedFlyIDFromCSV(string FolderPath)
+        //{
+        //    string csvFilePath = FolderPath + @"\data.csv";
+        //    if (!File.Exists(csvFilePath)) return;
             
-            var stringLines = File.ReadAllLines(csvFilePath).ToList();
-
-
-            MessageBox.Show(stringLines.FirstOrDefault());
-
-
-
-        }
+        //    var stringLines = File.ReadAllLines(csvFilePath).ToList();
+            
+        //    MessageBox.Show(stringLines.FirstOrDefault());
+            
+        //}
 
         private void cleanTheFolder(string FolderPath)
         {

@@ -20,12 +20,14 @@ namespace Colibri.Grasshopper
             set { _inputParams = value; }
         }
 
+        private List<string> _studiedFlyID;
 
         //List of each input param's all steps index
         private List<List<int>> _allPositions;
         private List<List<int>> _allSelectedPositions;
         private int _selectedCounts;
         private List<int> _iniPositions;
+
 
         //current each position
         private List<int> _currentPositionsIndex { get; set; }
@@ -37,17 +39,21 @@ namespace Colibri.Grasshopper
         public int _totalCounts { get; private set; }
         
 
-        private string watchFilePath { get; set; }
+        private string _watchFilePath { get; set; }
+        //private string _studyFoler = String.Empty;
 
         private IteratorSelection _selections { get; set; }
+        private OverrideMode _overrideFolderMode = OverrideMode.AskEverytime;
 
         //constructor 
         public IteratorFlyParam(){}
 
-        public IteratorFlyParam(List<ColibriParam> sourceParams, IteratorSelection selections, string studyFolder)
+        public IteratorFlyParam(List<ColibriParam> sourceParams, IteratorSelection selections, string studyFolder, OverrideMode overrideFolderMode)
         {
             this._inputParams = sourceParams;
             this._selections = selections == null? new IteratorSelection(): selections;
+            this._overrideFolderMode = overrideFolderMode;
+            //this._studyFoler = studyFolder;
 
             this._totalCounts = ColibriBase.CalTotalCounts(this._inputParams);
             this._selectedCounts = _selections.SelectedCounts > 0 ? _selections.SelectedCounts : _totalCounts;
@@ -57,6 +63,14 @@ namespace Colibri.Grasshopper
             Count = 0;
 
             createWatchFile(studyFolder);
+
+            //get studied Fly ID from folder
+            if (this._overrideFolderMode == OverrideMode.FinishTheRest)
+            {
+                this._studiedFlyID = getStudiedFlyID(studyFolder);
+
+               // System.Windows.Forms.MessageBox.Show(this._studiedFlyID.First());
+            }
 
         }
 
@@ -68,10 +82,10 @@ namespace Colibri.Grasshopper
         {
             if (!string.IsNullOrEmpty(FolderPath))
             {
-                watchFilePath = FolderPath + "\\running.txt";
+                this._watchFilePath = FolderPath + "\\running.txt";
                 try
                 {
-                    File.WriteAllText(watchFilePath, "running");
+                    File.WriteAllText(this._watchFilePath, "running");
                 }
                 catch (Exception)
                 {
@@ -96,7 +110,6 @@ namespace Colibri.Grasshopper
                 {
                     InputParams[i].SetParamTo(this._iniPositions[i]);
                 }
-
                 
             }
             
@@ -119,6 +132,7 @@ namespace Colibri.Grasshopper
         {
             
             FirstResetAll(false);
+
             
             while (true)
             {
@@ -134,25 +148,38 @@ namespace Colibri.Grasshopper
 
                 //watch the selection
                 bool isInSelection = ifInSelectionDomains(_selections, Count);
+                
+
                 if (isInSelection)
                 {
-                    // We've just got a new valid permutation. Solve the new solution.
-                    e.Document.NewSolution(false);
+                    if (this._overrideFolderMode == OverrideMode.FinishTheRest)
+                    {
+                        bool isStudiedID = this._studiedFlyID.Contains(getCurrentFlyID());
+                        if (!isStudiedID)
+                        {
+                            // We've just got a new valid permutation. Solve the new solution.
+                            e.Document.NewSolution(false);
+                        }
+                    }
+                    else
+                    {
+                        e.Document.NewSolution(false);
+                    }
+
+                    
                     
                 }
 
                 //todo: check the First 0 position which would be execulted at the end.
-
                 
                 //isRunning = Count < _selectedCounts;
-
-
+                
                 //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
                 //watch the file to stop
-                if (!string.IsNullOrEmpty(watchFilePath))
+                if (!string.IsNullOrEmpty(_watchFilePath))
                 {
-                    if (!File.Exists(watchFilePath))
+                    if (!File.Exists(_watchFilePath))
                     {
                         // watch file was deleted by user
                         isRunning = false;
@@ -163,9 +190,9 @@ namespace Colibri.Grasshopper
                 {
                     // study is over!
                     
-                    if (File.Exists(watchFilePath))
+                    if (File.Exists(_watchFilePath))
                     {
-                        File.Delete(watchFilePath);
+                        File.Delete(_watchFilePath);
                     }
                     e.Document.NewSolution(false);
                     break;
@@ -213,9 +240,9 @@ namespace Colibri.Grasshopper
                     if (flewID.Count >= testNumber)
                     {
                         // study is over!
-                        if (File.Exists(watchFilePath))
+                        if (File.Exists(_watchFilePath))
                         {
-                            File.Delete(watchFilePath);
+                            File.Delete(_watchFilePath);
                         }
                         break;
                     }
@@ -229,7 +256,7 @@ namespace Colibri.Grasshopper
         {
 
            
-            if (MoveToParamIndex >= _inputParams.Count)
+            if (MoveToParamIndex >= this._inputParams.Count)
             {
                 return false;
             }
@@ -237,11 +264,11 @@ namespace Colibri.Grasshopper
             //System.Windows.Forms.MessageBox.Show(Count.ToString());
             
 
-            var currentParam = _inputParams[MoveToParamIndex];
-            var thisSelectedPositions = _allSelectedPositions[MoveToParamIndex];
+            var currentParam = this._inputParams[MoveToParamIndex];
+            var thisSelectedPositions = this._allSelectedPositions[MoveToParamIndex];
             //int currentStepPosition = currentStepPositionsIndex[MoveToParamIndex];
 
-            int nextPositionIndex = _currentPositionsIndex[MoveToParamIndex]+1; 
+            int nextPositionIndex = this._currentPositionsIndex[MoveToParamIndex]+1; 
             
 
             if (nextPositionIndex < thisSelectedPositions.Count)
@@ -274,8 +301,7 @@ namespace Colibri.Grasshopper
                     
                 return MoveToNextPermutation(ref MoveToParamIndex);
             }
-
-
+            
         }
         
         private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
@@ -300,6 +326,48 @@ namespace Colibri.Grasshopper
 
             isInSelection = includedCounts == 0 ? false : true;
             return isInSelection;
+
+        }
+
+        private string getCurrentFlyID()
+        {
+            var inputParams = this._inputParams;
+            string currentNickname = String.Empty;
+            string currentValue = String.Empty;
+            string flyID = String.Empty;
+            for (int i = 0; i < inputParams.Count; i++)
+            {
+                currentNickname = "in:"+ inputParams[i].NickName;
+                currentValue = inputParams[i].CurrentValue();
+                flyID += currentNickname +"_" +currentValue + "_";
+                //var currentPositionIndex = this._currentPositionsIndex[i];
+                //var currentPosition = this._allSelectedPositions[i][currentPositionIndex];
+            }
+
+            return flyID;
+        }
+        private List<string> getStudiedFlyID(string FolderPath)
+        {
+            var inputParams = this._inputParams;
+            string csvFilePath = FolderPath + @"\data.csv";
+            if (!File.Exists(csvFilePath)) return new List<string>();
+            var stringLines = File.ReadAllLines(csvFilePath).ToList();
+
+            var studiedFlyID = new List<string>();
+
+            var keys = stringLines.First().Split(',').Take(inputParams.Count).ToList();
+            for (int i = 0; i < stringLines.Count; i++)
+            {
+                var itemValues = stringLines[i].Split(',').Take(inputParams.Count).ToList();
+                string oneID = String.Empty;
+                for (int k = 0; k < itemValues.Count; k++)
+                {
+                    oneID += keys[k] + "_" + itemValues[k] + "_";
+                }
+                studiedFlyID.Add(oneID);
+            }
+
+            return studiedFlyID;
 
         }
         
