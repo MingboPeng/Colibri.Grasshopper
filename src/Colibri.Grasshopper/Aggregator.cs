@@ -124,6 +124,13 @@ namespace Colibri.Grasshopper
             //write only when toggle is connected
             if (this.Params.Input.Last().Sources.Any())
             {
+                //first open check
+                if (_isFirstTimeOpen)
+                {
+                    _isFirstTimeOpen = false;
+                    setWriteFileToFalse();
+                    return;
+                }
                 this._write = writeFile;
             }
             else
@@ -138,6 +145,7 @@ namespace Colibri.Grasshopper
             if (!_write)
             {
                 _alreadyWrittenLines = new List<string>();
+                return;
                 
             }
             
@@ -145,15 +153,7 @@ namespace Colibri.Grasshopper
 
             if (_write)
             {
-                //first open check
-                if (_isFirstTimeOpen)
-                {
-                    _isFirstTimeOpen = false;
-                    setWriteFileToFalse();
-                    return;
-                }
-
-
+                
                 //Check folder if existed
                 checkStudyFolder(Folder);
                 
@@ -206,10 +206,10 @@ namespace Colibri.Grasshopper
                 }
                 
                 _printOutStrings = _alreadyWrittenLines;
-                
+                updateMsg();
 
             }
-            updateMsg();
+
             //set output
             //DA.SetData(0, writeInData);
             DA.SetDataList(0, _printOutStrings);
@@ -249,6 +249,12 @@ namespace Colibri.Grasshopper
                 reader.TryGetInt32("recordingMode", ref readValue);
                 OverrideTypes = (OverrideMode)readValue;
             }
+
+            if (reader.ItemExists("Write"))
+            {
+                this._isFirstTimeOpen =  reader.GetBoolean("Write");
+            }
+            
             
             return base.Read(reader);
         }
@@ -256,6 +262,7 @@ namespace Colibri.Grasshopper
         public override bool Write(GH_IWriter writer)
         {
             writer.SetInt32("recordingMode", (int)OverrideTypes);
+            writer.SetBoolean("Write", true);
             return base.Write(writer);  
         }
 
@@ -263,16 +270,16 @@ namespace Colibri.Grasshopper
         {
             base.AppendAdditionalComponentMenuItems(menu);
 
-            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
+            Menu_AppendItem(menu, "Clean the folder and run all", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
                 .ToolTipText = "This will clean the folder first, and then start from beginning.";
 
-            Menu_AppendItem(menu, "Append all data to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
+            Menu_AppendItem(menu, "Run all and append data to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
                 .ToolTipText ="Keep all data, and append all new data to the end of CSV.";
 
-            Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
+            Menu_AppendItem(menu, "Run the rest and append data to the end", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
                 .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same)";
 
-            Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, OverrideTypes == OverrideMode.AskEverytime);
+            Menu_AppendItem(menu, "Ask me everytime if the folder is not empty", Menu_DoClick_Default, true, OverrideTypes == OverrideMode.AskEverytime);
             
             Menu_AppendSeparator(menu);
         }
@@ -304,7 +311,8 @@ namespace Colibri.Grasshopper
 
         private void updateMsg()
         {
-            this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString();
+            this.Message = "[OVERRIDE MODE]\n" + this.OverrideTypes.ToString();
+            int recordedCount = _printOutStrings.Select(_ => _.StartsWith("FlyID")).Count();
 
             if (_write)
             {
@@ -312,13 +320,14 @@ namespace Colibri.Grasshopper
             }
             else if(this.Params.Input.Last().Sources.Any())
             {
-                int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
+                
                 this.Message += "\n---------------\n[RECORDING DISABLED]\n" + recordedCount + " new data added";
             }
             else
             {
                 this.Message += "\n---------------\n[RECORDING DISABLED]";
             }
+
             this.ExpireSolution(true);
             
         }
@@ -405,7 +414,6 @@ namespace Colibri.Grasshopper
 
         public void setWriteFileToFalse()
         {
-            
             if (this.Params.Input.Last().Sources.Any())
             {
                 var writeFileToggle = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;

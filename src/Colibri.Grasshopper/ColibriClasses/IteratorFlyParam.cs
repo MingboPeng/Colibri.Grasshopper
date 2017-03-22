@@ -339,7 +339,7 @@ namespace Colibri.Grasshopper
             {
                 currentNickname = "in:"+ inputParams[i].NickName;
                 currentValue = inputParams[i].CurrentValue();
-                flyID += currentNickname +"_" +currentValue + "_";
+                flyID = String.IsNullOrEmpty(flyID) ? currentNickname + "_" + currentValue : flyID + "_" + currentNickname + "_" + currentValue;
                 //var currentPositionIndex = this._currentPositionsIndex[i];
                 //var currentPosition = this._allSelectedPositions[i][currentPositionIndex];
             }
@@ -362,7 +362,7 @@ namespace Colibri.Grasshopper
                 string oneID = String.Empty;
                 for (int k = 0; k < itemValues.Count; k++)
                 {
-                    oneID += keys[k] + "_" + itemValues[k] + "_";
+                    oneID = String.IsNullOrEmpty(oneID) ? keys[k] + "_" + itemValues[k] : oneID + "_" + keys[k] + "_" + itemValues[k];
                 }
                 studiedFlyID.Add(oneID);
             }
