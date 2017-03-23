@@ -124,6 +124,13 @@ namespace Colibri.Grasshopper
             //write only when toggle is connected
             if (this.Params.Input.Last().Sources.Any())
             {
+                //first open check
+                if (_isFirstTimeOpen)
+                {
+                    _isFirstTimeOpen = false;
+                    setWriteFileToFalse();
+                    return;
+                }
                 this._write = writeFile;
             }
             else
@@ -138,22 +145,15 @@ namespace Colibri.Grasshopper
             if (!_write)
             {
                 _alreadyWrittenLines = new List<string>();
-                
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString() + "\n---------------\n[RECORDING DISABLED]\n";
+
             }
             
                 //if we are told to run and we haven't written this line yet, do so
 
             if (_write)
             {
-                //first open check
-                if (_isFirstTimeOpen)
-                {
-                    _isFirstTimeOpen = false;
-                    setWriteFileToFalse();
-                    return;
-                }
-
-
+                
                 //Check folder if existed
                 checkStudyFolder(Folder);
                 
@@ -206,16 +206,18 @@ namespace Colibri.Grasshopper
                 }
                 
                 _printOutStrings = _alreadyWrittenLines;
+                //updateMsg();
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString()+ "\n---------------\n[RECORDING STARTED]\n";
                 
-
             }
-            updateMsg();
+
+
             //set output
             //DA.SetData(0, writeInData);
             DA.SetDataList(0, _printOutStrings);
-            
-        }
 
+        }
+        
         /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
@@ -239,7 +241,7 @@ namespace Colibri.Grasshopper
         {
             get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
         }
-
+        
         public override bool Read(GH_IReader reader)
         {
             int readValue = -1;
@@ -263,14 +265,14 @@ namespace Colibri.Grasshopper
         {
             base.AppendAdditionalComponentMenuItems(menu);
 
-            Menu_AppendItem(menu, "Always override the folder", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
+            Menu_AppendItem(menu, "Clean the foler and run all", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
                 .ToolTipText = "This will clean the folder first, and then start from beginning.";
 
-            Menu_AppendItem(menu, "Append all data to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
+            Menu_AppendItem(menu, "Run all and append to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
                 .ToolTipText ="Keep all data, and append all new data to the end of CSV.";
 
-            Menu_AppendItem(menu, "Finish the rest", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
-                .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same)";
+            Menu_AppendItem(menu, "Run the rest and append to the end", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
+                .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same with the previous)";
 
             Menu_AppendItem(menu, "Ask me everytime", Menu_DoClick_Default, true, OverrideTypes == OverrideMode.AskEverytime);
             
@@ -301,19 +303,21 @@ namespace Colibri.Grasshopper
             this.OverrideTypes = OverrideMode.AskEverytime;
             updateMsg();
         }
-
+        
         private void updateMsg()
         {
             this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString();
 
             if (_write)
             {
-                this.Message += "\n---------------\n[RECORDING STARTED]\n" + (_printOutStrings.Count - 1).ToString() + " new data added";
+                this.Message += "\n---------------\n[RECORDING STARTED]\n";
+                //this.Message += (_printOutStrings.Count - 1).ToString() + " new data added";
             }
             else if(this.Params.Input.Last().Sources.Any())
             {
                 int recordedCount = (_printOutStrings.Count - 1) < 0 ? 0 : _printOutStrings.Count - 1;
-                this.Message += "\n---------------\n[RECORDING DISABLED]\n" + recordedCount + " new data added";
+                this.Message += "\n---------------\n[RECORDING DISABLED]\n";
+                //this.Message += recordedCount + " new data added";
             }
             else
             {
@@ -330,7 +334,7 @@ namespace Colibri.Grasshopper
             int width = 400;
             int height = 400;
 
-            Size imageSize = new Size(width, height);
+            
             string imgName = flyID;
             string imgPath = string.Empty;
 
@@ -346,7 +350,7 @@ namespace Colibri.Grasshopper
 
             }
 
-
+            Size imageSize = new Size(width, height);
             //If ViewNames is empty, which means to capture current active view
             var activeView = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
             if (!ViewNames.Any())
@@ -355,6 +359,7 @@ namespace Colibri.Grasshopper
                 imgPath = Folder + @"\" + imgName;
 
                 activeView.Redraw();
+                
                 var pic = activeView.CaptureToBitmap(imageSize);
                 pic.Save(imgPath);
 
