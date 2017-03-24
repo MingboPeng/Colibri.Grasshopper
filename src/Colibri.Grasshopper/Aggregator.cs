@@ -144,8 +144,9 @@ namespace Colibri.Grasshopper
             //if we aren't told to write, clean out the list of already written items
             if (!_write)
             {
+                DA.SetDataList(0, _printOutStrings);
                 _alreadyWrittenLines = new List<string>();
-                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString() + "\n---------------\n[RECORDING DISABLED]\n";
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString() + "\n------------------------------\n[RECORDING DISABLED]\n";
                 return;
                 
 
@@ -210,15 +211,16 @@ namespace Colibri.Grasshopper
                 _printOutStrings = _alreadyWrittenLines;
                 
                 //updateMsg();
-                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString()+ "\n---------------\n[RECORDING STARTED]\n";
-                
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString()+ "\n------------------------------\n[RECORDING STARTED]\n";
+                DA.SetDataList(0, _printOutStrings);
+
             }
 
 
 
             //set output
             //DA.SetData(0, writeInData);
-            DA.SetDataList(0, _printOutStrings);
+            
 
         }
         
@@ -323,18 +325,18 @@ namespace Colibri.Grasshopper
 
             if (_write)
             {
-                this.Message += "\n---------------\n[RECORDING STARTED]\n";
+                this.Message += "\n------------------------------\n[RECORDING STARTED]\n";
                 //this.Message += (_printOutStrings.Count - 1).ToString() + " new data added";
             }
             else if(this.Params.Input.Last().Sources.Any())
             {
-                this.Message += "\n---------------\n[RECORDING DISABLED]\n";
+                this.Message += "\n------------------------------\n[RECORDING DISABLED]\n";
                 //this.Message += recordedCount + " new data added";
 
             }
             else
             {
-                this.Message += "\n---------------\n[RECORDING DISABLED]";
+                this.Message += "\n------------------------------\n[RECORDING DISABLED]";
             }
 
             this.ExpireSolution(true);
@@ -387,12 +389,13 @@ namespace Colibri.Grasshopper
             var namedViews = Rhino.RhinoDoc.ActiveDoc.NamedViews.ToDictionary(v => v.Name, v => v);
 
             //string newImgPathWithViewName = ImagePath;
-
+            string currentImgName = imgName;
             for (int i = 0; i < ViewNames.Count; i++)
             {
+                
                 string viewName = ViewNames[i];
                 string existViewName = string.Empty;
-
+                
                 if (views.ContainsKey(viewName))
                 {
                     activeView = views[viewName];
@@ -408,8 +411,8 @@ namespace Colibri.Grasshopper
                 //capture
                 if (!string.IsNullOrEmpty(existViewName))
                 {
-                    imgName += "_" + existViewName + ".png";
-                    imgPath = Folder + @"\" + imgName;
+                    currentImgName = imgName+ "_" + existViewName + ".png";
+                    imgPath = Folder + @"\" + currentImgName;
                     //save imgs
                     activeView.Redraw();
                     var pic = activeView.CaptureToBitmap(imageSize);
@@ -418,7 +421,7 @@ namespace Colibri.Grasshopper
                 }
 
             }
-            return imgName;
+            return currentImgName;
             
         }
 
