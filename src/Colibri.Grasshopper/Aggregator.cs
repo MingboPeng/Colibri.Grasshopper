@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Drawing;
+using System.Dynamic;
 using System.Collections.Generic;
 using Grasshopper.Kernel.Special;
+
+using Rhino.Geometry;
+using Grasshopper.Kernel.Types;
+
 using System.IO;
 using GH = Grasshopper;
 using Grasshopper.Kernel;
@@ -56,9 +61,11 @@ namespace Colibri.Grasshopper
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
-            pManager.AddGenericParameter("3DParams", "3DParams", "Optional input from the Colibri 3DParameters component.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("3D_Objects", "3D_Objects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow only supports straight lines and meshes.", GH_ParamAccess.list);
             pManager[4].Optional = true;
             pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
+            pManager[4].DataMapping = GH_DataMapping.Flatten;
+
             pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
             
             
@@ -88,9 +95,10 @@ namespace Colibri.Grasshopper
             //input variables
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
-            
 
-            var JSON = new threeDParam();
+            List<object> inJSON = new List<object>();
+            //object inJSON = null;
+            
             var imgParams = new ImgParam();
 
             //get data
@@ -98,10 +106,27 @@ namespace Colibri.Grasshopper
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
             DA.GetData(3, ref imgParams);
-            DA.GetData(4, ref JSON);
+            DA.GetDataList(4,  inJSON);
             DA.GetData(5, ref writeFile);
 
             //operations
+            //var JSON = inJSON as threeDParam;
+            
+            var JSON = new threeDParam();
+            if (!inJSON.IsNullOrEmpty())
+            {
+                if (inJSON.First() is ExpandoObject)
+                {
+                    JSON = new threeDParam(inJSON.First());
+                }
+                else
+                {
+                    JSON = new threeDParam(inJSON);
+                }
+                
+            }
+
+
             Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
             Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
             //Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
@@ -525,6 +550,7 @@ namespace Colibri.Grasshopper
                 {
                     cleanTheFolder(StudyFolderPath);
                 }
+                
 
             }
             
