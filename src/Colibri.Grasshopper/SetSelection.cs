@@ -27,10 +27,10 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iterations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
+            pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iteration combinations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntegerParameter("Takes", "Takes", "Numbers to TAKE on each Iterator input.  This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all \n 1: for current position \n >1: numbers to be picked.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Divisions", "Divisions", "Numbers to TAKE on each Iterator input.  This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
@@ -49,14 +49,14 @@ namespace Colibri.Grasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var takeNumbers = new List<int>();
-            var ranges = new List<GH_Interval>();
+            var divisions = new List<int>();
+            var domains = new List<GH_Interval>();
 
             //get Data
-            DA.GetDataList(1, takeNumbers);
-            DA.GetDataList(0, ranges);
+            DA.GetDataList(1, divisions);
+            DA.GetDataList(0, domains);
 
-            foreach (var item in ranges)
+            foreach (var item in domains)
             {
                 if (item.Value.Min<0 ||item.Value.Max ==0)
                 {
@@ -68,19 +68,24 @@ namespace Colibri.Grasshopper
 
             //Both two Domain and Take are set by user
             //give a warning, and remove take
-            if (!takeNumbers.IsNullOrEmpty() && !ranges.IsNullOrEmpty())
+            if (!divisions.IsNullOrEmpty() && !domains.IsNullOrEmpty())
             {
                 
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Please use either Domain or Take.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please use either Domain or Division.");
 
                 //remove takeNumbers
-                takeNumbers = new List<int>();
+                divisions = new List<int>();
             }
 
-            var selections = new IteratorSelection(takeNumbers, ranges);
 
-            //set Data
-            DA.SetData(0, selections);
+            if (RuntimeMessageLevel != GH_RuntimeMessageLevel.Error)
+            {
+                var selections = new IteratorSelection(divisions, domains);
+
+                //set Data
+                DA.SetData(0, selections);
+            }
+            
         }
 
         /// <summary>

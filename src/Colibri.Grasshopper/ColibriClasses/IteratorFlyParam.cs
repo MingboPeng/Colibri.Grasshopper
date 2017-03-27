@@ -194,7 +194,7 @@ namespace Colibri.Grasshopper
                     {
                         File.Delete(_watchFilePath);
                     }
-                    e.Document.NewSolution(false);
+                    //e.Document.NewSolution(false);
                     break;
                 }
                 
