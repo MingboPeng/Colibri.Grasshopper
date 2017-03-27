@@ -51,8 +51,8 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
-            pManager.AddTextParameter("FlyID(Inputs)", "FlyID", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
-            pManager.AddTextParameter("FlyResults(Outputs)", "FlyResults", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Genome (FlyID)", "Genome", "Inputs object from the Colibri Iterator compnent, which describes the ID of each iteration.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Results(FlyResults)", "Results", "Outputs object from the Colibri Results component which collects all output data from each iteration.", GH_ParamAccess.list);
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
@@ -69,8 +69,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("out", "ReadMe",
-                "...", GH_ParamAccess.list);
+            pManager.AddTextParameter("Records", "Records","Information that recorded in CSV file.", GH_ParamAccess.list);
 
         }
 

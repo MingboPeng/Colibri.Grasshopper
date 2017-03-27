@@ -50,7 +50,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList, as a variable input", GH_ParamAccess.list);
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
@@ -66,7 +66,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Value", "Value[N]", "current item of inputs", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Iteration ID", "FlyID", "connet to Aggregateor", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Iteration Genome", "Genome", "Contains a collection of genes (variables) which defines a unique ID of each iteration. Connet to Aggregateor", GH_ParamAccess.list);
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
             
