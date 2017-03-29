@@ -115,28 +115,7 @@ namespace Colibri.Grasshopper
             if (!inJSON.IsNullOrEmpty())
             {
                 JSON = new threeDParam(inJSON);
-                //foreach (var item in inJSON)
-                //{
-                //    //var inSpec = inJSON[0] as GH_ObjectWrapper;
-                //    var inSpec = item as GH_ObjectWrapper;
-                //    if ((inSpec != null) && (inSpec.Value is ExpandoObject))
-                //    {
-                //        var obj = inSpec.Value;
-                        
-                //        if (obj != null)
-                //        {
-                //            //MessageBox.Show(JsonChildren.Count.ToString());
-                //            JSON.AddGeometry(obj);
-
-                //        }
-                    
-                //    }
-                //    else
-                //    {
-                //        JSON = new threeDParam(inJSON);
-                //    }
-                //}
-
+                
             }
 
 
