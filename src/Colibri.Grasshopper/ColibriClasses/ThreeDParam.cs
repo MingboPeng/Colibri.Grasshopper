@@ -13,46 +13,36 @@ namespace Colibri.Grasshopper
     public class threeDParam
     {
         public bool IsDefined { get; set; }
+
         public string JsonSting { get; set; }
+        //private List<object> JsonGeometries { get; set; }
+        //private List<object> JsonMaterials { get; set; }
+        //private List<object> JsonChildren { get; set; }
+        
         public threeDParam()
         {
             this.IsDefined = false;
         }
-        public threeDParam(object JsonObj)
-        {
-            this.IsDefined = true;
-            this.JsonSting = JsonConvert.SerializeObject(JsonObj);
-            this.JsonSting = JsonSting.Replace("OOO", "object");
-
-        }
+        
         public threeDParam(List<object> threeDObjs)
         {
-            var lines = collectLines(threeDObjs);
-            var meshes = collectMeshes(threeDObjs);
-
-            if (meshes.Any() || lines.Any())
+            if (threeDObjs.Any())
             {
                
-                object outJSON = makeThreeDParam(meshes, lines);
+                object outJSON = makeThreeDParamJSON(threeDObjs);
 
-                this.IsDefined = true;
-                this.JsonSting = JsonConvert.SerializeObject(outJSON);
-                this.JsonSting = JsonSting.Replace("OOO", "object");
+                if (outJSON != null)
+                {
+                    this.IsDefined = true;
+                    this.JsonSting = JsonConvert.SerializeObject(outJSON);
+                    this.JsonSting = JsonSting.Replace("OOO", "object");
+                }
+                
             }
-
             
-
         }
-
-
-        public static string hexColor(GH_Colour ghColor)
-        {
-            string hexStr = "0x" + ghColor.Value.R.ToString("X2") +
-                ghColor.Value.G.ToString("X2") +
-                ghColor.Value.B.ToString("X2");
-
-            return hexStr;
-        }
+        
+        
 
         #region getLineForJson
         private dynamic lineJSON(Line line)
@@ -90,7 +80,7 @@ namespace Colibri.Grasshopper
         private object makeLineMaterial()
         {
             dynamic JsonMat = new ExpandoObject();
-            JsonMat.uuid = Guid.NewGuid();
+            JsonMat.uuid = "LnColor_Black";
             JsonMat.type = "LineBasicMaterial";
             JsonMat.color = "0x000000";
             JsonMat.linewidth = 1;
@@ -102,12 +92,12 @@ namespace Colibri.Grasshopper
         private dynamic linesJSON(List<GH_Line> GHLines)
         {
 
-            if (!GHLines.Any())
+            if (GHLines.IsNullOrEmpty())
             {
                 return null;
             }
 
-            LineCount = GHLines.Count;
+            //LineCount = GHLines.Count;
             var JsonGeometries = new List<object>();
             foreach (var item in GHLines)
             {
@@ -125,7 +115,7 @@ namespace Colibri.Grasshopper
             //userData.layer = "Default";
 
 
-            int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+            //int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             for (int i = 0; i < size; i++)
             {
                 dynamic JsonObjectChildren = new ExpandoObject();
@@ -136,7 +126,6 @@ namespace Colibri.Grasshopper
                 JsonObjectChildren.material = JsonFile.materials.uuid;
                 //JsonObjectChildren.matrix = numbers;
                 //JsonObjectChildren.userData = userData;
-
                 //add children to JsonFile
                 JsonFile.children[i] = JsonObjectChildren;
             }
@@ -154,7 +143,7 @@ namespace Colibri.Grasshopper
         /// <param name="mesh">The rhino mesh to serialize.  Can contain quads and tris.</param>
         /// <param name="attDict">The attribute dictionary to serialize.  Objects should all be reference types.</param>
         /// <returns>a JSON string representing a rhino mes</returns>
-        private static object meshJSON(Mesh mesh)
+        private static object meshGeometries(Mesh mesh)
         {
             //create a dynamic object to populate
             dynamic jason = new ExpandoObject();
@@ -319,32 +308,34 @@ namespace Colibri.Grasshopper
         private dynamic meshesJSON(List<GH_Mesh> GHMeshes)
         {
 
-            if (!GHMeshes.Any())
+            if (GHMeshes.IsNullOrEmpty())
             {
                 return null;
             }
 
-            MeshCount = GHMeshes.Count;
-
-            Mesh joinedMesh = new Mesh();
+            //MeshCount = GHMeshes.Count;
+            var JsonGeometries = new List<object>();
+            var JsonMaterials = new List<object>();
+            var JsonFaceColorIndexes = new List<object>();
+            //Mesh joinedMesh = new Mesh();
             foreach (var item in GHMeshes)
             {
-                joinedMesh.Append(item.Value);
+                //joinedMesh.Append(item.Value);
+                JsonGeometries.Add(meshGeometries(item.Value));
+                JsonMaterials.Add(getMeshFaceMaterials(item.Value)["materials"]);
+                JsonFaceColorIndexes.Add(getMeshFaceMaterials(item.Value)["faceMaterialIndex"]);
             }
 
-            var JsonGeometries = new List<object> { meshJSON(joinedMesh) };
-            var materialsInfo = getMeshFaceMaterials(joinedMesh);
+            //var JsonGeometries = new List<object> { meshGeometries(joinedMesh) };
+            //var materialsInfo = getMeshFaceMaterials(joinedMesh);
 
             int size = JsonGeometries.Count;
 
             dynamic JsonFile = new ExpandoObject();
             JsonFile.geometries = JsonGeometries;
-            JsonFile.materials = materialsInfo["materials"];
+            JsonFile.materials = JsonMaterials;
             JsonFile.children = new object[size];
-
-            dynamic userData = new ExpandoObject();
-            userData.Spectacles_FaceColorIndexes = materialsInfo["faceMaterialIndex"];
-
+            
             //int[] numbers = new int[16] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
             for (int i = 0; i < size; i++)
             {
@@ -353,8 +344,12 @@ namespace Colibri.Grasshopper
                 JsonObjectChildren.name = "mesh" + i.ToString();
                 JsonObjectChildren.type = "Mesh";
                 JsonObjectChildren.geometry = JsonFile.geometries[i].uuid;
-                JsonObjectChildren.material = JsonFile.materials.uuid;
+                JsonObjectChildren.material = JsonFile.materials[i].uuid;
                 //JsonObjectChildren.matrix = numbers;
+
+                //userData
+                dynamic userData = new ExpandoObject();
+                userData.Spectacles_FaceColorIndexes = JsonFaceColorIndexes[i];
                 JsonObjectChildren.userData = userData;
 
                 //add children to JsonFile
@@ -364,15 +359,54 @@ namespace Colibri.Grasshopper
             return JsonFile;
         }
 
+
         #endregion
 
-        int LineCount = 0;
-        int MeshCount = 0;
-
-        private object makeThreeDParam(List<GH_Mesh> meshes, List<GH_Line> lines)
+        #region getSpectaclesForJson
+        private dynamic spectaclesJSON(List<dynamic> SpectaclesObjs)
         {
+            if (SpectaclesObjs.IsNullOrEmpty()) return null;
+
+            var JsonGeometries = new List<object>();
+            var JsonMaterials = new List<object>();
+            var JsonChildren = new List<object>();
+
+
+            foreach (var item in SpectaclesObjs)
+            {
+                dynamic obj = item;
+
+                JsonGeometries.AddRange(obj.geometries);
+                JsonMaterials.AddRange(obj.materials);
+                JsonChildren.AddRange(obj.OOO.children);
+            }
+
+            dynamic JsonFile = new ExpandoObject();
+            JsonFile.geometries = JsonGeometries;
+            JsonFile.materials = JsonMaterials;
+            JsonFile.children = JsonChildren;
+
+            return JsonFile;
+
+        }
+        #endregion
+
+
+        //int LineCount = 0;
+        //int MeshCount = 0;
+
+        private object makeThreeDParamJSON(List<object> GHGeometries)
+        {
+            var validObjs = collectValidObjs(GHGeometries);
+
+            var lines = validObjs["lines"] as List<GH_Line>;
+            var meshes = validObjs["meshes"] as List<GH_Mesh>;
+            var spectaclesObjs = validObjs["SpectaclesObjs"] as List<dynamic>;
+
+           
             var meshesJsonObj = meshesJSON(meshes);
             var linesJsonObj = linesJSON(lines);
+            var spectaclesJsonObj = spectaclesJSON(spectaclesObjs);
 
             var JsonGeometries = new List<object>();
             var JsonMaterials = new List<object>();
@@ -381,7 +415,7 @@ namespace Colibri.Grasshopper
             if (meshesJsonObj != null)
             {
                 JsonGeometries.AddRange(meshesJsonObj.geometries);
-                JsonMaterials.Add(meshesJsonObj.materials);
+                JsonMaterials.AddRange(meshesJsonObj.materials);
                 JsonChildren.AddRange(meshesJsonObj.children);
             }
 
@@ -392,6 +426,12 @@ namespace Colibri.Grasshopper
                 JsonChildren.AddRange(linesJsonObj.children);
             }
 
+            if (spectaclesJsonObj != null)
+            {
+                JsonGeometries.AddRange(spectaclesJsonObj.geometries);
+                JsonMaterials.AddRange(spectaclesJsonObj.materials);
+                JsonChildren.AddRange(spectaclesJsonObj.children);
+            }
 
             //create a dynamic object to populate
             dynamic outJsonFile = new ExpandoObject();
@@ -416,9 +456,11 @@ namespace Colibri.Grasshopper
             return outJsonFile;
         }
 
-        private List<GH_Line> collectLines(List<object> inputObjects)
+        private Dictionary<string, object> collectValidObjs(List<object> inputObjects)
         {
             var lines = new List<GH_Line>();
+            var meshes = new List<GH_Mesh>();
+            var SpectaclesObjs = new List<dynamic>();
             foreach (var item in inputObjects)
             {
 
@@ -438,25 +480,8 @@ namespace Colibri.Grasshopper
                         lines.Add(new GH_Line(line));
                     }
                     
-
                 }
-                else
-                {
-
-                }
-
-            }
-
-            
-            return lines;
-        }
-        private List<GH_Mesh> collectMeshes(List<object> inputObjects)
-        {
-            var meshes = new List<GH_Mesh>();
-            foreach (var item in inputObjects)
-            {
-
-                if (item is GH_Mesh)
+                else if (item is GH_Mesh)
                 {
                     meshes.Add(item as GH_Mesh);
 
@@ -482,6 +507,14 @@ namespace Colibri.Grasshopper
                     meshes.Add(mesh);
 
                 }
+                else if (item is GH_ObjectWrapper)
+                {
+                    var inSpec = item as GH_ObjectWrapper;
+                    if (inSpec.Value is ExpandoObject)
+                    {
+                        SpectaclesObjs.Add(inSpec.Value);
+                    }
+                }
                 else
                 {
 
@@ -489,9 +522,59 @@ namespace Colibri.Grasshopper
 
             }
 
+            var dic = new Dictionary<string, object>();
+            //add lines
+            dic.Add("lines", lines);
+            dic.Add("meshes", meshes);
+            dic.Add("SpectaclesObjs", SpectaclesObjs);
             
-            return meshes;
+            return dic;
         }
+        //private List<GH_Mesh> collectMeshes(List<object> inputObjects)
+        //{
+        //    var meshes = new List<GH_Mesh>();
+        //    foreach (var item in inputObjects)
+        //    {
+
+        //        if (item is GH_Mesh)
+        //        {
+        //            meshes.Add(item as GH_Mesh);
+
+        //        }
+        //        else if (item is GH_Brep)
+        //        {
+        //            var i = item as GH_Brep;
+        //            var mesh = brepToGHMesh(i.Value);
+        //            meshes.Add(mesh);
+
+        //        }
+        //        else if (item is GH_Box)
+        //        {
+        //            var i = item as GH_Box;
+        //            var mesh = brepToGHMesh(i.Brep());
+        //            meshes.Add(mesh);
+
+        //        }
+        //        else if (item is GH_Surface)
+        //        {
+        //            var i = item as GH_Surface;
+        //            var mesh = brepToGHMesh(i.Value);
+        //            meshes.Add(mesh);
+
+        //        }
+        //        else
+        //        {
+
+        //        }
+
+        //    }
+
+            
+        //    return meshes;
+        //}
+        
+
+
         private GH_Mesh brepToGHMesh(Brep brep)
         {
             Mesh m = new Mesh();
@@ -503,6 +586,15 @@ namespace Colibri.Grasshopper
 
             return new GH_Mesh(m);
 
+        }
+
+        public static string hexColor(GH_Colour ghColor)
+        {
+            string hexStr = "0x" + ghColor.Value.R.ToString("X2") +
+                ghColor.Value.G.ToString("X2") +
+                ghColor.Value.B.ToString("X2");
+
+            return hexStr;
         }
 
         public override string ToString()

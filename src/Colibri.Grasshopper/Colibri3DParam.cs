@@ -66,9 +66,9 @@ namespace Colibri.Grasshopper
                 //create json from mesh
                 
                 object outJSON = makeThreeDParam(meshes,lines);
-                var outParam = new threeDParam(outJSON);
+                //var outParam = new threeDParam(outJSON);
 
-                DA.SetData(0, outParam);
+                //DA.SetData(0, outParam);
             }
             
         }

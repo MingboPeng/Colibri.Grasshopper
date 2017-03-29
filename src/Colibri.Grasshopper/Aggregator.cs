@@ -61,7 +61,7 @@ namespace Colibri.Grasshopper
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
-            pManager.AddGenericParameter("3D_Objects", "3D_Objects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow only supports straight lines and meshes.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("3D_Objects", "3D_Objects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
             pManager[4].Optional = true;
             pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
             pManager[4].DataMapping = GH_DataMapping.Flatten;
@@ -108,21 +108,35 @@ namespace Colibri.Grasshopper
             DA.GetDataList(4,  inJSON);
             DA.GetData(5, ref writeFile);
 
-            //operations
+            //operations is ExpandoObject
             //var JSON = inJSON as threeDParam;
-            
+
             var JSON = new threeDParam();
             if (!inJSON.IsNullOrEmpty())
             {
-                if (inJSON.First() is ExpandoObject)
-                {
-                    JSON = new threeDParam(inJSON.First());
-                }
-                else
-                {
-                    JSON = new threeDParam(inJSON);
-                }
-                
+                JSON = new threeDParam(inJSON);
+                //foreach (var item in inJSON)
+                //{
+                //    //var inSpec = inJSON[0] as GH_ObjectWrapper;
+                //    var inSpec = item as GH_ObjectWrapper;
+                //    if ((inSpec != null) && (inSpec.Value is ExpandoObject))
+                //    {
+                //        var obj = inSpec.Value;
+                        
+                //        if (obj != null)
+                //        {
+                //            //MessageBox.Show(JsonChildren.Count.ToString());
+                //            JSON.AddGeometry(obj);
+
+                //        }
+                    
+                //    }
+                //    else
+                //    {
+                //        JSON = new threeDParam(inJSON);
+                //    }
+                //}
+
             }
 
 
