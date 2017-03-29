@@ -81,7 +81,7 @@ namespace Colibri.Grasshopper
             var userSelections = new IteratorSelection();
             DA.GetData(this.Params.Input.Count - 1, ref userSelections);
             
-            //Dictionary<string, string> FlyID = new Dictionary<string, string>();
+
             var FlyID = new List<object>();
             
             //flyParam only exists when flying

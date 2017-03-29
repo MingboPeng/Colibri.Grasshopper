@@ -27,10 +27,10 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntervalParameter("Domains", "Domains", "Ranges of all iteration combinations, can be one or a list of 1d domains (use Construct Domain).", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Divisions", "Divisions", "Numbers to TAKE on each Iterator input. This should be a list of integers of the same length as the list of Iterator inputs. By default, iterator will go through each smallest step as possible.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntegerParameter("Divisions", "Divisions", "Numbers to TAKE on each Iterator input.  This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
+            pManager.AddIntervalParameter("Domains", "Domains", "Set the ranges of all Division filtered iteration combinations, can be one or a list of 1d domains (use Construct Domain). Domain setting comes after Divisions setting.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
@@ -65,19 +65,7 @@ namespace Colibri.Grasshopper
                 }
 
             }
-
-            //Both two Domain and Take are set by user
-            //give a warning, and remove take
-            if (!divisions.IsNullOrEmpty() && !domains.IsNullOrEmpty())
-            {
-                
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please use either Domain or Division.");
-
-                //remove takeNumbers
-                divisions = new List<int>();
-            }
-
-
+            
             if (RuntimeMessageLevel != GH_RuntimeMessageLevel.Error)
             {
                 var selections = new IteratorSelection(divisions, domains);

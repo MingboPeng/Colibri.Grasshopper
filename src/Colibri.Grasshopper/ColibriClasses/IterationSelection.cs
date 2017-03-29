@@ -83,12 +83,7 @@ namespace Colibri.Grasshopper
            
             this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions, this._domains);
         }
-
-        //private void iniColibriParams(List<ColibriParam> ColibriParams)
-        //{
-            
-        //}
-
+        
         private int calSelectedTotalCount(List<List<int>> allParamsSelectedPositions, List<GH_Interval> domains)
         {
             int selectedTotal = 0;

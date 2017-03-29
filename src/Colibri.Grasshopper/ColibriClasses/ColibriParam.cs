@@ -13,9 +13,6 @@ namespace Colibri.Grasshopper
     {
         //Properties
         public InputType GHType { get; private set; }
-        
-        private string _nickName;
-
         public string NickName
         {
             get
@@ -34,42 +31,34 @@ namespace Colibri.Grasshopper
                 RawParam.Attributes.ExpireLayout();
             }
         }
-
-
-        //todo: merge this to position
-        // for now is used for tracking the panel values positon only
-        //private int panelItemPosition;
-
-        private int _position;
-
         public int Position
         {
             get { return _position; }
             private set { _position = value; }
         }
-
         public int AtIteratorPosition { get; set; }
-        private int _totalCount;
-
         public int TotalCount
         {
             get { return _totalCount; }
             set { _totalCount = value; }
         }
-
-        private List<string> _panelValues = new List<string>();
-
-        public IGH_Param RawParam { get; private set; }
-
-        //for flyParam
-        private int _iniPosition;
-
         public int IniPosition
         {
             get { return _iniPosition; }
             set { _iniPosition = value; }
         }
+        public IGH_Param RawParam { get; private set; }
 
+
+        private string _nickName;
+        private int _position;
+        private int _totalCount;
+        //for flyParam
+        private int _iniPosition;
+        private List<string> _panelValues = new List<string>();
+
+        public int[] MyProperty { get; private set; }
+        
         //Constructor
         public ColibriParam()
         {
