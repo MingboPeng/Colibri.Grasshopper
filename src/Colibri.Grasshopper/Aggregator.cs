@@ -43,7 +43,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public Aggregator()
           : base("Colibri Aggregator", "Aggregator",
-              "Aggregates design input and output data, image & Spectacles filemanes into a data.csv file that Design Explorer can open.",
+              "Aggregates design data, image & Spectacles model into a data.csv file that Design Explorer can open.",
               "TT Toolbox", "Colibri")
         {
         }
@@ -56,12 +56,12 @@ namespace Colibri.Grasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Iteration Genome (FlyID)", "Genome", "Inputs object from the Colibri Iterator compnent, which describes the ID of each iteration.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Iteration Results(FlyResults)", "Results", "Outputs object from the Colibri Results component which collects all output data from each iteration.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Results (Parameters)", "Results", "Data from the Colibri Parameters component which collects all output data from each iteration.", GH_ParamAccess.list);
             pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
-            pManager.AddGenericParameter("3D_Objects", "3D_Objects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("3DObjects", "3DObjects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
             pManager[4].Optional = true;
             pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
             pManager[4].DataMapping = GH_DataMapping.Flatten;

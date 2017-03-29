@@ -18,8 +18,8 @@ namespace Colibri.Grasshopper
         /// ne	w tabs/panels will automatically be created.
         /// </summary>
         public ColibriOutputs()
-          : base("Colibri FlyResults", "FlyResults",
-              "Collects design results (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
+          : base("Colibri Parameters", "Parameters",
+              "Collects design parameters (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.\nYou can also combine this output as a static gene in Genome.",
               "TT Toolbox", "Colibri")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
@@ -32,7 +32,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Result", "Result[1]", "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited 10 values max.\nNull or Empty value will be marked as \"NoData\"", GH_ParamAccess.list);
+            pManager.AddTextParameter("Data", "Data[1]", "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited with 10 values max.\nNull or Empty value will be marked as \"NoData\"", GH_ParamAccess.list);
             pManager[0].DataMapping = GH_DataMapping.Flatten;
             pManager[0].Optional = true;
         }
@@ -42,7 +42,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("FlyResults(Outputs)", "FlyResults", "Colibri's FlyResults object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Parameters", "Parameters", "Colibri's Parameters.  Plug this into the Colibri aggregator downstream.\nYou can use the outputs as inputs of aggregator's Genome or Results.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -155,20 +155,19 @@ namespace Colibri.Grasshopper
                 int inputIndex = i + 1;
 
                 bool isNicknameEmpty = String.IsNullOrWhiteSpace(inParamNickname);
-                bool isNicknameDefault = inParamNickname.StartsWith("Result[");
+                bool isNicknameDefault = inParamNickname.StartsWith("Data[");
 
 
                 if (isNicknameEmpty|| isNicknameDefault)
                 {
-                    inParam.NickName = "Result["+inputIndex+"]";
+                    inParam.NickName = "Data[" + inputIndex+"]";
                 }
-                inParam.Name = "Result";
-                inParam.Description = "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited 10 values max.\nNull or Empty value will be marked as \"NoData\"";
+                inParam.Name = "Data";
+                inParam.Description = "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited with 10 values max.\nNull or Empty value will be marked as \"NoData\"";
                 inParam.Access = GH_ParamAccess.list;
                 inParam.Optional = true;
                 inParam.DataMapping = GH_DataMapping.Flatten;
                 inParam.WireDisplay = GH_ParamWireDisplay.faint;
-
                 
             }
 
@@ -255,7 +254,7 @@ namespace Colibri.Grasshopper
 
             if (flyResults.Any())
             {
-                messages += "[NAME,VALUE]";
+                messages += "[NAME,DATA]";
                 messages += "\n-------------------\n";
             }
             foreach (var item in flyResults)
