@@ -74,27 +74,28 @@ namespace Colibri.Grasshopper
 
             this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
             this._totalDomain = new GH_Interval(new Rhino.Geometry.Interval(0,this.TotalCounts-1));
-            this._domains = iniDomains(this._userDomains, this._totalDomain);
+            
 
             this._paramsPositions = ColibriBase.AllParamsPositions(ColibriParams);
             this._paramsTakeNumbers = iniTakeNumbers(this._userParamsTakeNumbers, ColibriParams);
             this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsTakeNumbers, ColibriParams);
-
-           
-            this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions, this._domains);
+            
+            this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions);
+            var selectedTotalDomain = new GH_Interval(new Rhino.Geometry.Interval(0, this.SelectedCounts - 1));
+            this._domains = iniDomains(this._userDomains, selectedTotalDomain);
         }
         
-        private int calSelectedTotalCount(List<List<int>> allParamsSelectedPositions, List<GH_Interval> domains)
+        private int calSelectedTotalCount(List<List<int>> allParamsSelectedPositions)
         {
             int selectedTotal = 0;
 
             //Total count from Domains
-            int totalDomainsLength = 0;
-            foreach (var item in domains)
-            {
-                totalDomainsLength += (int)item.Value.Length + 1;
+            //int totalDomainsLength = 0;
+            //foreach (var item in domains)
+            //{
+            //    totalDomainsLength += (int)item.Value.Length + 1;
 
-            }
+            //}
 
             //Total count from params positions
             int runIterationNumber = 1;
@@ -111,7 +112,7 @@ namespace Colibri.Grasshopper
                 runIterationNumber = this.TotalCounts;
             }
 
-            selectedTotal = Math.Min(totalDomainsLength, runIterationNumber);
+            //selectedTotal = Math.Min(totalDomainsLength, runIterationNumber);
 
 
             return selectedTotal;
