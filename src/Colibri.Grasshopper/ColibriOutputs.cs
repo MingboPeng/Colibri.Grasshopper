@@ -80,7 +80,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{5cac6c29-d015-4489-b592-48ff52e8c33e}"); }
+            get { return new Guid("{f8903fbe-3986-46e4-b588-9bddd6d5a5d0}"); }
         }
 
 

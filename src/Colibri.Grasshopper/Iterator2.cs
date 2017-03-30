@@ -23,14 +23,17 @@ namespace Colibri.Grasshopper
         private List<ColibriParam> _filteredSources;
         private IteratorFlyParam _flyParam;
         private bool _isTestFly = false;
-        private bool _ignoreAllWarningMsg = false;
-        private string _studyFolder = "";
-        private OverrideMode _mode = OverrideMode.AskEverytime;
-
+        
+        
         private int _totalCount = 0;
         private int _selectedCount = 0;
 
         private IteratorSelection _selections = new IteratorSelection();
+
+        private Aggregator _aggObj = null;
+        private OverrideMode _mode = OverrideMode.AskEverytime;
+        private bool _ignoreAllWarningMsg = false;
+        private string _studyFolder = "";
 
 
         /// <summary>
@@ -309,28 +312,28 @@ namespace Colibri.Grasshopper
         // response to Button event
         private void OnMouseDownEvent(object sender)
         {
-            if (_doc == null)
+            if (this._doc == null)
             {
-                _doc = GH.Instances.ActiveCanvas.Document;
+                this._doc = GH.Instances.ActiveCanvas.Document;
             }
 
             if (this.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error) return;
            
             //Clean first
             this._flyParam = null;
-            
+
             //recollect all params 
-            _filteredSources = gatherSources();
+            this._filteredSources = gatherSources();
 
-            _filteredSources.RemoveAll(item => item == null);
-            _filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
-
+            this._filteredSources.RemoveAll(item => item == null);
+            this._filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
+            //string Para
             
             //checked if Aggregator is recording and the last
             if (!isAggregatorReady()) return;
            
             //check if any vaild input source connected to Iteratior
-            if (_filteredSources.Count() > 0)
+            if (this._filteredSources.Count() > 0)
             {
                 this._flyParam = new IteratorFlyParam(_filteredSources,this._selections,this._studyFolder, this._mode);
             }
@@ -341,16 +344,24 @@ namespace Colibri.Grasshopper
             }
 
             
-            int testIterationNumber = _selectedCount;
+            int testIterationNumber = this._selectedCount;
             //int totalIterationNumber = _totalCount;
 
-            if (_isTestFly)
+            if (this._isTestFly)
             {
                 testIterationNumber = 3;
             }
+            string msgString = _flyParam.InputParams.Count() + " input(s) connected." +
+                  "\n" + testIterationNumber + " (out of " + _totalCount + ") iterations will be done. \n\nContinue?" +
+                  "\n\n-------------------------------------------------------- "+
+                  "\nTo pause during progressing?\n    1.Press ESC.";
 
-            var userClick = MessageBox.Show(_flyParam.InputParams.Count() + " slider(s) connected:\n" + "Param Names " +
-                  "\n\n" + testIterationNumber + " (out of "+ _totalCount + ") iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo);
+            if (!String.IsNullOrWhiteSpace(this._studyFolder))
+            {
+                msgString += "\n    2.Or remove \"running\" file located in foler:\n\t" + this._studyFolder;
+            }
+
+            var userClick = MessageBox.Show(msgString, "Start?", MessageBoxButtons.YesNo);
 
             if (userClick == DialogResult.Yes)
             {
@@ -618,8 +629,8 @@ namespace Colibri.Grasshopper
             
             //this will check and add take_numbers and domains
             Selections.MatchSelectionFrom(ColibriParams);
-            _totalCount = Selections.TotalCounts;
-            _selectedCount = Selections.SelectedCounts;
+            this._totalCount = Selections.TotalCounts;
+            this._selectedCount = Selections.SelectedCounts;
             string messages = "";
 
             //Check selections
@@ -630,7 +641,7 @@ namespace Colibri.Grasshopper
             if (Selections.IsDefinedInSel)
             {
                 messages += "\nSelected: " + _selectedCount;
-                messages += "\n\n-----SELECTION-----\n";
+                messages += "\n";
                 messages += Selections.ToString(true);
             }
             
@@ -680,23 +691,53 @@ namespace Colibri.Grasshopper
         #endregion
 
         #region Check Aggregator before fly
-        private Aggregator _aggObj = null;
+        
         
         //Check if Aggregator exist, and if it is at the last
         private bool isAggregatorReady()
         {
-            
-            var folder = "";
+            this._aggObj = null;
+            this._studyFolder = "";
+
+            //var folder = "";
             bool isReady = true;
-            _aggObj = aggregatorObj();
+            
             var checkingMsg = new List<string>();
 
-            //is aggregator is not connected 
-            if (_aggObj == null) return isReady;
+            checkingMsg = checkIfGetAggregatorObj();
             
-            //check aggregator 
-            checkingMsg = _aggObj.CheckAggregatorIfReady();
-
+            //Genome is not connected to Aggregator, then there is warning msg in checkingMsg 
+            if (!checkingMsg.IsNullOrEmpty())
+            {
+                var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n\n\n" + checkingMsg[0], "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.Yes)
+                {
+                    
+                    return true;
+                }
+                else
+                {
+                    // user doesn't want ot continue! return false to stop
+                    return false;
+                }
+            }
+            else //this._aggObj exists
+            {
+                if (this._aggObj != null)
+                {
+                    //check aggregator 
+                    checkingMsg = this._aggObj.CheckAggregatorIfReady();
+                }
+                else
+                {
+                    // this._aggObj doesn't exist, return true to start.
+                    return true;
+                }
+                
+            }
+            
+            
+            // checking messages from Aggregator
             if (checkingMsg.IsNullOrEmpty() || _ignoreAllWarningMsg)
             {
                 isReady = true;
@@ -716,50 +757,46 @@ namespace Colibri.Grasshopper
                 }
             }
                 
-            folder = _aggObj.Folder;
-            this._mode = _aggObj.OverrideTypes;
-            this._studyFolder = folder;
+            this._mode = this._aggObj.OverrideTypes;
+            this._studyFolder = this._aggObj.Folder;
             return isReady;
 
         }
         
-        private Aggregator aggregatorObj()
+        private List<string> checkIfGetAggregatorObj()
         {
-            _aggObj = null;
-            var aggregatorID = new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}");
+            
+            var aggregatorID = new Guid("{c285fdce-3c5b-4701-a2ca-c4850c5aa2b7}");
+
+            var msg = new List<string>();
+            string warningMsg = "  It seems Iterator is not directly connected to Aggregator. If yes, then no pre-check and data protection.\n\t[SOLUTION]: connect Genome to Aggregator' Genome directly!";
 
             // only check Recipients of FlyID
             var flyIDRecipients = this.Params.Output.Last().Recipients;
 
-            if (flyIDRecipients.IsNullOrEmpty()) return null;
-
-            //var aggObj = flyIDRecipients.Where(
-            //    _ => _.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
-            //    ).FirstOrDefault();
-
-            //_aggObj = aggObj.Attributes.GetTopLevel.DocObject as Aggregator;
-
-            //_aggObj = (from item in flyIDRecipients
-            //           where item.Attributes.GetTopLevel.DocObject.ComponentGuid.Equals(aggregatorID)
-            //           select item.Attributes.GetTopLevel.DocObject)
-            //           .First() as Aggregator;
+            if (flyIDRecipients.IsNullOrEmpty()) return msg;
 
             foreach (var item in flyIDRecipients)
             {
                 var recipientParent = item.Attributes.GetTopLevel.DocObject;
                 if (recipientParent.ComponentGuid.Equals(aggregatorID))
                 {
-                    _aggObj = recipientParent as Aggregator;
+                    this._aggObj = recipientParent as Aggregator;
                 }
             }
-            return _aggObj;
+
+            if (this._aggObj == null)
+            {
+                msg.Add(warningMsg);
+            }
+            
+            return msg;
+            
         }
 
 
         #endregion
-
         
-
     }
 
 

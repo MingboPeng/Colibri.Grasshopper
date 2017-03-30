@@ -262,7 +262,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
+            get { return new Guid("{c285fdce-3c5b-4701-a2ca-c4850c5aa2b7}"); }
         }
         
         public override bool Read(GH_IReader reader)
@@ -470,18 +470,6 @@ namespace Colibri.Grasshopper
         
         private void setToLast()
         {
-            //string warningMsg = "  Aggregator might not capture all objects that you see in Rhino view.\n\t[SOLUTION]: select Aggregator and press Ctrl+F can save your life!";
-            //var doc = GH.Instances.ActiveCanvas.Document;
-            //bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
-
-            //if (!isAggregatorLast)
-            //{
-            //    msg.Add(warningMsg);
-
-            //}
-
-            //return msg;
-
             this.OnPingDocument().DeselectAll();
             this.Attributes.Selected = true;
             this.OnPingDocument().BringSelectionToTop();

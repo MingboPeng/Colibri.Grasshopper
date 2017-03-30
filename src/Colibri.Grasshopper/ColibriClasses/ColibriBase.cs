@@ -90,6 +90,8 @@ namespace Colibri.Grasshopper
             return totalIterations;
         }
 
+        
+
         //to get all params' all steps' indexes 
         public static List<List<int>> AllParamsPositions(List<ColibriParam> ColibriParams)
         {
@@ -106,7 +108,19 @@ namespace Colibri.Grasshopper
             return positionsList;
             //inputParamsStepLists = stepLists;
         }
-        
+
+        public static List<string> getAllNames(List<ColibriParam> ColibriParams)
+        {
+            var names = new List<string>();
+
+            foreach (var item in ColibriParams)
+            {
+               names.Add(item.NickName);
+            }
+
+            return names;
+        }
+
 
     }
     

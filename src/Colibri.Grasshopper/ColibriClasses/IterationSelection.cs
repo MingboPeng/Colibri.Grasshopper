@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Rhino.Geometry;
 
 namespace Colibri.Grasshopper
 {
@@ -16,8 +17,8 @@ namespace Colibri.Grasshopper
 
         public List<int> ParamsTakeNumbers
         {
-            get { return _paramsTakeNumbers; }
-            private set { _paramsTakeNumbers = value; }
+            get { return _paramsDivisionNumbers; }
+            private set { _paramsDivisionNumbers = value; }
         }
         public List<GH_Interval> Domains
         {
@@ -32,7 +33,7 @@ namespace Colibri.Grasshopper
         }
 
 
-        private List<int> _paramsTakeNumbers;
+        private List<int> _paramsDivisionNumbers;
         private List<GH_Interval> _domains;
         private List<List<int>> _paramsPositions;
         private List<List<int>> _paramsSelectedPositions;
@@ -45,24 +46,25 @@ namespace Colibri.Grasshopper
         private List<GH_Interval> _userDomains;
         public List<int> UserTakes { get { return _userParamsTakeNumbers; } private set {} }
         private List<int> _userParamsTakeNumbers;
+        private List<string> _paramNames;
 
         //Construction
         public IteratorSelection()
         {
             this.IsDefinedInSel = false;
         }
-        public IteratorSelection(List<int> takeNumbers, List<GH_Interval> domains)
+        public IteratorSelection(List<int> divisions, List<GH_Interval> domains)
         {
             
             //Both are empty 
-            if (takeNumbers.IsNullOrEmpty() && domains.IsNullOrEmpty())
+            if (divisions.IsNullOrEmpty() && domains.IsNullOrEmpty())
             {
                 this.IsDefinedInSel = false;
             }
             else
             {
                 this.IsDefinedInSel = true;
-                this._userParamsTakeNumbers = takeNumbers;
+                this._userParamsTakeNumbers = divisions;
                 this._userDomains = domains;
             }
         }
@@ -73,30 +75,48 @@ namespace Colibri.Grasshopper
         {
 
             this.TotalCounts = ColibriBase.CalTotalCounts(ColibriParams);
-            this._totalDomain = new GH_Interval(new Rhino.Geometry.Interval(0,this.TotalCounts-1));
-            
+            this._totalDomain = new GH_Interval(new Interval(0,this.TotalCounts-1));
+            this._paramNames = ColibriBase.getAllNames(ColibriParams);
 
             this._paramsPositions = ColibriBase.AllParamsPositions(ColibriParams);
-            this._paramsTakeNumbers = iniTakeNumbers(this._userParamsTakeNumbers, ColibriParams);
-            this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsTakeNumbers, ColibriParams);
+            this._paramsDivisionNumbers = iniTakeNumbers(this._userParamsTakeNumbers, ColibriParams);
+
+            //_paramsSelectedPositions is used to fly params
+            this._paramsSelectedPositions = calParamsSelectedPositions(this._paramsPositions, this._paramsDivisionNumbers, ColibriParams);
             
-            this.SelectedCounts = calSelectedTotalCount(this._paramsSelectedPositions);
-            var selectedTotalDomain = new GH_Interval(new Rhino.Geometry.Interval(0, this.SelectedCounts - 1));
+
+            var selectedPositionCounts = calSelectedPositionsCount(this._paramsSelectedPositions);
+            var selectedTotalDomain = new GH_Interval(new Interval(0, selectedPositionCounts - 1));
+
+            //_domains is used to fly params
             this._domains = iniDomains(this._userDomains, selectedTotalDomain);
+
+            this.SelectedCounts = calSelectedTotalCount(this._domains, selectedPositionCounts);
         }
-        
-        private int calSelectedTotalCount(List<List<int>> allParamsSelectedPositions)
+        private int calSelectedTotalCount(List<GH_Interval> finalDomains, int finalTotalPositionCounts)
         {
+
             int selectedTotal = 0;
 
             //Total count from Domains
-            //int totalDomainsLength = 0;
-            //foreach (var item in domains)
-            //{
-            //    totalDomainsLength += (int)item.Value.Length + 1;
+            int totalDomainsLength = 0;
+            foreach (var item in finalDomains)
+            {
+                totalDomainsLength += (int)item.Value.Length + 1;
 
-            //}
+            }
+            
+            selectedTotal = Math.Min(totalDomainsLength, finalTotalPositionCounts);
+            
 
+            return selectedTotal;
+        }
+
+        private int calSelectedPositionsCount(List<List<int>> allParamsSelectedPositions)
+        {
+            
+            int selectedTotal = 0;
+            
             //Total count from params positions
             int runIterationNumber = 1;
             
@@ -113,7 +133,7 @@ namespace Colibri.Grasshopper
             }
 
             //selectedTotal = Math.Min(totalDomainsLength, runIterationNumber);
-
+            selectedTotal = runIterationNumber;
 
             return selectedTotal;
         }
@@ -192,7 +212,7 @@ namespace Colibri.Grasshopper
                     max = item.Value.Max;
                 }
 
-                var newIterval = new Rhino.Geometry.Interval(min, max);
+                var newIterval = new Interval(min, max);
 
                 if (totalDomain.Value.IncludesInterval(newIterval))
                 {
@@ -280,63 +300,7 @@ namespace Colibri.Grasshopper
 
             return paramsSelectedPositions;
         }
-
-        //private List<List<int>> calPatamsPositionsOnDomains(List<List<int>> paramsPositions, List<GH_Interval> domains)
-        //{
-        //    int count = 0;
-        //    var rangedParamsPositions = new List<List<int>>();
-
-        //    foreach (var paramPositions in paramsPositions)
-        //    {
-
-
-        //        rangedParamsPositions.Add(new List<int>());
-        //        foreach (var position in paramPositions)
-        //        {
-
-        //            //check each position in each domain
-        //            foreach (var domain in domains)
-        //            {
-        //                if (domain.Value.IncludesParameter(position))
-        //                {
-        //                    rangedParamsPositions.Last().Add(position);
-        //                }
-        //            }
-
-
-
-        //            count++;
-        //        }
-
-
-
-
-
-        //    }
-
-
-
-        //    return rangedParamsPositions;
-        //}
-
-
-
-        //private int calSelectedCounts(List<int> Steps, List<GH_Interval> Domains)
-        //{
-        //    int totalIterations = 1;
-
-        //    foreach (var item in Steps)
-        //    {
-        //        int totalCount = item.TotalCount;
-        //        if (totalCount > 0)
-        //        {
-        //            totalIterations *= totalCount;
-        //        }
-        //    }
-        //    return 0;
-        //}
-
-
+        
         //override
         public override string ToString()
         {
@@ -350,7 +314,7 @@ namespace Colibri.Grasshopper
             string outString = null;
             if (takes.Count != 0)
             {
-                outString += "Take:\n";
+                outString += "------DIVISIONS------\n";
                 foreach (var item in takes)
                 {
                     outString += " [" + item + "]";
@@ -359,7 +323,7 @@ namespace Colibri.Grasshopper
 
             if (domains.Count != 0)
             {
-                outString += "Domain:\n";
+                outString += "------DOMAINS------\n";
                 foreach (var item in domains)
                 {
                     outString += (int)item.Value.Min + " TO " + (int)item.Value.Max + "\n";
@@ -385,16 +349,18 @@ namespace Colibri.Grasshopper
 
             if (userTakes.Count != 0)
             {
-                outString += "Take\n";
+                outString += "\n------DIVISIONS------\n";
+                int currentIndex = 0;
                 foreach (var item in takes)
                 {
-                    outString += " ["+item.Count + "]";
+                    outString += this._paramNames[currentIndex] + " ["+item.Count + "]\n";
+                    currentIndex++;
                 }
             }
 
             if (userDomains.Count != 0)
             {
-                outString += "Domain\n";
+                outString += "\n------DOMAINS------\n";
                 foreach (var item in domains)
                 {
                     int length = (int)item.Value.Length + 1;

@@ -4,6 +4,7 @@ using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using System;
+using System.Windows.Forms;
 using System.IO;
 
 namespace Colibri.Grasshopper
@@ -68,8 +69,6 @@ namespace Colibri.Grasshopper
             if (this._overrideFolderMode == OverrideMode.FinishTheRest)
             {
                 this._studiedFlyID = getStudiedFlyID(studyFolder);
-
-               // System.Windows.Forms.MessageBox.Show(this._studiedFlyID.First());
             }
 
         }
@@ -136,10 +135,9 @@ namespace Colibri.Grasshopper
             
             while (true)
             {
-
+                
                 int currentParamIndex = 0;
                 bool isRunning = true;
-
                 
                 //move to the next set of slider positions
                 isRunning = MoveToNextPermutation(ref currentParamIndex);
@@ -147,7 +145,7 @@ namespace Colibri.Grasshopper
                 Count++;
 
                 //watch the selection
-                bool isInSelection = ifInSelectionDomains(_selections, Count);
+                bool isInSelection = ifInSelectionDomains(this._selections, Count);
                 
 
                 if (isInSelection)
@@ -165,16 +163,20 @@ namespace Colibri.Grasshopper
                     {
                         e.Document.NewSolution(false);
                     }
-
-                    
                     
                 }
 
-                //todo: check the First 0 position which would be execulted at the end.
-                
-                //isRunning = Count < _selectedCounts;
-                
-                //Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+                //watch the user cancel the process
+                if (GH_Document.IsEscapeKeyDown())
+                {
+                    if (MessageBox.Show("Do you want to stop the process?\nSo far " + Count.ToString() +
+                      " out of " + this._selectedCounts.ToString() + " iterations are done!", "Stop?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
+                        // cancel the process by user input!
+                        isRunning = false;
+                    }
+                }
 
                 //watch the file to stop
                 if (!string.IsNullOrEmpty(_watchFilePath))
@@ -201,6 +203,7 @@ namespace Colibri.Grasshopper
             }
             
         }
+
         public void FlyTest(GH_SolutionEventArgs e, int testNumber)
         {
             

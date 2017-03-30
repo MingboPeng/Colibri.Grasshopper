@@ -177,8 +177,7 @@ namespace Colibri.Grasshopper
             
             return panelValues;
         }
-
-
+        
         public string CurrentValue() {
 
             var rawParam = this.RawParam;
