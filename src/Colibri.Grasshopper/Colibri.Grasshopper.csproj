@@ -60,11 +60,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
+    <Compile Include="ARCHIVE\Aggregator_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ColibriInputs_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ColibriOutputs_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ImageParameters_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\Iterator_ARCHIVE.cs" />
     <Compile Include="ColibriClasses\Extensions.cs" />
     <Compile Include="ColibriClasses\ImgParam.cs" />
     <Compile Include="ColibriClasses\IterationSelection.cs" />
     <Compile Include="ColibriClasses\ThreeDParam.cs" />
-    <Compile Include="ColibriInputs.cs" />
     <Compile Include="ColibriClasses\IteratorAttributes.cs" />
     <Compile Include="ColibriClasses\ColibriParam.cs" />
     <Compile Include="ImageParameters.cs" />
@@ -92,6 +96,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Aggregator.png" />
+    <Content Include="Resources\Colibri_logobase_1.png" />
+    <Content Include="Resources\Colibri_logobase_2.png" />
+    <Content Include="Resources\Colibri_logobase_3.png" />
+    <Content Include="Resources\Colibri_logobase_4.png" />
+    <Content Include="Resources\Colibri_logobase_5.png" />
     <Content Include="Resources\imgParam.png" />
     <Content Include="Resources\Iterator.png" />
     <Content Include="Resources\Output.png" />

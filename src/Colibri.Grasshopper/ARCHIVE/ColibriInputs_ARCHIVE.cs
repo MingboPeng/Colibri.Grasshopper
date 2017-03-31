@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
 using GH = Grasshopper;
 using Grasshopper.Kernel;
+using Rhino.Geometry;
+using System.Windows.Forms;
 using System.Linq;
 using Grasshopper.Kernel.Special;
 
 namespace Colibri.Grasshopper
 {
-    public class ColibriInputs : GH_Component
+    public class ColibriInputs_ARCHIVE : GH_Component
     {
         GH_Document doc = null;
 
         /// <summary>
         /// Initializes a new instance of the ColibriInputs class.
         /// </summary>
-        public ColibriInputs()
+        public ColibriInputs_ARCHIVE()
           : base("Colibri Inputs", "Colibri Inputs",
               "Collects design input values to chart in Design Explorer.  These will be the vertical axes to the left on the parallel coordinates plot.  These values should describe the genome of a single design iteration.\n\nThis component lets you easily use Colibri to record a Galapagos or Octopus run, and to review all iterations in Design Explorer.",
               "TT Toolbox", "Colibri")
@@ -22,6 +26,8 @@ namespace Colibri.Grasshopper
         }
 
         public override GH_Exposure Exposure { get { return GH_Exposure.hidden; } }
+
+        public override bool Obsolete { get { return true; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -146,7 +152,7 @@ namespace Colibri.Grasshopper
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.staticInput;
+                return Properties.Resources.Colibri_logobase_5;
             }
         }
 
