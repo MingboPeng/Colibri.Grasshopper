@@ -74,7 +74,7 @@
     <Compile Include="ImageParameters.cs" />
     <Compile Include="Colibri.GrasshopperInfo.cs" />
     <Compile Include="ColibriOutputs.cs" />
-    <Compile Include="Iterator2.cs" />
+    <Compile Include="Iterator.cs" />
     <Compile Include="ColibriClasses\IteratorFlyParam.cs" />
     <Compile Include="SetSelection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

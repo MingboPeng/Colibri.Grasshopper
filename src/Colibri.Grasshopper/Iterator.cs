@@ -14,7 +14,7 @@ using GH_IO.Serialization;
 
 namespace Colibri.Grasshopper
 {
-    public class Iterator2 : GH_Component, IGH_VariableParameterComponent
+    public class Iterator : GH_Component, IGH_VariableParameterComponent
     {
         
         private GH_Document _doc = null;
@@ -39,7 +39,7 @@ namespace Colibri.Grasshopper
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public Iterator2()
+        public Iterator()
           : base("Colibri FlyID (Iterator)", "Iterator",
               "Generates design iterations from a collection of sliders, panels, or valueLists.",
               "TT Toolbox", "Colibri")
