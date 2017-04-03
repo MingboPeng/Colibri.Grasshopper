@@ -33,6 +33,10 @@ namespace Colibri.Grasshopper
         private Aggregator _aggObj = null;
         private OverrideMode _mode = OverrideMode.AskEverytime;
         private bool _ignoreAllWarningMsg = false;
+        private bool _remoteFly = false;
+        private string _selectionName = "Selection";
+        private string _remoteFlyName = "RemoteFly";
+        private string _remoteCtrlName = "RemoteCtrl";
         private string _studyFolder = "";
 
 
@@ -57,7 +61,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter("Selection", "Selection", "Optional input if you want to run partial iterations.", GH_ParamAccess.item);
+            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Optional input if you want to run partial iterations.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 
@@ -82,9 +86,28 @@ namespace Colibri.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             var userSelections = new IteratorSelection();
-            DA.GetData(this.Params.Input.Count - 1, ref userSelections);
-            
+            bool remoteFly = false;
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
+            DA.GetData(selectionIndex, ref userSelections);
 
+            if (this._remoteFly)
+            {
+                DA.GetData(selectionIndex + 1, ref remoteFly);
+
+                //set remoteCtrl 
+                if (_running)
+                {
+                    DA.SetData(selectionIndex + 1, true);
+                }
+                else
+                {
+                    DA.SetData(selectionIndex + 1, false);
+                }
+                
+            }
+
+            
+            
             var FlyID = new List<object>();
             
             //flyParam only exists when flying
@@ -95,7 +118,11 @@ namespace Colibri.Grasshopper
 
                 this._selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
                 this.Message = updateComponentMsg(_filteredSources, this._selections);
-                
+
+                if (remoteFly)
+                {
+                    this.OnMouseDownEvent(this);
+                }
             }
             
             //Get current value
@@ -105,7 +132,7 @@ namespace Colibri.Grasshopper
                 FlyID.Add(item.ToString(true));
             }
             
-            DA.SetDataList(Params.Output.Count-1,FlyID);
+            DA.SetDataList(selectionIndex, FlyID);
             
         }
 
@@ -146,7 +173,11 @@ namespace Colibri.Grasshopper
 
             if (reader.ItemExists("ignoreAllWarningMsg"))
             {
-                _ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
+                this._ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
+            }
+            if (reader.ItemExists(this._remoteFlyName))
+            {
+                this._remoteFly = reader.GetBoolean(this._remoteFlyName);
             }
 
             return base.Read(reader);
@@ -154,7 +185,8 @@ namespace Colibri.Grasshopper
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetBoolean("ignoreAllWarningMsg", _ignoreAllWarningMsg);
+            writer.SetBoolean("ignoreAllWarningMsg", this._ignoreAllWarningMsg);
+            writer.SetBoolean(this._remoteFlyName, this._remoteFly);
             return base.Write(writer);
         }
 
@@ -165,7 +197,10 @@ namespace Colibri.Grasshopper
             //Menu_AppendSeparator(menu);
 
             base.AppendAdditionalComponentMenuItems(menu);
-            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg, true, _ignoreAllWarningMsg);
+            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg, true, this._ignoreAllWarningMsg);
+
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "RemoteFly", remoteFly, true, this._remoteFly);
             Menu_AppendSeparator(menu);
         }
 
@@ -228,9 +263,10 @@ namespace Colibri.Grasshopper
         private List<ColibriParam> gatherSources()
         {
             var filtedSources = new List<ColibriParam>();
-            
+
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
             // exclude the last input which is "Selection"
-            for (int i = 0; i < this.Params.Input.Count-1; i++)
+            for (int i = 0; i < selectionIndex; i++)
             {
                 //Check if it is fly or empty source param
                 //bool isFly = i == this.Params.Input.Count - 1 ? true : false;
@@ -434,7 +470,34 @@ namespace Colibri.Grasshopper
 
         private void ignoreWarningMsg(object sender, EventArgs e)
         {
-            _ignoreAllWarningMsg = !_ignoreAllWarningMsg;
+            this._ignoreAllWarningMsg = !this._ignoreAllWarningMsg;
+        }
+        
+
+        private void remoteFly(object sender, EventArgs e)
+        {
+            this._remoteFly = !this._remoteFly;
+            
+            if (this._remoteFly)
+            {
+                var remoteInParam = new Param_Boolean();
+                var remoteOutParam = new Param_Boolean();
+
+                int index = this.Params.Input.Count;
+                this.Params.RegisterInputParam(remoteInParam, index);
+                this.Params.RegisterOutputParam(remoteOutParam, index);
+
+            }
+            else
+            {
+                int remoteFlyIndex = this.Params.IndexOfInputParam(this._remoteFlyName);
+                this.Params.UnregisterInputParameter(this.Params.Input[remoteFlyIndex]);
+                this.Params.UnregisterOutputParameter(this.Params.Output[remoteFlyIndex]);
+            }
+            VariableParameterMaintenance();
+            this.Params.OnParametersChanged();
+            this.ExpireSolution(true);
+
         }
 
         #endregion
@@ -443,12 +506,21 @@ namespace Colibri.Grasshopper
 
         public bool CanInsertParameter(GH_ParameterSide side, int index)
         {
-            bool isInputSide = (side == GH_ParameterSide.Input) ? true : false;
-            bool isTheFlyButton = (index == this.Params.Input.Count) ? true : false;
-            bool isTheOnlyInput = (index == 0) ? true : false;
+            bool isInputSide = side == GH_ParameterSide.Input;
+            
+            bool isTheOnlyInput = index == 0;
 
-            //We only let input parameters to be added (output number is fixed at one)
-            if (isInputSide && !isTheFlyButton && !isTheOnlyInput)
+            //isSetting includes Selection and remoteFly,
+            //canInsert at the end when remoteFly is flase.
+            bool isSetting = false;
+            if (this._remoteFly)
+            {
+                //if remoteFly is on, then the last two (Selection and remoteFly) can not insert anymore.
+                isSetting = (index == this.Params.Input.Count) || (index == this.Params.Input.Count-1);
+            }
+            
+            //We only let input parameters to be added 
+            if (isInputSide && !isSetting && !isTheOnlyInput)
             {
                 return true;
             }
@@ -461,13 +533,22 @@ namespace Colibri.Grasshopper
 
         public bool CanRemoveParameter(GH_ParameterSide side, int index)
         {
-            bool isInputSide = (side == GH_ParameterSide.Input)? true : false;
-            bool isTheFlyButton = (index == this.Params.Input.Count-1) ? true : false;
-            bool isTheOnlyInput = (index == 0)&&(this.Params.Input.Count<=2) ? true : false;
+            bool isInputSide = side == GH_ParameterSide.Input;
+            //bool isTheFlyButton = index == this.Params.Input.Count-1;
+            bool isTheOnlyInput = (index == 0)&&(this.Params.Input.Count<=2);
 
+
+            //isSetting includes Selection and remoteFly,
+            //cannot remove Selection Setting.
+            bool isSetting = index == this.Params.Input.Count - 1;
+            if (this._remoteFly)
+            {
+                //if remoteFly is on, then Selection is at this.Params.Input.Count-2.
+                isSetting = (index == this.Params.Input.Count-2);
+            }
 
             //can only remove from the input and non Fly? or the first Slider
-            if (isInputSide && !isTheFlyButton && !isTheOnlyInput)
+            if (isInputSide && !isSetting && !isTheOnlyInput)
             {
                 return true;
             }
@@ -481,20 +562,43 @@ namespace Colibri.Grasshopper
 
         public IGH_Param CreateParameter(GH_ParameterSide side, int index)
         {
+            
+            // if remoteFly
+            if (index == this.Params.Input.Count)
+            {
+                this._remoteFly = true;
+            }
+
+            if (this._remoteFly && (index == this.Params.Input.Count))
+            {
+                var remoteInParam = new Param_Boolean();
+                var remoteOutParam = new Param_Boolean();
+                Params.RegisterOutputParam(remoteOutParam, index);
+                return remoteInParam;
+            }
+
+            // add normal params
             var outParam = new Param_GenericObject();
             outParam.NickName = String.Empty;
             Params.RegisterOutputParam(outParam, index);
 
-            var param = new Param_GenericObject();
-            param.NickName = String.Empty;
-
-            return param;
+            var inParam = new Param_GenericObject();
+            inParam.NickName = String.Empty;
+            return inParam;
         }
 
         public bool DestroyParameter(GH_ParameterSide side, int index)
         {
+            //bool isRemoteFly = index == this.Params.IndexOfInputParam(this._remoteFlyName)
+            if (this._remoteFly && (index == this.Params.Input.Count-1))
+            {
+                this._remoteFly = false;
+            }
+
             //unregister ther output when input is destroied.
             Params.UnregisterOutputParameter(Params.Output[index]);
+
+            
             return true;
         }
 
@@ -502,8 +606,30 @@ namespace Colibri.Grasshopper
         //Todo remove unnecessary code here
         public void VariableParameterMaintenance()
         {
-           
-            for (int i = 0; i < this.Params.Input.Count-1; i++)
+            int inputParamCount = this.Params.Input.Count - 1;
+            if (this._remoteFly)
+            {
+                inputParamCount--; //this.Params.Input.Count - 2;
+
+                //settings for remoteFly
+                var remoteInParam = this.Params.Input.Last() as Param_Boolean;
+                remoteInParam.Name = this._remoteFlyName;
+                remoteInParam.NickName = this._remoteFlyName;
+                remoteInParam.SetPersistentData(new GH_Boolean(false));
+                remoteInParam.Optional = true;
+                remoteInParam.Description = "Remote control for Iterator, set to true to fly.";
+                remoteInParam.MutableNickName = true;
+                
+
+                var remoteOutParam = this.Params.Output.Last() as Param_Boolean;
+                remoteOutParam.Name = this._remoteCtrlName;
+                remoteOutParam.NickName = this._remoteCtrlName;
+                remoteOutParam.SetPersistentData(new GH_Boolean(false));
+                remoteOutParam.Description = "Control downstream conponents after fly starts.";
+                remoteOutParam.MutableNickName = true;
+            }
+
+            for (int i = 0; i < inputParamCount; i++)
             {
                 // create inputs
                 var inParam = this.Params.Input[i];
@@ -538,9 +664,12 @@ namespace Colibri.Grasshopper
         //This is for if any source connected, reconnected, removed, replacement 
         private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
         {
-            
-            bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
-            bool isSelection = e.ParameterIndex == this.Params.Input.Count-1 ? true : false;
+            //int inputParamCount = this.Params.Input.Count - 1;
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
+
+            bool isInputSide = e.ParameterSide == GH_ParameterSide.Input;
+            bool isSelection = e.ParameterIndex == selectionIndex;
+            bool isRemoteFly = e.Parameter.NickName == this._remoteFlyName;
 
             
             //check input side only
@@ -549,13 +678,20 @@ namespace Colibri.Grasshopper
             //check if is Selection setting only
             if (isSelection) return;
 
+            //check if is _remoteFly setting
+            if (isRemoteFly) return;
+            //{
+            //    //Selection's index becomes this.Params.Input.Count - 2
+            //    if (e.ParameterIndex == inputParamCount-1) return;
+            //}
 
-            bool isSecondLastSourceFull = Params.Input[this.Params.Input.Count - 2].Sources.Any();
+            
+            bool isSecondLastSourceFull = Params.Input[selectionIndex - 1].Sources.Any();
             // add a new input param while the second last input is full
             if (isSecondLastSourceFull)
             {
-                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count - 1);
-                Params.RegisterInputParam(newParam, Params.Input.Count - 1);
+                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, selectionIndex);
+                Params.RegisterInputParam(newParam, selectionIndex);
                 VariableParameterMaintenance();
                 this.Params.OnParametersChanged();
             }
@@ -575,27 +711,31 @@ namespace Colibri.Grasshopper
             if (isExist)
             {
                 
-                //if (e.Type == GH_ObjectEventType.NickName)
-                //{
-                    checkAllInputParamNames(_filteredSources);
-                    //this.ExpireSolution(true);
+                
+                checkAllInputParamNames(_filteredSources);
 
-                    //edit the Fly output without expire this component's solution, 
-                    // only expire the downstream components which connected to the last output "FlyID"
+                //edit the Fly output without expire this component's solution, 
+                // only expire the downstream components which connected to the last output "FlyID"
+                if (this._remoteFly)
+                {
+                    int flyIDindex = this.Params.Output.Count - 2;
+                    this.Params.Output[flyIDindex].ExpireSolution(false);
+                    this.Params.Output[flyIDindex].ClearData();
+                    this.Params.Output[flyIDindex].AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+                }
+                else
+                {
                     this.Params.Output.Last().ExpireSolution(false);
                     this.Params.Output.Last().ClearData();
                     this.Params.Output.Last().AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+                }
+                
                     
-                    //foreach (var item in this.Params.Output.Last().Recipients)
-                    //{
-                    //    item.ExpireSolution(false);
-                    //}
+                    
+                if (_doc == null) _doc = GH.Instances.ActiveCanvas.Document;
 
-                    if (_doc == null) _doc = GH.Instances.ActiveCanvas.Document;
-
-                    _doc.NewSolution(false);
-
-                //}
+                _doc.NewSolution(false);
+                
 
             }
 
@@ -608,10 +748,10 @@ namespace Colibri.Grasshopper
 
         private List<string> getFlyID()
         {
-            if (_filteredSources.IsNullOrEmpty()) return new List<string>();
+            if (this._filteredSources.IsNullOrEmpty()) return new List<string>();
 
             var FlyID = new List<string>();
-            foreach (var item in _filteredSources)
+            foreach (var item in this._filteredSources)
             {
                 FlyID.Add(item.ToString(true));
             }
@@ -772,7 +912,8 @@ namespace Colibri.Grasshopper
             string warningMsg = "  It seems Iterator is not directly connected to Aggregator. If yes, then no pre-check and data protection.\n\t[SOLUTION]: connect Genome to Aggregator' Genome directly!";
 
             // only check Recipients of FlyID
-            var flyIDRecipients = this.Params.Output.Last().Recipients;
+            int genomeIndex = this.Params.IndexOfInputParam(this._selectionName);
+            var flyIDRecipients = this.Params.Output[genomeIndex].Recipients;
 
             if (flyIDRecipients.IsNullOrEmpty()) return msg;
 
