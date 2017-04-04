@@ -58,7 +58,7 @@ namespace Colibri.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
             pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
             pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.", GH_ParamAccess.list);
-            pManager.AddGenericParameter("ImgParams", "ImgParams", "Optional input from the Colibri ImageParameters component.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("ImgSetting", "ImgSetting", "Optional input from the Colibri ImageSetting component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
             pManager.AddGenericParameter("3DObjects", "3DObjects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
@@ -538,18 +538,7 @@ namespace Colibri.Grasshopper
             }
             
         }
-
-        //private void getStudiedFlyIDFromCSV(string FolderPath)
-        //{
-        //    string csvFilePath = FolderPath + @"\data.csv";
-        //    if (!File.Exists(csvFilePath)) return;
-            
-        //    var stringLines = File.ReadAllLines(csvFilePath).ToList();
-            
-        //    MessageBox.Show(stringLines.FirstOrDefault());
-            
-        //}
-
+        
         private void cleanTheFolder(string FolderPath)
         {
             if (!Directory.Exists(FolderPath)) return;
