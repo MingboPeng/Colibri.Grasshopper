@@ -324,22 +324,6 @@ namespace Colibri.Grasshopper
             }
         }
 
-        ///// <summary>
-        ///// check input source Nicknames
-        ///// </summary>   
-        //private void checkAllSourceParamNames(List<ColibriParam> validColibriParams)
-        //{
-        //    //all items in the list are unnull. which is checked in gatherSources();
-
-        //    if (validColibriParams.IsNullOrEmpty()) return;
-
-        //    foreach (var item in validColibriParams)
-        //    {
-        //        checkSourceParamNickname(item);
-        //        //checkInputParamNickname(item);
-        //    }
-        //}
-
 
         #endregion
 
@@ -710,35 +694,34 @@ namespace Colibri.Grasshopper
 
             if (isExist)
             {
-                
-                
-                checkAllInputParamNames(_filteredSources);
+                //todo: this can be finished inside ColibriParam
+                checkInputParamNickname(sender);
 
                 //edit the Fly output without expire this component's solution, 
                 // only expire the downstream components which connected to the last output "FlyID"
+                int flyIDindex = this.Params.Output.Count;
                 if (this._remoteFly)
                 {
-                    int flyIDindex = this.Params.Output.Count - 2;
-                    this.Params.Output[flyIDindex].ExpireSolution(false);
-                    this.Params.Output[flyIDindex].ClearData();
-                    this.Params.Output[flyIDindex].AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+                    flyIDindex = flyIDindex - 2;
+                    
                 }
                 else
                 {
-                    this.Params.Output.Last().ExpireSolution(false);
-                    this.Params.Output.Last().ClearData();
-                    this.Params.Output.Last().AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+                    flyIDindex = flyIDindex - 1;
                 }
-                
-                    
-                    
+
+                this.Params.Output[flyIDindex].ExpireSolution(false);
+                this.Params.Output[flyIDindex].ClearData();
+                this.Params.Output[flyIDindex].AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+
+
+
                 if (_doc == null) _doc = GH.Instances.ActiveCanvas.Document;
 
                 _doc.NewSolution(false);
                 
 
             }
-
             else
             {
                 sender = null;
