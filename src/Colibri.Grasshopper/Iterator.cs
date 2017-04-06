@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using GH = Grasshopper;
-using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel;
 using System.Linq;
 using Grasshopper.Kernel.Parameters;
-using Grasshopper.Kernel.Components;
-using System.Threading.Tasks;
 using Grasshopper.Kernel.Data;
 using System.Windows.Forms;
 using Grasshopper.Kernel.Types;
@@ -162,6 +159,7 @@ namespace Colibri.Grasshopper
         public override void RemovedFromDocument(GH_Document document)
         {
             base.RemovedFromDocument(document);
+            if (_filteredSources.IsNullOrEmpty()) return;
             foreach (var item in _filteredSources)
             {
                 item.ObjectNicknameChanged -= OnSourceNicknameChanged;
