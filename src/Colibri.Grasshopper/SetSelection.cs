@@ -16,7 +16,7 @@ namespace Colibri.Grasshopper
         public SetSelection()
           : base("Iteration Selection", "Sel",
               "Generates iteration selections for Iterator.",
-              "TT Toolbox", "Colibri")
+              "TT Toolbox", "Colibri 2.0")
         {
         }
 

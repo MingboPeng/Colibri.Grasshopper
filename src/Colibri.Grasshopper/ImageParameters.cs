@@ -18,7 +18,7 @@ namespace Colibri.Grasshopper
         public ImageParameters()
           : base("Image Setting", "Img Setting",
               "Defines how Colibri generates images.  Right now this just sets the size, but we could expose more options like Ladybug's Capture View component.",
-              "TT Toolbox", "Colibri")
+              "TT Toolbox", "Colibri 2.0")
         {
         }
 

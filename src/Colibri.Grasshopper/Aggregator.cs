@@ -44,7 +44,7 @@ namespace Colibri.Grasshopper
         public Aggregator()
           : base("Colibri Aggregator", "Aggregator",
               "Aggregates design data, image & Spectacles model into a data.csv file that Design Explorer can open.",
-              "TT Toolbox", "Colibri")
+              "TT Toolbox", "Colibri 2.0")
         {
         }
 

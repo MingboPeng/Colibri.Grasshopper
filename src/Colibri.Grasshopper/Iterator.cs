@@ -43,7 +43,7 @@ namespace Colibri.Grasshopper
         public Iterator()
           : base("Colibri FlyID (Iterator)", "Iterator",
               "Generates design iterations from a collection of sliders, panels, or valueLists.",
-              "TT Toolbox", "Colibri")
+              "TT Toolbox", "Colibri 2.0")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
             

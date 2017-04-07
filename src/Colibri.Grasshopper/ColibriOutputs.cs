@@ -20,7 +20,7 @@ namespace Colibri.Grasshopper
         public ColibriOutputs()
           : base("Colibri Parameters", "Parameters",
               "Collects design parameters (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs. These values should describe the characteristics of a single design iteration.\nYou can also combine this output as a static gene in Genome.",
-              "TT Toolbox", "Colibri")
+              "TT Toolbox", "Colibri 2.0")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
         }
