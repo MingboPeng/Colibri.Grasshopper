@@ -886,6 +886,7 @@ namespace Colibri.Grasshopper
 
         }
         
+        //this will check two levels of components after Iteration
         private List<string> checkIfGetAggregatorObj()
         {
             
@@ -896,17 +897,40 @@ namespace Colibri.Grasshopper
 
             // only check Recipients of FlyID
             int genomeIndex = this.Params.IndexOfInputParam(this._selectionName);
-            var flyIDRecipients = this.Params.Output[genomeIndex].Recipients;
+            var flyIDRecipients = this.Params.Output[genomeIndex].DirectConnectedComponents();
 
             if (flyIDRecipients.IsNullOrEmpty()) return msg;
 
+            var twoLevelsRecipients = new List<IGH_DocumentObject>();
+            twoLevelsRecipients.AddRange(flyIDRecipients);
             foreach (var item in flyIDRecipients)
             {
-                var recipientParent = item.Attributes.GetTopLevel.DocObject;
-                if (recipientParent.ComponentGuid.Equals(aggregatorID))
+                var secondLevelOutputs = new List<IGH_Param>();
+                if (item is IGH_Component)
                 {
-                    this._aggObj = recipientParent as Aggregator;
+                    secondLevelOutputs = ((GH_Component)item).Params.Output;
                 }
+                else if (item is IGH_Param)
+                {
+                    secondLevelOutputs.Add(item as IGH_Param);
+                }
+                
+                foreach (var secondLevelOutput in secondLevelOutputs)
+                {
+                    var secondLevelRecipients = secondLevelOutput.DirectConnectedComponents();
+                    twoLevelsRecipients.AddRange(secondLevelRecipients);
+                }
+
+            }
+            
+
+            foreach (var item in twoLevelsRecipients)
+            {
+                if (item.ComponentGuid.Equals(aggregatorID))
+                {
+                    this._aggObj = item as Aggregator;
+                }
+
             }
 
             if (this._aggObj == null)
@@ -918,7 +942,7 @@ namespace Colibri.Grasshopper
             
         }
 
-
+        
         #endregion
         
     }

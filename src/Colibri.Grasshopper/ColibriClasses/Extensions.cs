@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Grasshopper.Kernel;
 
 namespace Colibri.Grasshopper
 {
@@ -48,5 +49,32 @@ namespace Colibri.Grasshopper
             }
             return collection.Count < 1;
         }
+
+        /// <summary>
+        /// Gets all connected components.
+        /// </summary>
+        /// <typeparam name="IGH_Param">The IGH_Param type.</typeparam>
+        /// <param name="outputParam">The outputParam</param>
+        /// <returns>
+        ///     <c>List<GH_Component></c>.
+        /// </returns>
+        public static List<IGH_DocumentObject> DirectConnectedComponents(this IGH_Param outputParam)
+        {
+            var connectedComponent = new List<IGH_DocumentObject>();
+
+            var recipients = outputParam.Recipients;
+            if (recipients.IsNullOrEmpty()) return connectedComponent;
+            
+            foreach (var item in recipients)
+            {
+                var recipientComponent = item.Attributes.GetTopLevel.DocObject;
+                connectedComponent.Add(recipientComponent);
+
+
+            }
+            return connectedComponent;
+        }
+
+
     }
 }

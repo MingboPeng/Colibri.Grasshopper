@@ -142,7 +142,7 @@ namespace Colibri.Grasshopper
                 //move to the next set of slider positions
                 isRunning = MoveToNextPermutation(ref currentParamIndex);
 
-                Count++;
+                
 
                 //watch the selection
                 bool isInSelection = ifInSelectionDomains(this._selections, Count);
@@ -166,6 +166,7 @@ namespace Colibri.Grasshopper
                     
                 }
 
+                Count++;
 
                 //watch the user cancel the process
                 if (GH_Document.IsEscapeKeyDown())
