@@ -198,8 +198,8 @@ namespace Colibri.Grasshopper
             {
                 //todo: two mode for running or unrunning 
                 var valueList = rawParam as GH_ValueList;
-                currentValue = valueList.FirstSelectedItem.Value.ToString();
-                //currentValue = valueList.ListItems[position].Value.ToString();
+                //currentValue = valueList.FirstSelectedItem.Value.ToString();
+                currentValue = valueList.FirstSelectedItem.Name.ToString();
             }
             else
             {

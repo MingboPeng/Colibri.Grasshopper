@@ -597,6 +597,7 @@ namespace Colibri.Grasshopper
                 var remoteInParam = this.Params.Input.Last() as Param_Boolean;
                 remoteInParam.Name = this._remoteFlyName;
                 remoteInParam.NickName = this._remoteFlyName;
+                remoteInParam.Access = GH_ParamAccess.item;
                 remoteInParam.SetPersistentData(new GH_Boolean(false));
                 remoteInParam.Optional = true;
                 remoteInParam.Description = "Remote control for Iterator, set to true to fly.";
@@ -605,6 +606,7 @@ namespace Colibri.Grasshopper
 
                 var remoteOutParam = this.Params.Output.Last() as Param_Boolean;
                 remoteOutParam.Name = this._remoteCtrlName;
+                remoteOutParam.Access = GH_ParamAccess.item;
                 remoteOutParam.NickName = this._remoteCtrlName;
                 remoteOutParam.SetPersistentData(new GH_Boolean(false));
                 remoteOutParam.Description = "Control downstream conponents after fly starts.";
@@ -784,7 +786,7 @@ namespace Colibri.Grasshopper
                 //check take numbers for each parameters
                 if (takeNumbers.Any() && takeNumbers.Count != ColibriParam.Count)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "The number of connected sliders must be equal to the number of items in the Steps input list.\n But Colibri will run all iterations in this case.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "The number of connected sliders must be equal to the number of items in the Steps input list.\n But Colibri will run without Division settings.");
                     
                 }
 
