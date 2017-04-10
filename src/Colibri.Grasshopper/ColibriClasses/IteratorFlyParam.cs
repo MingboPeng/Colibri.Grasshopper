@@ -46,6 +46,8 @@ namespace Colibri.Grasshopper
         private IteratorSelection _selections { get; set; }
         private OverrideMode _overrideFolderMode = OverrideMode.AskEverytime;
 
+        private List<List<int>> iterationsFlyList = new List<List<int>>();
+
         //constructor 
         public IteratorFlyParam(){}
 
@@ -127,90 +129,90 @@ namespace Colibri.Grasshopper
             
         }
         
-        public void FlyAll(GH_SolutionEventArgs e)
-        {
+        //public void FlyAll(GH_SolutionEventArgs e)
+        //{
             
-            FirstResetAll(false);
+        //    FirstResetAll(false);
 
             
-            while (true)
-            {
+        //    while (true)
+        //    {
                 
-                int currentParamIndex = 0;
-                bool isRunning = true;
+        //        int currentParamIndex = 0;
+        //        bool isRunning = true;
                 
-                //move to the next set of slider positions
-                isRunning = MoveToNextPermutation(ref currentParamIndex);
+        //        //move to the next set of slider positions
+        //        isRunning = MoveToNextPermutation(ref currentParamIndex);
 
                 
 
-                //watch the selection
-                bool isInSelection = ifInSelectionDomains(this._selections, Count);
+        //        //watch the selection
+        //        bool isInSelection = ifInSelectionDomains(this._selections, Count);
                 
 
-                if (isInSelection)
-                {
-                    if (this._overrideFolderMode == OverrideMode.FinishTheRest)
-                    {
-                        bool isStudiedID = this._studiedFlyID.Contains(getCurrentFlyID());
-                        if (!isStudiedID)
-                        {
-                            // We've just got a new valid permutation. Solve the new solution.
-                            e.Document.NewSolution(false);
-                        }
-                    }
-                    else
-                    {
-                        e.Document.NewSolution(false);
-                    }
+        //        if (isInSelection)
+        //        {
+        //            if (this._overrideFolderMode == OverrideMode.FinishTheRest)
+        //            {
+        //                bool isStudiedID = this._studiedFlyID.Contains(getCurrentFlyID());
+        //                if (!isStudiedID)
+        //                {
+        //                    // We've just got a new valid permutation. Solve the new solution.
+        //                    e.Document.NewSolution(false);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                e.Document.NewSolution(false);
+        //            }
                     
-                }
+        //        }
 
-                Count++;
+        //        Count++;
 
-                //watch the user cancel the process
-                if (GH_Document.IsEscapeKeyDown())
-                {
-                    if (MessageBox.Show("Do you want to stop the process?\nSo far " + Count.ToString() +
-                      " out of " + this._selectedCounts.ToString() + " iterations are done!", "Stop?", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        // cancel the process by user input!
-                        isRunning = false;
-                    }
-                }
+        //        //watch the user cancel the process
+        //        if (GH_Document.IsEscapeKeyDown())
+        //        {
+        //            if (MessageBox.Show("Do you want to stop the process?\nSo far " + Count.ToString() +
+        //              " out of " + this._selectedCounts.ToString() + " iterations are done!", "Stop?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+        //            {
+        //                // cancel the process by user input!
+        //                isRunning = false;
+        //            }
+        //        }
 
-                //watch the file to stop
-                if (!string.IsNullOrEmpty(_watchFilePath))
-                {
-                    if (!File.Exists(_watchFilePath))
-                    {
-                        // watch file was deleted by user
-                        isRunning = false;
-                    }
-                }
+        //        //watch the file to stop
+        //        if (!string.IsNullOrEmpty(_watchFilePath))
+        //        {
+        //            if (!File.Exists(_watchFilePath))
+        //            {
+        //                // watch file was deleted by user
+        //                isRunning = false;
+        //            }
+        //        }
 
-                if (!isRunning )
-                {
-                    // study is over!
+        //        if (!isRunning )
+        //        {
+        //            // study is over!
                     
-                    if (File.Exists(_watchFilePath))
-                    {
-                        File.Delete(_watchFilePath);
-                    }
-                    //e.Document.NewSolution(false);
-                    break;
-                }
+        //            if (File.Exists(_watchFilePath))
+        //            {
+        //                File.Delete(_watchFilePath);
+        //            }
+        //            //e.Document.NewSolution(false);
+        //            break;
+        //        }
                 
-            }
+        //    }
             
-        }
+        //}
 
         public void FlyTest(GH_SolutionEventArgs e, int testNumber)
         {
             
             if (_totalCounts <= testNumber)
             {
-                FlyAll(e);
+                Fly(e);
                 return;
             }
 
@@ -256,83 +258,41 @@ namespace Colibri.Grasshopper
         }
         
        
-        private bool MoveToNextPermutation(ref int MoveToParamIndex)
-        {
+        //private bool MoveToNextPermutation(ref int MoveToParamIndex)
+        //{
 
            
-            if (MoveToParamIndex >= this._inputParams.Count)
-            {
-                return false;
-            }
-
-            //System.Windows.Forms.MessageBox.Show(Count.ToString());
-            
-
-            var currentParam = this._inputParams[MoveToParamIndex];
-            var thisSelectedPositions = this._allSelectedPositions[MoveToParamIndex];
-            //int currentStepPosition = currentStepPositionsIndex[MoveToParamIndex];
-
-            int nextPositionIndex = this._currentPositionsIndex[MoveToParamIndex]+1; 
-            
-
-            if (nextPositionIndex < thisSelectedPositions.Count)
-            {
-                int nextPosition = thisSelectedPositions[nextPositionIndex];
-                
-                currentParam.SetParamTo(nextPosition);
-                
-                //Increment the current step position
-                this._currentPositionsIndex[MoveToParamIndex]++ ;
-                
-                return true;
-            }else
-            {
-                
-                //currentParam.Reset();
-                currentParam.SetParamTo(thisSelectedPositions.First());
-
-                ////The current component is already at the maximum value. Reset it back to zero.
-                this._currentPositionsIndex[MoveToParamIndex] = 0;
-
-                //// Move on to the next slider.
-                MoveToParamIndex++;
-
-                //// If we've run out of sliders to modify, we're done permutatin'
-                if (MoveToParamIndex >= _inputParams.Count)
-                {
-                    return false;
-                }
-                    
-                return MoveToNextPermutation(ref MoveToParamIndex);
-            }
-            
-        }
-
-        //private List<List<int>> genFlyPositionList()
-        //{
-        //    var iterations = new List<List<int>>();
         //    if (MoveToParamIndex >= this._inputParams.Count)
         //    {
         //        return false;
         //    }
+
+        //    //System.Windows.Forms.MessageBox.Show(Count.ToString());
             
 
-        //    //var currentParam = this._inputParams[MoveToParamIndex];
+        //    var currentParam = this._inputParams[MoveToParamIndex];
         //    var thisSelectedPositions = this._allSelectedPositions[MoveToParamIndex];
-        //    int nextPositionIndex = this._currentPositionsIndex[MoveToParamIndex] + 1;
+        //    //int currentStepPosition = currentStepPositionsIndex[MoveToParamIndex];
+
+        //    int nextPositionIndex = this._currentPositionsIndex[MoveToParamIndex]+1; 
             
+
         //    if (nextPositionIndex < thisSelectedPositions.Count)
         //    {
         //        int nextPosition = thisSelectedPositions[nextPositionIndex];
                 
+        //        currentParam.SetParamTo(nextPosition);
+                
         //        //Increment the current step position
-        //        this._currentPositionsIndex[MoveToParamIndex]++;
-
+        //        this._currentPositionsIndex[MoveToParamIndex]++ ;
+                
         //        return true;
-        //    }
-        //    else
+        //    }else
         //    {
                 
+        //        //currentParam.Reset();
+        //        currentParam.SetParamTo(thisSelectedPositions.First());
+
         //        ////The current component is already at the maximum value. Reset it back to zero.
         //        this._currentPositionsIndex[MoveToParamIndex] = 0;
 
@@ -344,12 +304,203 @@ namespace Colibri.Grasshopper
         //        {
         //            return false;
         //        }
-
+                    
         //        return MoveToNextPermutation(ref MoveToParamIndex);
         //    }
-
+            
         //}
+
+        public void Fly(GH_SolutionEventArgs e)
+        {
+
+            FirstResetAll(false);
+
+            var flyPositions = FlyPositions(this._allSelectedPositions);
+            var selflyPositions = selectedIterations(this._selections, flyPositions);
+
+            int totalIterations = selflyPositions.Count;
+
+            
+            bool isRunning = true;
+            
+            foreach (var item in selflyPositions)
+            {
+                //set each param to target positon
+                for (int i = 0; i < item.Count; i++)
+                {
+                    var currentParam = this._inputParams[i];
+                    int moveToPosition = item[i];
+                    currentParam.SetParamTo(moveToPosition);
+                }
+
+
+                if (this._overrideFolderMode == OverrideMode.FinishTheRest)
+                {
+                    bool isStudiedID = this._studiedFlyID.Contains(getCurrentFlyID());
+                    if (!isStudiedID)
+                    {
+                        // We've just got a new valid permutation. Solve the new solution.
+                        e.Document.NewSolution(false);
+                    }
+                }
+                else
+                {
+                    e.Document.NewSolution(false);
+                }
+
+
+
+                Count++;
+                isRunning = Count < totalIterations;
+                isRunning = listenToKeepRunning();
+
+
+                if (!isRunning)
+                {
+                    // study is over!
+
+                    if (File.Exists(_watchFilePath))
+                    {
+                        File.Delete(_watchFilePath);
+                    }
+                    //e.Document.NewSolution(false);
+                    break;
+                }
+
+
+                
+            }
+
+        }
+
+        private bool listenToKeepRunning()
+        {
+            //watch the user cancel the process
+            if (GH_Document.IsEscapeKeyDown())
+            {
+                if (MessageBox.Show("Do you want to stop the process?\nSo far " + Count.ToString() +
+                  " out of " + this._selectedCounts.ToString() + " iterations are done!", "Stop?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    // cancel the process by user input!
+                    return false;
+                }
+            }
+
+            //watch the file to stop
+            if (!string.IsNullOrEmpty(_watchFilePath))
+            {
+                if (!File.Exists(_watchFilePath))
+                {
+                    // watch file was deleted by user
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        //from Grasshopper's CrossReference
+        private bool nextPosition(List<int> offsets, List<int> lengths, int index)
+        {
+            if (index >= offsets.Count)
+                return false;
+            if (lengths[index] < 0)
+                return this.nextPosition(offsets, lengths, checked(index + 1));
+            if (offsets[index] >= lengths[index])
+            {
+                offsets[index] = 0;
+                return this.nextPosition(offsets, lengths, checked(index + 1));
+            }
+            List<int> intList1 = offsets;
+            List<int> intList2 = intList1;
+            int index1 = index;
+            int index2 = index1;
+            int num = checked(intList1[index1] + 1);
+            intList2[index2] = num;
+            return true;
+        }
+
+        private List<List<int>> FlyPositions(List<List<int>> inLists)
+        {
+            List<List<int>> inputLists = inLists;
+            List<List<int>> crossReferencedList = new List<List<int>>();
+            List<List<int>> positionsOfEachIterations = new List<List<int>>();
+            List<int> lengths = new List<int>();
+            List<int> offsets = new List<int>();
+            List<int> intList = new List<int>();
+
+            for (int i = 0; i < inputLists.Count; i++)
+            {
+                if (inputLists[i].Count != 0)
+                {
+                    intList.Add(i);
+                    offsets.Add(0);
+                    lengths.Add(checked(inputLists[i].Count - 1));
+                    crossReferencedList.Add(new List<int>());
+                }
+            }
+            
+
+            if (offsets.Count == 0)
+                return new List<List<int>>();
+
+            offsets[0] = -1;
+
+            while (this.nextPosition(offsets, lengths, 0))
+            {
+                int num10 = 0;
+                int num11 = checked(inputLists.Count - 1);
+                int index8 = num10;
+                while (index8 <= num11)
+                {
+                    int index3 = offsets[index8];
+
+                    if (index3 <= lengths[index8])
+                    {
+                        crossReferencedList[index8].Add(inputLists[index8][index3]);
+                    }
+                    checked { ++index8; }
+                }
+            }
+
+            int iterationCount = crossReferencedList[0].Count;
+            int paramCount = crossReferencedList.Count;
+
+            for (int i = 0; i < iterationCount; i++)
+            {
+                positionsOfEachIterations.Add(new List<int>());
+                for (int j = 0; j < paramCount; j++)
+                {
+                    int setIndex = crossReferencedList[j][i];
+                    positionsOfEachIterations.Last().Add(setIndex);
+                }
+            }
+
+            return positionsOfEachIterations;
+        }
+
+        private List<List<int>> selectedIterations(IteratorSelection Selections, List<List<int>> allIterations)
+        {
+            int count = 0;
+            bool ifInSelection = true;
+            var selectedIterationPositions = new List<List<int>>();
         
+            foreach (var item in allIterations)
+            {
+                
+                ifInSelection = ifInSelectionDomains(Selections, count);
+                if (ifInSelection)
+                {
+                    selectedIterationPositions.Add(allIterations[count]);
+                }
+                count++;
+            }
+            
+            return selectedIterationPositions;
+            
+
+
+        }
         private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
         {
             //Selections undefined, so all is in seleciton
@@ -365,7 +516,8 @@ namespace Colibri.Grasshopper
             if (Selections.Domains.Any())
             {
                 foreach (var domain in Selections.Domains)
-                { 
+                {
+                    
                     includedCounts += domain.Value.IncludesParameter(currentCount) == true ? 1 : 0;
                 }
             }

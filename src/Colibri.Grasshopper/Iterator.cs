@@ -426,7 +426,7 @@ namespace Colibri.Grasshopper
                 }
                 else
                 {
-                    _flyParam.FlyAll(e);
+                    _flyParam.Fly(e);
                 }
 
                 if (_aggObj != null)
