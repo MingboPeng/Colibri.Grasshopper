@@ -844,13 +844,15 @@ namespace Colibri.Grasshopper
             }
             else //this._aggObj exists
             {
-                if (this._aggObj != null)
+                if (this._aggObj != null && this._aggObj.RuntimeMessageLevel!= GH_RuntimeMessageLevel.Error)
                 {
                     //check aggregator 
                     checkingMsg = this._aggObj.CheckAggregatorIfReady();
                 }
                 else
                 {
+                    //clear _aggObj, when it has a warning runtime msg.
+                    this._aggObj = null;
                     // this._aggObj doesn't exist, return true to start.
                     return true;
                 }
@@ -875,6 +877,11 @@ namespace Colibri.Grasshopper
                 {
                     // user doesn't want ot continue! set isReady to false to stop
                     isReady = false;
+                }
+                else
+                {
+                    // user click yes to ignore all Aggregator's msgs
+                    return true;
                 }
             }
                 

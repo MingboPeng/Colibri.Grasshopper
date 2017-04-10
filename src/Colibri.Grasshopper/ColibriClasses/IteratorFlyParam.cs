@@ -307,6 +307,48 @@ namespace Colibri.Grasshopper
             }
             
         }
+
+        //private List<List<int>> genFlyPositionList()
+        //{
+        //    var iterations = new List<List<int>>();
+        //    if (MoveToParamIndex >= this._inputParams.Count)
+        //    {
+        //        return false;
+        //    }
+            
+
+        //    //var currentParam = this._inputParams[MoveToParamIndex];
+        //    var thisSelectedPositions = this._allSelectedPositions[MoveToParamIndex];
+        //    int nextPositionIndex = this._currentPositionsIndex[MoveToParamIndex] + 1;
+            
+        //    if (nextPositionIndex < thisSelectedPositions.Count)
+        //    {
+        //        int nextPosition = thisSelectedPositions[nextPositionIndex];
+                
+        //        //Increment the current step position
+        //        this._currentPositionsIndex[MoveToParamIndex]++;
+
+        //        return true;
+        //    }
+        //    else
+        //    {
+                
+        //        ////The current component is already at the maximum value. Reset it back to zero.
+        //        this._currentPositionsIndex[MoveToParamIndex] = 0;
+
+        //        //// Move on to the next slider.
+        //        MoveToParamIndex++;
+
+        //        //// If we've run out of sliders to modify, we're done permutatin'
+        //        if (MoveToParamIndex >= _inputParams.Count)
+        //        {
+        //            return false;
+        //        }
+
+        //        return MoveToNextPermutation(ref MoveToParamIndex);
+        //    }
+
+        //}
         
         private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
         {
