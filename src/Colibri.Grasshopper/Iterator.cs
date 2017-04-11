@@ -92,14 +92,7 @@ namespace Colibri.Grasshopper
                 DA.GetData(selectionIndex + 1, ref remoteFly);
 
                 //set remoteCtrl 
-                if (_running)
-                {
-                    DA.SetData(selectionIndex + 1, true);
-                }
-                else
-                {
-                    DA.SetData(selectionIndex + 1, false);
-                }
+                DA.SetData(selectionIndex + 1, _running);
                 
             }
 
@@ -393,6 +386,7 @@ namespace Colibri.Grasshopper
             {
                 _run = false;
                 _isTestFly = false;
+                _flyParam = null;
             }
 
 
@@ -598,7 +592,7 @@ namespace Colibri.Grasshopper
                 remoteInParam.Name = this._remoteFlyName;
                 remoteInParam.NickName = this._remoteFlyName;
                 remoteInParam.Access = GH_ParamAccess.item;
-                remoteInParam.SetPersistentData(new GH_Boolean(false));
+                //remoteInParam.SetPersistentData(new GH_Boolean(false));
                 remoteInParam.Optional = true;
                 remoteInParam.Description = "Remote control for Iterator, set to true to fly.";
                 remoteInParam.MutableNickName = true;
@@ -608,7 +602,7 @@ namespace Colibri.Grasshopper
                 remoteOutParam.Name = this._remoteCtrlName;
                 remoteOutParam.Access = GH_ParamAccess.item;
                 remoteOutParam.NickName = this._remoteCtrlName;
-                remoteOutParam.SetPersistentData(new GH_Boolean(false));
+                //remoteOutParam.SetPersistentData(new GH_Boolean(false));
                 remoteOutParam.Description = "Control downstream conponents after fly starts.";
                 remoteOutParam.MutableNickName = true;
             }
