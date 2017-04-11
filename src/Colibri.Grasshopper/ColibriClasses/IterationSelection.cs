@@ -319,6 +319,7 @@ namespace Colibri.Grasshopper
                 {
                     outString += " [" + item + "]";
                 }
+                outString += "\n";
             }
 
             if (domains.Count != 0)

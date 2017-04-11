@@ -336,7 +336,7 @@ namespace Colibri.Grasshopper
             }
             else if (GHType == InputType.Panel)
             {
-                this.RawParam.ExpireSolution(false);
+                //this.RawParam.ExpireSolution(false);
             }
             else if (GHType == InputType.ValueList)
             {
@@ -344,10 +344,11 @@ namespace Colibri.Grasshopper
                 var valueList = param as GH_ValueList;
                 string state = indexToValueListState(_position);
                 valueList.LoadState(state);
-                this.RawParam.ExpireSolution(false);
-
+                
             }
-            
+            this.RawParam.ExpireSolution(false);
+
+
         }
 
         // todo: SetToNext() 
