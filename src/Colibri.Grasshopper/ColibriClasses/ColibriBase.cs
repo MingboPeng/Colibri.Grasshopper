@@ -59,7 +59,7 @@ namespace Colibri.Grasshopper
             {
                 dataKey = String.IsNullOrEmpty(dataKey) ? Prefix + item.Key : dataKey + "," + Prefix + item.Key;
 				dataValue = String.IsNullOrEmpty(dataValue) ? item.Value : dataValue + "," + item.Value;
-                flyID = String.IsNullOrEmpty(flyID) ? item.Key + "_" + item.Value : flyID + "_" + item.Key + "_" + item.Value;
+                flyID = String.IsNullOrEmpty(flyID) ? item.Key +  item.Value : flyID + "_" + item.Key + item.Value;
             }
 
             DesignExplorerData.Add("DataTitle", dataKey);

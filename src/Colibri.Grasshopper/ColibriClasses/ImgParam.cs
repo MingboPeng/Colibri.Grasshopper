@@ -18,7 +18,7 @@ namespace Colibri.Grasshopper
         {
             this.IsDefined = false;
         }
-        public ImgParam(string SaveName, List<string> ViewNames, int Width, int Height)
+        public ImgParam(string SaveName, List<string> ViewNames, int Width = 600, int Height = 600)
         {
             this.IsDefined = true;
             this.SaveName = SaveName;

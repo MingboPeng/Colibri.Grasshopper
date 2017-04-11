@@ -88,7 +88,8 @@ namespace Colibri.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
+            
+            
             bool writeFile = false;
 
             //input variables
@@ -355,7 +356,7 @@ namespace Colibri.Grasshopper
             {
                 this.Message += "\n------------------------------\n[RECORDING DISABLED]";
             }
-
+            
             this.ExpireSolution(true);
             
         }
@@ -364,8 +365,8 @@ namespace Colibri.Grasshopper
         {
             //string imgID = flyID;
             var ViewNames = new List<string>();
-            int width = 400;
-            int height = 400;
+            int width = 600;
+            int height = 600;
 
             
             string imgName = flyID;

@@ -322,6 +322,7 @@ namespace Colibri.Grasshopper
 
             
             bool isRunning = true;
+            bool stopByUser = false;
             
             foreach (var item in selflyPositions)
             {
@@ -333,17 +334,8 @@ namespace Colibri.Grasshopper
                     currentParam.SetParamTo(moveToPosition);
                 }
 
-
-                if (this._overrideFolderMode == OverrideMode.FinishTheRest)
-                {
-                    bool isStudiedID = this._studiedFlyID.Contains(getCurrentFlyID());
-                    if (!isStudiedID)
-                    {
-                        // We've just got a new valid permutation. Solve the new solution.
-                        e.Document.NewSolution(false);
-                    }
-                }
-                else
+                
+                if (!checkIfStudiedFromCSV())
                 {
                     e.Document.NewSolution(false);
                 }
@@ -352,18 +344,16 @@ namespace Colibri.Grasshopper
 
                 Count++;
                 isRunning = Count < totalIterations;
-                isRunning = listenToKeepRunning();
+                stopByUser = !listenToKeepRunning();
 
 
-                if (!isRunning)
+                if (!isRunning || stopByUser)
                 {
                     // study is over!
-
                     if (File.Exists(_watchFilePath))
                     {
                         File.Delete(_watchFilePath);
                     }
-                    //e.Document.NewSolution(false);
                     break;
                 }
 
@@ -501,6 +491,7 @@ namespace Colibri.Grasshopper
 
 
         }
+
         private bool ifInSelectionDomains(IteratorSelection Selections, int CurrentCount)
         {
             //Selections undefined, so all is in seleciton
@@ -533,35 +524,31 @@ namespace Colibri.Grasshopper
             string currentNickname = String.Empty;
             string currentValue = String.Empty;
             string flyID = String.Empty;
+
+            var currentValues = new List<string>();
             for (int i = 0; i < inputParams.Count; i++)
             {
-                currentNickname = "in:"+ inputParams[i].NickName;
                 currentValue = inputParams[i].CurrentValue();
-                flyID = String.IsNullOrEmpty(flyID) ? currentNickname + "_" + currentValue : flyID + "_" + currentNickname + "_" + currentValue;
-                //var currentPositionIndex = this._currentPositionsIndex[i];
-                //var currentPosition = this._allSelectedPositions[i][currentPositionIndex];
+                currentValues.Add(currentValue);
             }
+
+            flyID = string.Join("_", currentValues);
 
             return flyID;
         }
+
         private List<string> getStudiedFlyID(string FolderPath)
         {
             var inputParams = this._inputParams;
             string csvFilePath = FolderPath + @"\data.csv";
             if (!File.Exists(csvFilePath)) return new List<string>();
-            var stringLines = File.ReadAllLines(csvFilePath).ToList();
-
+            var stringLines = File.ReadAllLines(csvFilePath);
             var studiedFlyID = new List<string>();
-
-            var keys = stringLines.First().Split(',').Take(inputParams.Count).ToList();
-            for (int i = 0; i < stringLines.Count; i++)
+            
+            for (int i = 0; i < stringLines.Count(); i++)
             {
-                var itemValues = stringLines[i].Split(',').Take(inputParams.Count).ToList();
-                string oneID = String.Empty;
-                for (int k = 0; k < itemValues.Count; k++)
-                {
-                    oneID = String.IsNullOrEmpty(oneID) ? keys[k] + "_" + itemValues[k] : oneID + "_" + keys[k] + "_" + itemValues[k];
-                }
+                var itemValues = stringLines[i].Split(',').Take(inputParams.Count);
+                string oneID = string.Join("_",itemValues);
                 studiedFlyID.Add(oneID);
             }
 
@@ -569,6 +556,20 @@ namespace Colibri.Grasshopper
 
         }
         
+        private bool checkIfStudiedFromCSV()
+        {
+            if (this._overrideFolderMode == OverrideMode.FinishTheRest)
+            {
+                return this._studiedFlyID.Contains(getCurrentFlyID());
+            }
+            else
+            {
+                return false;
+            }
+            
+        }
+
+
         #endregion
 
     }
