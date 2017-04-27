@@ -282,7 +282,7 @@ namespace Colibri.Grasshopper
                     string currentValue = "";
                     if ((values[i] == null) || String.IsNullOrWhiteSpace( values[i].ToString()))
                     {
-                        currentValue = "NoData";
+                        currentValue = "-999";//not data
                     }
                     else
                     {

@@ -179,10 +179,7 @@ namespace Colibri.Grasshopper
                 checkStudyFolder(Folder);
                 
                 
-                keyReady += ",img";
-
-                if (JSON.IsDefined)
-                    keyReady += ",threeD";
+                
                 
 
                 //check csv file
@@ -191,6 +188,26 @@ namespace Colibri.Grasshopper
                     //clean out the list of already written items
                     _printOutStrings = new List<string>();
                     //add key lines 
+                    
+                    //check if there is one or more imges
+                    if (imgParams.IsDefined)
+                    {
+                        int imgCounts = imgParams.ViewNames.Count;
+                        imgCounts = imgCounts > 0 ? imgCounts : 1;
+                        
+                        for (int i = 1; i <= imgCounts; i++)
+                        {
+                            keyReady += ",img_"+i;
+                        }
+                    }
+                    else
+                    {
+                        keyReady += ",img";
+                    }
+
+                    if (JSON.IsDefined)
+                        keyReady += ",threeD";
+
                     keyReady += Environment.NewLine;
                     File.WriteAllText(csvPath, keyReady);
                     _alreadyWrittenLines.Add("[Title] "+keyReady);
@@ -372,6 +389,8 @@ namespace Colibri.Grasshopper
             string imgName = flyID;
             string imgPath = string.Empty;
 
+            var imgCSV = new List<string>();
+
 
             // overwrite the image parameter setting if user has inputed the values
             if (imgParams.IsDefined)
@@ -430,6 +449,7 @@ namespace Colibri.Grasshopper
                 if (!string.IsNullOrEmpty(existViewName))
                 {
                     currentImgName = imgName+ "_" + existViewName + ".png";
+                    imgCSV.Add(currentImgName);
                     imgPath = Folder + @"\" + currentImgName;
                     //save imgs
                     activeView.Redraw();
@@ -439,7 +459,8 @@ namespace Colibri.Grasshopper
                 }
 
             }
-            return currentImgName;
+            
+            return string.Join(",", imgCSV); ;
             
         }
 
