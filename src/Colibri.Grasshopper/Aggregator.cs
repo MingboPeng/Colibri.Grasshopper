@@ -178,10 +178,6 @@ namespace Colibri.Grasshopper
                 //Check folder if existed
                 checkStudyFolder(Folder);
                 
-                
-                
-                
-
                 //check csv file
                 if (!File.Exists(csvPath))
                 {
@@ -194,11 +190,19 @@ namespace Colibri.Grasshopper
                     {
                         int imgCounts = imgParams.ViewNames.Count;
                         imgCounts = imgCounts > 0 ? imgCounts : 1;
-                        
-                        for (int i = 1; i <= imgCounts; i++)
+
+                        if (imgCounts>1)
                         {
-                            keyReady += ",img_"+i;
+                            for (int i = 1; i <= imgCounts; i++)
+                            {
+                                keyReady += ",img_" + i;
+                            }
                         }
+                        else
+                        {
+                            keyReady += ",img";
+                        }
+                        
                     }
                     else
                     {
