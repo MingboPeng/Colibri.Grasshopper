@@ -496,11 +496,18 @@ namespace Colibri.Grasshopper
         
         private void setToLast()
         {
-            this.OnPingDocument().DeselectAll();
-            this.Attributes.Selected = true;
-            this.OnPingDocument().BringSelectionToTop();
-            this.Attributes.Selected = false;
 
+            var doc = GH.Instances.ActiveCanvas.Document;
+            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
+
+            if (!isAggregatorLast)
+            {
+                this.OnPingDocument().DeselectAll();
+                this.Attributes.Selected = true;
+                this.OnPingDocument().BringSelectionToTop();
+                this.Attributes.Selected = false;
+            }
+            
         }
 
         private List<string> checkIfRecording(List<string> msg)
