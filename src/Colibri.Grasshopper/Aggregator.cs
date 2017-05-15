@@ -110,13 +110,11 @@ namespace Colibri.Grasshopper
             DA.GetData(5, ref writeFile);
 
             //operations is ExpandoObject
-            //var JSON = inJSON as threeDParam;
-
+            inJSON.RemoveAll(item => item == null);
             var JSON = new threeDParam();
             if (!inJSON.IsNullOrEmpty())
             {
                 JSON = new threeDParam(inJSON);
-                
             }
 
 
