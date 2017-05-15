@@ -1,16 +1,39 @@
 ﻿using System;
 using System.Drawing;
+using System.Dynamic;
 using System.Collections.Generic;
-using System.IO;
+using Grasshopper.Kernel.Special;
 
-using Grasshopper.Kernel;
-using Rhino.Display;
 using Rhino.Geometry;
+using Grasshopper.Kernel.Types;
 
-namespace Aggregator
+using System.IO;
+using GH = Grasshopper;
+using Grasshopper.Kernel;
+using System.Windows.Forms;
+using System.Linq;
+using GH_IO.Serialization;
+using Grasshopper.Kernel.Parameters;
+
+
+namespace Colibri.Grasshopper
 {
+    
+
     public class Aggregator : GH_Component
     {
+        //private bool _writeFile = false;
+        public string Folder = "";
+        public OverrideMode OverrideTypes = OverrideMode.AskEverytime;
+        //variable to keep track of what lines have been written during a colibri flight
+        private List<string> _alreadyWrittenLines = new List<string>();
+        private List<string> _printOutStrings = new List<string>();
+
+        private bool _isFirstTimeOpen = true;
+        //private bool _isAlwaysOverrideFolder = false;
+        
+        private bool _write = false;
+
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
         /// constructor without any arguments.
@@ -19,9 +42,9 @@ namespace Aggregator
         /// new tabs/panels will automatically be created.
         /// </summary>
         public Aggregator()
-          : base("Aggregator", "Aggregator",
-              "Aggregates design input and output data, image & Spectacles filemanes into a data.csv file that Design Explorer can open.",
-              "TT Toolbox", "Colibri")
+          : base("Colibri Aggregator", "Aggregator",
+              "Aggregates design data, image & Spectacles model into a data.csv file that Design Explorer can open.",
+              "TT Toolbox", "Colibri 2.0")
         {
         }
 
@@ -32,11 +55,20 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.", GH_ParamAccess.item);
-            pManager.AddTextParameter("Inputs", "Inputs", "Inputs object from the Colibri Iterator compnent.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Outputs", "Outputs", "Outputs object from the Colibri Outputs component.", GH_ParamAccess.list);
-            pManager.AddTextParameter("ImgParams", "ImgParams", "ImgParams object from the Colibri ImageParameters component.", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("ImgSetting", "ImgSetting", "Optional input from the Colibri ImageSetting component.", GH_ParamAccess.item);
+            pManager[3].Optional = true;
+            pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
+            pManager.AddGenericParameter("3DObjects", "3DObjects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
+            pManager[4].Optional = true;
+            pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
+            pManager[4].DataMapping = GH_DataMapping.Flatten;
+
+            pManager.AddBooleanParameter("Write?", "Write?", "Set to true to write files to disk.", GH_ParamAccess.item,false);
+            
+            
         }
 
         /// <summary>
@@ -44,14 +76,11 @@ namespace Aggregator
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("SpectaclesFileName", "SpectaclesFileName",
-                "Feed this into the Spectacles_SceneCompiler component downstream.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Records", "Records","Information that recorded in CSV file.", GH_ParamAccess.list);
 
         }
 
-        //variable to keep track of what lines have been written during a colibri flight
-        private List<string> alreadyWrittenLines = new List<string>();
-
+        
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -59,127 +88,177 @@ namespace Aggregator
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            
+            
+            bool writeFile = false;
+
             //input variables
-            string folder = "";
             List<string> inputs = new List<string>();
             List<string> outputs = new List<string>();
-            List<string> imgParams = new List<string>();
-            bool writeFile = false;
+
+            List<object> inJSON = new List<object>();
+            //object inJSON = null;
             
+            var imgParams = new ImgParam();
+
             //get data
-            DA.GetData(0, ref folder);
+            DA.GetData(0, ref Folder);
             DA.GetDataList(1, inputs);
             DA.GetDataList(2, outputs);
-            DA.GetDataList(3, imgParams);
-            DA.GetData(4, ref writeFile);
+            DA.GetData(3, ref imgParams);
+            DA.GetDataList(4,  inJSON);
+            DA.GetData(5, ref writeFile);
 
-            //operations
-
-
-            string csvPath = folder + "/data.csv";
-            var rawData = inputs;
-            int inDataLength = rawData.Count;
-            rawData.AddRange(outputs);
-            int allDataLength = rawData.Count;
-
-            string imgName = "";
-            string imgPath = "";
-            string keyReady = "";
-            string valueReady = "";
-            
-
-            //format write in data
-            for (int i = 0; i < rawData.Count; i++)
+            //operations is ExpandoObject
+            inJSON.RemoveAll(item => item == null);
+            var JSON = new threeDParam();
+            if (!inJSON.IsNullOrEmpty())
             {
-                string item = Convert.ToString(rawData[i]).Replace("[", "").Replace("]", "").Replace(" ", "");
-                string dataKey = item.Split(',')[0];
-                string dataValue = item.Split(',')[1];
+                JSON = new threeDParam(inJSON);
+            }
 
-                if (i > 0) 
+
+            Dictionary<string,string> inputCSVstrings = ColibriBase.FormatDataToCSVstring(inputs,"in:");
+            Dictionary<string, string> outputCSVstrings = ColibriBase.FormatDataToCSVstring(outputs,"out:");
+            //Dictionary<string, string> imgParamsClean = ColibriBase.ConvertBactToDictionary(imgParams);
+            
+            string csvPath = Folder + @"\data.csv";
+            //var rawData = inputs;
+            //int inDataLength = rawData.Count;
+            //rawData.AddRange(outputs);
+            //int allDataLength = rawData.Count;
+
+            //Parsing data to csv format
+            string flyID = inputCSVstrings["FlyID"];
+            string keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
+            string valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
+
+            string systemSafeFileName = flyID.Replace(" ", "");
+            systemSafeFileName = Path.GetInvalidFileNameChars()
+                                    .Aggregate(systemSafeFileName, (current, c) => current.Replace(c.ToString(),""));
+
+            //write only when toggle is connected
+            if (this.Params.Input.Last().Sources.Any())
+            {
+                //first open check
+                if (_isFirstTimeOpen)
                 {
+                    _isFirstTimeOpen = false;
+                    setWriteFileToFalse();
+                    return;
+                }
+                this._write = writeFile;
+            }
+            else
+            {
+                this._write = false;
+            }
+            
+            //var ViewNames = new List<string>();
+            
+            
+            //if we aren't told to write, clean out the list of already written items
+            if (!_write)
+            {
+                DA.SetDataList(0, _printOutStrings);
+                _alreadyWrittenLines = new List<string>();
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString() + "\n------------------------------\n[RECORDING DISABLED]\n";
+                return;
+                
 
-                    if (i < inDataLength)
+            }
+            
+                //if we are told to run and we haven't written this line yet, do so
+
+            if (_write)
+            {
+                
+                //Check folder if existed
+                checkStudyFolder(Folder);
+                
+                //check csv file
+                if (!File.Exists(csvPath))
+                {
+                    //clean out the list of already written items
+                    _printOutStrings = new List<string>();
+                    //add key lines 
+                    
+                    //check if there is one or more imges
+                    if (imgParams.IsDefined)
                     {
-                        keyReady += ",in:" + dataKey;
+                        int imgCounts = imgParams.ViewNames.Count;
+                        imgCounts = imgCounts > 0 ? imgCounts : 1;
+
+                        if (imgCounts>1)
+                        {
+                            for (int i = 1; i <= imgCounts; i++)
+                            {
+                                keyReady += ",img_" + i;
+                            }
+                        }
+                        else
+                        {
+                            keyReady += ",img";
+                        }
                         
                     }
                     else
                     {
-                        keyReady += ",out:" + dataKey;
+                        keyReady += ",img";
                     }
 
-                    valueReady = valueReady + "," + dataValue;
-                    imgName = imgName + "_" + dataValue;
+                    if (JSON.IsDefined)
+                        keyReady += ",threeD";
 
+                    keyReady += Environment.NewLine;
+                    File.WriteAllText(csvPath, keyReady);
+                    _alreadyWrittenLines.Add("[Title] "+keyReady);
                 }
                 else
                 {
-                    //the first set
-                    keyReady = "in:" + dataKey;
-                    valueReady += dataValue;
-                    imgName = dataValue;
+                    //add data lins
+                    if (!_alreadyWrittenLines.Contains("[FlyID] " + flyID))
+                    {
+                        string writeInData = valueReady;
+
+                        //save img
+                        string imgFileName = captureViews(imgParams, systemSafeFileName);
+                        writeInData += ","+imgFileName;
+
+                        //save json
+                        if (JSON.IsDefined)
+                        {
+                            string jsonFileName = systemSafeFileName + ".json";
+                            string jsonFilePath = Folder + @"\" + jsonFileName;
+                            File.WriteAllText(jsonFilePath, JSON.JsonSting);
+                            writeInData += "," + jsonFileName;
+                        }
+
+                        //save csv // add data at the end 
+                        //writeInData = string.Format("{0},{1},{2}\n", valueReady, imgFileName, jsonFileName);
+                        writeInData += "\n";
+                        File.AppendAllText(csvPath, writeInData);
+                        
+                        //add this line to our list of already written lines
+                        _alreadyWrittenLines.Add("[FlyID] "+flyID);
+                    }
+
                 }
                 
-            }
-
-            
-            
-            bool run = writeFile;
-            string fileName = imgName;
-            imgPath = folder+"/"+imgName + ".png";
-            imgName += ".png";
-            string jsonFilePath = folder + "/" + fileName + ".json";
-            string jsonFileName = fileName + ".json";
-            string writeInData = "";
-            //int width = 500;
-            //int height = 500;
-            List<int> cleanedImgParams = new List<int>();
-            foreach (string item in imgParams) 
-            {
-                string cleanItem = Convert.ToString(item).Replace("[", "").Replace("]", "").Replace(" ", "");
-                //string dataValue = cleanItem.Split(',')[1];
-                cleanedImgParams.Add(Convert.ToInt32(cleanItem.Split(',')[1]));
-            }
-
-            Size viewSize = new Size(cleanedImgParams[0], cleanedImgParams[1]);
-            //string imagePath = @"C:\Users\Mingbo\Documents\GitHub\Colibri.Grasshopper\src\MP_test\01.png";
-
-            //if we aren't told to write, clean out the list of already written items
-            if (!run)
-            {
-                alreadyWrittenLines = new List<string>();
-            }
-            //if we are told to run and we haven't written this line yet, do so
-            if (run && !alreadyWrittenLines.Contains(valueReady))
-            {
-                //add this line to our list of already written lines
-                alreadyWrittenLines.Add(valueReady);
-
-                //check csv file
-                if (!File.Exists(csvPath))
-                {
-                    keyReady = keyReady + ",img,threeD" + Environment.NewLine;
-                    File.WriteAllText(csvPath, keyReady);
-                }
-
-                //save imgs
-                Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
-                var pic = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.CaptureToBitmap(viewSize);
-                pic.Save(imgPath);
-
-                //save csv
-                writeInData = string.Format("{0},{1},{2}\n", valueReady, imgName, jsonFileName);
-                File.AppendAllText(csvPath, writeInData);
-
+                _printOutStrings = _alreadyWrittenLines;
+                
+                //updateMsg();
+                this.Message = "[OVERRIDE MODE]\n" + OverrideTypes.ToString()+ "\n------------------------------\n[RECORDING STARTED]\n";
+                DA.SetDataList(0, _printOutStrings);
 
             }
-            
+
             //set output
             //DA.SetData(0, writeInData);
-            DA.SetData(0, jsonFilePath);
+            
 
         }
-
+        
         /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
@@ -190,7 +269,7 @@ namespace Aggregator
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Colibri.Grasshopper.Properties.Resources.Colibri_logobase_4;
+                return Colibri.Grasshopper.Properties.Resources.Aggregator;
             }
         }
 
@@ -201,7 +280,315 @@ namespace Aggregator
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{787196c8-5cc8-46f5-b253-4e63d8d271e1}"); }
+            get { return new Guid("{c285fdce-3c5b-4701-a2ca-c4850c5aa2b7}"); }
         }
+        
+        public override bool Read(GH_IReader reader)
+        {
+            int readValue = -1;
+
+            if (reader.ItemExists("recordingMode"))
+            {
+                reader.TryGetInt32("recordingMode", ref readValue);
+                OverrideTypes = (OverrideMode)readValue;
+            }
+
+            if (reader.ItemExists("Write"))
+            {
+                this._isFirstTimeOpen =  reader.GetBoolean("Write");
+            }
+            
+            
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetInt32("recordingMode", (int)OverrideTypes);
+            writer.SetBoolean("Write", true);
+            return base.Write(writer);  
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+
+
+            Menu_AppendItem(menu, "Clean the foler and run all", Menu_DoClick_Override, true, OverrideTypes == OverrideMode.OverrideAll)
+                .ToolTipText = "This will clean the folder first, and then start from beginning.";
+
+            Menu_AppendItem(menu, "Run all and append to the end", Menu_DoClick_AppendAll, true, OverrideTypes == OverrideMode.AppendAllToTheEnd)
+                .ToolTipText ="Keep all data, and append all new data to the end of CSV.";
+
+            Menu_AppendItem(menu, "Run the rest and append to the end", Menu_DoClick_FinishRest, true, OverrideTypes == OverrideMode.FinishTheRest)
+                .ToolTipText = "Only run what is left compared to the existing CSV. (All settings must be same with the previous)";
+
+            Menu_AppendItem(menu, "Ask me everytime if the folder is not empty", Menu_DoClick_Default, true, OverrideTypes == OverrideMode.AskEverytime);
+            
+            Menu_AppendSeparator(menu);
+        }
+
+        private void Menu_DoClick_FinishRest(object sender, EventArgs e)
+        {
+            this.OverrideTypes = OverrideMode.FinishTheRest;
+            updateMsg();
+            
+        }
+
+        private void Menu_DoClick_AppendAll(object sender, EventArgs e)
+        {
+            this.OverrideTypes = OverrideMode.AppendAllToTheEnd;
+            updateMsg();
+        }
+
+        private void Menu_DoClick_Override(object sender, EventArgs e)
+        {
+            this.OverrideTypes = OverrideMode.OverrideAll;
+            updateMsg();
+        }
+
+        private void Menu_DoClick_Default(object sender, EventArgs e)
+        {
+            this.OverrideTypes = OverrideMode.AskEverytime;
+            updateMsg();
+        }
+        
+        private void updateMsg()
+        {
+            this.Message = "[OVERRIDE MODE]\n" + this.OverrideTypes.ToString();
+            int recordedCount = _printOutStrings.Select(_ => _.StartsWith("FlyID")).Count();
+
+            if (_write)
+            {
+                this.Message += "\n------------------------------\n[RECORDING STARTED]\n";
+                //this.Message += (_printOutStrings.Count - 1).ToString() + " new data added";
+            }
+            else if(this.Params.Input.Last().Sources.Any())
+            {
+                this.Message += "\n------------------------------\n[RECORDING DISABLED]\n";
+                //this.Message += recordedCount + " new data added";
+
+            }
+            else
+            {
+                this.Message += "\n------------------------------\n[RECORDING DISABLED]";
+            }
+            
+            this.ExpireSolution(true);
+            
+        }
+
+        private string captureViews(ImgParam imgParams,string flyID)
+        {
+            //string imgID = flyID;
+            var ViewNames = new List<string>();
+            int width = 600;
+            int height = 600;
+
+            
+            string imgName = flyID;
+            string imgPath = string.Empty;
+
+            var imgCSV = new List<string>();
+
+
+            // overwrite the image parameter setting if user has inputed the values
+            if (imgParams.IsDefined)
+            {
+                bool isThereNoImgName = imgParams.SaveName == "defaultName";
+                imgName = isThereNoImgName ? imgName : imgParams.SaveName;
+                ViewNames = imgParams.ViewNames;
+                width = imgParams.Width;
+                height = imgParams.Height;
+
+            }
+
+            Size imageSize = new Size(width, height);
+            //If ViewNames is empty, which means to capture current active view
+            var activeView = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
+            if (!ViewNames.Any())
+            {
+                imgName += ".png";
+                imgPath = Folder + @"\" + imgName;
+
+                activeView.Redraw();
+                
+                var pic = activeView.CaptureToBitmap(imageSize);
+                pic.Save(imgPath);
+
+                //return here, and skip the following views' check
+                return imgName;
+
+            }
+            
+            //If user set View Names
+            var views = Rhino.RhinoDoc.ActiveDoc.Views.ToDictionary(v => v.ActiveViewport.Name, v => v);
+            var namedViews = Rhino.RhinoDoc.ActiveDoc.NamedViews.ToDictionary(v => v.Name, v => v);
+
+            //string newImgPathWithViewName = ImagePath;
+            string currentImgName = imgName;
+            for (int i = 0; i < ViewNames.Count; i++)
+            {
+                
+                string viewName = ViewNames[i];
+                string existViewName = string.Empty;
+                
+                if (views.ContainsKey(viewName))
+                {
+                    activeView = views[viewName];
+                    existViewName = viewName;
+                }
+                else if(namedViews.ContainsKey(viewName))
+                {
+                    existViewName = viewName;
+                    var namedViewIndex = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(viewName);
+                    Rhino.RhinoDoc.ActiveDoc.NamedViews.Restore(namedViewIndex, Rhino.RhinoDoc.ActiveDoc.Views.ActiveView, true);
+                }
+                
+                //capture
+                if (!string.IsNullOrEmpty(existViewName))
+                {
+                    currentImgName = imgName+ "_" + existViewName + ".png";
+                    imgCSV.Add(currentImgName);
+                    imgPath = Folder + @"\" + currentImgName;
+                    //save imgs
+                    activeView.Redraw();
+                    var pic = activeView.CaptureToBitmap(imageSize);
+                    pic.Save(imgPath);
+                    
+                }
+
+            }
+            
+            return string.Join(",", imgCSV); ;
+            
+        }
+
+        public void setWriteFileToFalse()
+        {
+            if (this.Params.Input.Last().Sources.Any())
+            {
+                var writeFileToggle = this.Params.Input.Last().Sources.First() as GH_BooleanToggle;
+                if (writeFileToggle != null)
+                {
+                    writeFileToggle.Value = false;
+                    writeFileToggle.ExpireSolution(true);
+                }
+                
+            }
+        }
+
+        
+        //Check if Aggregator exist, and if it is at the last
+        public List<string> CheckAggregatorIfReady()
+        {
+            setToLast();
+            var checkingMsg = new List<string>();
+            checkingMsg = checkIfRecording(checkingMsg);
+            //checkingMsg = checkIfLast(checkingMsg);
+            return checkingMsg;
+
+        }
+        
+        private void setToLast()
+        {
+
+            var doc = GH.Instances.ActiveCanvas.Document;
+            bool isAggregatorLast = doc.Objects.Last().InstanceGuid.Equals(this.InstanceGuid);
+
+            if (!isAggregatorLast)
+            {
+                this.OnPingDocument().DeselectAll();
+                this.Attributes.Selected = true;
+                this.OnPingDocument().BringSelectionToTop();
+                this.Attributes.Selected = false;
+            }
+            
+        }
+
+        private List<string> checkIfRecording(List<string> msg)
+        {
+            string warningMsg = "  Aggregator is not recording the data.\n\t[SOLUTION]: set Aggregator's \"write?\" to true.";
+            var isRecording = this.Params.Input.Last().VolatileData.AllData(true).First() as GH.Kernel.Types.GH_Boolean;
+
+            if (!isRecording.Value)
+            {
+                msg.Add(warningMsg);
+            }
+            
+            return msg;
+
+        }
+        
+
+        private void checkStudyFolder(string StudyFolderPath)
+        {
+            string warningMsg = "Study folder is not empty, do you want to override everything inside!";
+            string csvFilePath = StudyFolderPath + "\\data.csv";
+            
+            if (!Directory.Exists(StudyFolderPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(StudyFolderPath);
+                    
+                }
+                catch (Exception ex)
+                {
+
+                    throw ex;
+                }
+
+                return;
+            }
+
+            
+            if (!_alreadyWrittenLines.IsNullOrEmpty()) return;
+            
+            //Check Mode
+            if (this.OverrideTypes == OverrideMode.OverrideAll)
+            {
+                cleanTheFolder(StudyFolderPath);
+            }
+            else if (this.OverrideTypes == OverrideMode.AppendAllToTheEnd || this.OverrideTypes == OverrideMode.FinishTheRest)
+            {
+                //do nothing, append the end
+            }
+            else if(Directory.GetFiles(StudyFolderPath).Any() && this.OverrideTypes == OverrideMode.AskEverytime)
+            {
+                //popup msg box and ask user
+                var userClick = MessageBox.Show(warningMsg, "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.Yes)
+                {
+                    cleanTheFolder(StudyFolderPath);
+                }
+                
+
+            }
+            
+        }
+        
+        private void cleanTheFolder(string FolderPath)
+        {
+            if (!Directory.Exists(FolderPath)) return;
+            
+
+            DirectoryInfo folderInfo = new DirectoryInfo(FolderPath);
+            try
+            {
+                foreach (var item in folderInfo.GetFiles())
+                {
+                    item.Delete();
+                }
+
+            }
+            catch (Exception)
+            {
+                //MessageBox.Show("Override the folder failed, please clean up the folder manually./n/n"+ex.ToString());
+                //throw ex;
+            }
+        }
+
+
     }
 }

@@ -34,15 +34,19 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="RhinoCommon">
+      <HintPath>References\RhinoCommon.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="RhinoCommon">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\Program Files\McNeel\Rhinoceros 5.0\System\RhinoCommon.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Grasshopper">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\AppData\Roaming\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.76.0\Grasshopper.dll</HintPath>
@@ -56,11 +60,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
-    <Compile Include="ColibriInputs.cs" />
+    <Compile Include="ARCHIVE\Aggregator_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ColibriInputs_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ColibriOutputs_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\ImageParameters_ARCHIVE.cs" />
+    <Compile Include="ARCHIVE\Iterator_ARCHIVE.cs" />
+    <Compile Include="ColibriClasses\Extensions.cs" />
+    <Compile Include="ColibriClasses\ImgParam.cs" />
+    <Compile Include="ColibriClasses\IterationSelection.cs" />
+    <Compile Include="ColibriClasses\ThreeDParam.cs" />
+    <Compile Include="ColibriClasses\IteratorAttributes.cs" />
+    <Compile Include="ColibriClasses\ColibriParam.cs" />
     <Compile Include="ImageParameters.cs" />
-    <Compile Include="Iterator.cs" />
     <Compile Include="Colibri.GrasshopperInfo.cs" />
     <Compile Include="ColibriOutputs.cs" />
+    <Compile Include="Iterator.cs" />
+    <Compile Include="ColibriClasses\IteratorFlyParam.cs" />
+    <Compile Include="SetSelection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -72,22 +88,26 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Colibri_logobase_1.png" />
+    <Compile Include="ColibriClasses\ColibriBase.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Colibri_logobase_2.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_3.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_4.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Colibri_logobase_5.png" />
+    <Content Include="Resources\Aggregator.png" />
+    <Content Include="Resources\Colibri_logobase_1.png" />
+    <Content Include="Resources\Colibri_logobase_2.png" />
+    <Content Include="Resources\Colibri_logobase_3.png" />
+    <Content Include="Resources\Colibri_logobase_4.png" />
+    <Content Include="Resources\Colibri_logobase_5.png" />
+    <Content Include="Resources\imgParam.png" />
+    <Content Include="Resources\Iterator.png" />
+    <Content Include="Resources\Output.png" />
+    <Content Include="Resources\Selection.png" />
+    <Content Include="Resources\staticInput.png" />
+    <None Include="packages.config" />
+    <None Include="Resources\threeDParam.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
-
+using Grasshopper;
+using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
+using Grasshopper.Kernel.Data;
 
 namespace Colibri.Grasshopper
 {
-    public class ColibriOutputs : GH_Component
+    public class ColibriOutputs : GH_Component, IGH_VariableParameterComponent
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -16,21 +18,23 @@ namespace Colibri.Grasshopper
         /// ne	w tabs/panels will automatically be created.
         /// </summary>
         public ColibriOutputs()
-          : base("Colibri Outputs", "Colibri Outputs",
-              "Collects design outputs (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs.  These values should describe the characteristics of a single design iteration.",
-              "TT Toolbox", "Colibri")
+          : base("Colibri Parameters", "Parameters",
+              "Collects design parameters (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs. These values should describe the characteristics of a single design iteration.\nYou can also combine this output as a static gene in Genome.",
+              "TT Toolbox", "Colibri 2.0")
         {
+            Params.ParameterSourcesChanged += ParamSourcesChanged;
         }
 
-        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
+        public override GH_Exposure Exposure { get { return GH_Exposure.primary; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Names", "Names", "Output names.  These names will show up on top of vertical axes in Design Explorer's parallel coordinates plot.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Values", "Values", "Output Values.  This list should be the same length as the list of names.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Data", "Data[1]", "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited with 10 values max.\nNull or Empty value will be marked as \"NoData\"", GH_ParamAccess.list);
+            pManager[0].DataMapping = GH_DataMapping.Flatten;
+            pManager[0].Optional = true;
         }
 
         /// <summary>
@@ -38,7 +42,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Outputs", "Outputs", "Colibri's Outputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Parameters", "Parameters", "Colibri's Parameters.  Plug this into the Colibri aggregator downstream.\nYou can use the outputs as inputs of aggregator's Genome or Phenome.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -48,53 +52,10 @@ namespace Colibri.Grasshopper
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //Declare variables
-            List<string> OutputNames = new List<string>();
-            List<string> OutputValues = new List<string>();
-
-            //catch inputs from Grasshopper
-
-            DA.GetDataList(0, OutputNames);
-            DA.GetDataList(1, OutputValues);
-
-            //defense
-            if (OutputNames.Count != OutputValues.Count)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide equal numbers of Names and Values.");
-                return;
-            }
-
-            //dict to populate
-            Dictionary<string, string> myDictionary = new Dictionary<string, string>();
-
-            //loop over headings
-            for (int i = 0; i < OutputNames.Count; i++)
-            {
-                try
-                {
-                    myDictionary.Add(OutputNames[i], OutputValues[i]);
-                }
-                catch (ArgumentException ex)
-                {
-                    if (ex.ToString().Contains("key"))
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your Outputs must have unique names!  Set them all and try again.");
-                        return;
-                    }
-                    else
-                    {
-                        throw ex;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-            }
-
-
+            //checkInputParamNickname();
+            this.Message= updateComponentMsg();
             //set output data
-            DA.SetDataList(0, myDictionary);
+            DA.SetDataList(0, getFlyResults());
 
         }
 
@@ -108,7 +69,7 @@ namespace Colibri.Grasshopper
             {
                 // You can add image files to your project resources and access them like this:
                 //return Resources.IconForThisComponent;
-                return Properties.Resources.Colibri_logobase_2;
+                return Properties.Resources.Output;
             }
         }
 
@@ -119,7 +80,228 @@ namespace Colibri.Grasshopper
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{5cac6c29-d015-4489-b592-48ff52e8c33e}"); }
+            get { return new Guid("{f8903fbe-3986-46e4-b588-9bddd6d5a5d0}"); }
+        }
+
+
+        #region Methods of IGH_VariableParameterComponent interface
+
+        public bool CanInsertParameter(GH_ParameterSide side, int index)
+        {
+            bool isInputSide = (side == GH_ParameterSide.Input) ? true : false;
+            bool isTheOnlyInput = (index == 0) ? true : false;
+
+            //We only let input parameters to be added (output number is fixed at one)
+            if (isInputSide  && !isTheOnlyInput)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        public bool CanRemoveParameter(GH_ParameterSide side, int index)
+        {
+            bool isInputSide = (side == GH_ParameterSide.Input) ? true : false;
+            bool isTheOnlyInput = this.Params.Input.Count == 1 ? true : false;
+
+
+            //can only remove from the input and non Fly? or the first Slider
+            if (isInputSide && !isTheOnlyInput)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+
+        public IGH_Param CreateParameter(GH_ParameterSide side, int index)
+        {
+            //var outParam = new Param_GenericObject();
+            //outParam.NickName = String.Empty;
+            //Params.RegisterOutputParam(outParam, index);
+
+            var param = new Param_GenericObject();
+            param.NickName = String.Empty;
+
+            return param;
+        }
+
+        public bool DestroyParameter(GH_ParameterSide side, int index)
+        {
+            //unregister ther output when input is destroied.
+            //Params.UnregisterOutputParameter(Params.Output[index]);
+            
+            return true;
+        }
+
+
+        //Todo remove unnecessary code here
+        public void VariableParameterMaintenance()
+        {
+
+            for (int i = 0; i < this.Params.Input.Count; i++)
+            {
+                // create inputs
+                var inParam = this.Params.Input[i];
+                string inParamNickname = inParam.NickName;
+                int inputIndex = i + 1;
+
+                bool isNicknameEmpty = String.IsNullOrWhiteSpace(inParamNickname);
+                bool isNicknameDefault = inParamNickname.StartsWith("Data[");
+
+
+                if (isNicknameEmpty|| isNicknameDefault)
+                {
+                    inParam.NickName = "Data[" + inputIndex+"]";
+                }
+                inParam.Name = "Data";
+                inParam.Description = "Design results (performance metrics) to chart in Design Explorer.\nOne or a list of values is acceptable, but each grip is limited with 10 values max.\nNull or Empty value will be marked as \"NoData\"";
+                inParam.Access = GH_ParamAccess.list;
+                inParam.Optional = true;
+                inParam.DataMapping = GH_DataMapping.Flatten;
+                inParam.WireDisplay = GH_ParamWireDisplay.faint;
+                
+            }
+
+        }
+
+
+        #endregion
+
+        //This is for if any source connected, reconnected, removed, replacement 
+        private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
+        {
+            
+            bool isInputSide = e.ParameterSide == GH_ParameterSide.Input ? true : false;
+            
+            //check input side only
+            if (!isInputSide) return;
+            
+            bool isLastSourceFull = Params.Input.Last().Sources.Any();
+            // add a new input param while the second last input is full
+            if (isLastSourceFull)
+            {
+                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, Params.Input.Count);
+                Params.RegisterInputParam(newParam, Params.Input.Count);
+                VariableParameterMaintenance();
+                this.Params.OnParametersChanged();
+            }
+
+            ////recollecting the filteredSources and rename while any source changed
+            //_filteredSources = gatherSources();
+            //checkAllNames(filteredSources);
+            checkInputParamNickname(e.Parameter);
+
+        }
+
+        private void checkInputParamNickname(IGH_Param sender)
+        {
+            //var allInputParams = this.Params.Input;
+            //for (int i = 0; i < allInputParams.Count; i++)
+            //{
+            if (sender.Sources.Any())
+            {
+                //get nickname from source
+                string inputName = sender.Sources.First().NickName;
+
+                //if nickname is empty, then use defaultname
+                if (!String.IsNullOrEmpty(inputName))
+                {
+                //set inputParam's nickname
+                sender.NickName = inputName;
+                }
+                sender.ObjectChanged += InputParam_ObjectNicknameChanged;
+            }
+            else
+            {
+                sender.ObjectChanged -= InputParam_ObjectNicknameChanged;
+            }
+            
+            this.Attributes.ExpireLayout();
+            
+
+        }
+
+
+        private void InputParam_ObjectNicknameChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
+        {
+            if (e.Type == GH_ObjectEventType.NickName)
+            {
+                this.Message = updateComponentMsg();
+                //edit the Fly output without expire this component's solution, 
+                // only expire the downstream components which connected to the last output "FlyID"
+                this.Params.Output.Last().ExpireSolution(false);
+                this.Params.Output.Last().ClearData();
+                this.Params.Output.Last().AddVolatileDataList(new GH_Path(0), getFlyResults());
+                
+                var doc = Instances.ActiveCanvas.Document;
+
+                doc.NewSolution(false);
+            }
+        }
+        private string updateComponentMsg()
+        {
+            string messages = "";
+            var flyResults = getFlyResults();
+
+            if (flyResults.Any())
+            {
+                messages += "[NAME,DATA]";
+                messages += "\n-------------------\n";
+            }
+            foreach (var item in flyResults)
+            {
+                messages += item+"\n";
+            }
+            return messages;
+
+        }
+
+        private List<string> getFlyResults()
+        {
+
+            var FlyResults = new List<string>();
+            var allInputParams = this.Params.Input;
+            foreach (var item in allInputParams)
+            {
+                string nickname = item.NickName;
+                var values = item.VolatileData.AllData(false).ToList();
+                int maxNumberTake = values.Count <= 10 ? values.Count : 10;
+
+                for (int i = 0; i < maxNumberTake; i++)
+                {
+                    //check Nickname
+                    string currentValue = "";
+                    if ((values[i] == null) || String.IsNullOrWhiteSpace( values[i].ToString()))
+                    {
+                        currentValue = "-999";//not data
+                    }
+                    else
+                    {
+                        currentValue = values[i].ToString();
+                    }
+
+                    //check Nickname
+                    var currentNickname = nickname;
+                    if (values.Count>1)
+                    {
+                        currentNickname = nickname +"_" +(i+1).ToString();
+                    }
+
+                    string resultString = "[" + currentNickname + "," + currentValue + "]";
+                    FlyResults.Add(resultString);
+                }
+            }
+
+            return FlyResults;
         }
     }
 }
