@@ -253,8 +253,6 @@ namespace Colibri.Grasshopper
 
             }
 
-
-
             //set output
             //DA.SetData(0, writeInData);
             
