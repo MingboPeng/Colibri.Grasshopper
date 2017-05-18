@@ -43,7 +43,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public Aggregator()
           : base("Colibri Aggregator", "Aggregator",
-              "Aggregates design data, image & Spectacles model into a data.csv file that Design Explorer can open.",
+              "Aggregates design data, images & Spectacles models into a data.csv file (and corresponding data set that data.csv links to) that Design Explorer can open.",
               "TT Toolbox", "Colibri 2.0")
         {
         }
@@ -61,7 +61,7 @@ namespace Colibri.Grasshopper
             pManager.AddGenericParameter("ImgSetting", "ImgSetting", "Optional input from the Colibri ImageSetting component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
-            pManager.AddGenericParameter("3DObjects", "3DObjects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nNow this only exports straight lines and meshes.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("3DObjects", "3DObjects", "Optional input for 3D Objects from the Spectacles SceneObjects component.\nCurrently this only exports straight lines and meshes.", GH_ParamAccess.list);
             pManager[4].Optional = true;
             pManager[4].WireDisplay = GH_ParamWireDisplay.faint;
             pManager[4].DataMapping = GH_DataMapping.Flatten;

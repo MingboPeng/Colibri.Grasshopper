@@ -19,13 +19,13 @@ namespace Colibri.Grasshopper
         /// </summary>
         public ColibriOutputs()
           : base("Colibri Parameters", "Parameters",
-              "Collects design parameters (us engineers would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs. These values should describe the characteristics of a single design iteration.\nYou can also combine this output as a static gene in Genome.",
+              "Collects design parameters (us engineer types would call these 'performance metrics') to chart in Design Explorer.  These will be the vertical axes to the far right on the parallel coordinates plot, next to the design inputs. These values should describe the characteristics of a single design iteration.\nYou can also combine this output as a static gene in Genome.",
               "TT Toolbox", "Colibri 2.0")
         {
             Params.ParameterSourcesChanged += ParamSourcesChanged;
         }
 
-        public override GH_Exposure Exposure { get { return GH_Exposure.primary; } }
+        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -42,7 +42,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Parameters", "Parameters", "Colibri's Parameters.  Plug this into the Colibri aggregator downstream.\nYou can use the outputs as inputs of aggregator's Genome or Phenome.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Parameters", "Parameters", "Colibri's Parameters.  Plug this into the Colibri Aggregator downstream.  Most users should connect 'Parameters' to the 'Phenome' inout on the Aggregator.\n\nHowever, you can use 'Parameters' as an input for the Colibri Aggregator's Genome input, too, which is useful when working with Galapagos or Octopus.", GH_ParamAccess.list);
         }
 
         /// <summary>

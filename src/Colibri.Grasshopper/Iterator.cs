@@ -58,7 +58,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Optional input if you want to run partial iterations.", GH_ParamAccess.item);
+            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Connect the Colibri 'Iteration Selection' component here to define a subset of the design space to iterate over.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 
@@ -70,7 +70,7 @@ namespace Colibri.Grasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Value", "Value[N]", "current item of inputs", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Iteration Genome", "Genome", "Contains a collection of genes (variables) which defines a unique ID of each iteration. Connet to Aggregateor", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Iteration Genome", "Genome", "Contains a collection of genes (variables) which defines a unique ID of each iteration. Connet to the Colibri Aggregator", GH_ParamAccess.list);
             pManager[0].MutableNickName = false;
             pManager[1].MutableNickName = false;
             
