@@ -26,7 +26,7 @@ namespace Colibri.Grasshopper
         //List of each input param's all steps index
         private List<List<int>> _allPositions;
         private List<List<int>> _allSelectedPositions;
-        private int _selectedCounts;
+        private long _selectedCounts;
         private List<int> _iniPositions;
 
 
@@ -37,7 +37,7 @@ namespace Colibri.Grasshopper
         public static int Count { get; private set; }
        
         // Total Iteration number int
-        public int _totalCounts { get; private set; }
+        public Int64 _totalCounts { get; private set; }
         
 
         private string _watchFilePath { get; set; }

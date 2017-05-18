@@ -71,9 +71,9 @@ namespace Colibri.Grasshopper
         }
 
 
-        public static int CalTotalCounts(List<ColibriParam> ColibriParams)
+        public static Int64 CalTotalCounts(List<ColibriParam> ColibriParams)
         {
-            int totalIterations = 1;
+            Int64 totalIterations = 1;
 
             foreach (var item in ColibriParams)
             {
