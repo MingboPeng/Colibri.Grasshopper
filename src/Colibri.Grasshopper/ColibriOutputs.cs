@@ -5,6 +5,7 @@ using Grasshopper;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace Colibri.Grasshopper
 {
@@ -272,22 +273,37 @@ namespace Colibri.Grasshopper
             var allInputParams = this.Params.Input;
             foreach (var item in allInputParams)
             {
-                string nickname = item.NickName;
-                var values = item.VolatileData.AllData(false).ToList();
+                if (item.SourceCount <= 0)
+                {
+                    continue;
+                }
+                
+
+                string nickname = item.NickName.Replace(',',' ').Replace('.', ' ');
+                var values = new List<IGH_Goo>() { new GH_String("-999")};
+                //this is for cases those "data not collected"
+                if (!item.VolatileData.IsEmpty)
+                {
+                    values = item.VolatileData.AllData(false).ToList();
+                }
+                
                 int maxNumberTake = values.Count <= 10 ? values.Count : 10;
 
                 for (int i = 0; i < maxNumberTake; i++)
                 {
                     //check Nickname
                     string currentValue = "";
+
                     if ((values[i] == null) || String.IsNullOrWhiteSpace( values[i].ToString()))
                     {
-                        currentValue = "-999";//not data
+                        currentValue = "-999";//not data (<null> or <empty>)
                     }
                     else
                     {
                         currentValue = values[i].ToString();
                     }
+
+
 
                     //check Nickname
                     var currentNickname = nickname;
