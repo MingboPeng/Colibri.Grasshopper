@@ -58,7 +58,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Connect the Colibri 'Iteration Selection' component here to define a subset of the design space to iterate over.", GH_ParamAccess.item);
+            pManager.AddGenericParameter(this._selectionName, this._selectionName, "(Optional) Connect the Colibri 'Iteration Selection' component here to define a subset of the design space to iterate over.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 

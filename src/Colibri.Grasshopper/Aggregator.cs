@@ -58,6 +58,7 @@ namespace Colibri.Grasshopper
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
             pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
             pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.", GH_ParamAccess.list);
+            pManager[2].Optional = true;
             pManager.AddGenericParameter("ImgSetting", "ImgSetting", "Optional input from the Colibri ImageSetting component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
             pManager[3].WireDisplay = GH_ParamWireDisplay.faint;
