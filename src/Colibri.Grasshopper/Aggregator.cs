@@ -57,7 +57,7 @@ namespace Colibri.Grasshopper
         {
             pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
             pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
-            pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.\nThis is optional if there is no computed data to export.", GH_ParamAccess.list);
             pManager[2].Optional = true;
             pManager.AddGenericParameter("ImgSetting", "ImgSetting", "Optional input from the Colibri ImageSetting component.", GH_ParamAccess.item);
             pManager[3].Optional = true;
@@ -130,10 +130,14 @@ namespace Colibri.Grasshopper
             //int allDataLength = rawData.Count;
 
             //Parsing data to csv format
-            string flyID = inputCSVstrings["FlyID"];
-            string keyReady = inputCSVstrings["DataTitle"] + "," + outputCSVstrings["DataTitle"];
-            string valueReady = inputCSVstrings["DataValue"] + "," + outputCSVstrings["DataValue"];
+            string flyID = inputCSVstrings["FlyID"]; 
+            string keyReady = inputCSVstrings["DataTitle"];
+            string valueReady = inputCSVstrings["DataValue"];
 
+            //add output data when it is not empty
+            keyReady = string.IsNullOrWhiteSpace(outputCSVstrings["DataTitle"]) ? keyReady : keyReady + "," + outputCSVstrings["DataTitle"];
+            valueReady = string.IsNullOrWhiteSpace(outputCSVstrings["DataValue"]) ? valueReady : valueReady + "," + outputCSVstrings["DataValue"];
+            
             string systemSafeFileName = flyID.Replace(" ", "");
             systemSafeFileName = Path.GetInvalidFileNameChars()
                                     .Aggregate(systemSafeFileName, (current, c) => current.Replace(c.ToString(),""));
