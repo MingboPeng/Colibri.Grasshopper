@@ -17,7 +17,7 @@ namespace Colibri.Grasshopper
         /// </summary>
         public ImageParameters()
           : base("Image Setting", "Img Setting",
-              "Defines how Colibri generates images.  Right now this just sets the size, but we could expose more options like Ladybug's Capture View component.",
+              "Defines how Colibri generates images during flights.  You can specify which viewport[s] to capture, and the resolution of the image.",
               "TT Toolbox", "Colibri 2.0")
         {
         }
@@ -29,8 +29,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("ImageSaveAsName", "SaveAs", "Optional input for overwriting the default image name, don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
-            pManager.AddTextParameter("RhinoViewNames", "Views", "Optional input for the Rhino viewport name which you would like to take a snapshot of.  Acceptable inputs include \"Perspective\", \"Top\", \"Bottom\", etc or any view name that you have already saved within the Rhino file (note that you do not need to input quotations).  If no text is input here, the default will be an image of the active viewport (or the last viewport in which you navigated).", GH_ParamAccess.list);
+            pManager.AddTextParameter("ImageSaveAsName", "SaveAs", "Optional input for overwriting the default image name.  Don't do anything here if you don't know how to generate a dynamic name!", GH_ParamAccess.item,"defaultName");
+            pManager.AddTextParameter("RhinoViewNames", "Views", "Optional input for the Rhino viewport name which you would like to take a snapshot of.  Acceptable inputs include \"Perspective\", \"Top\", \"Bottom\", etc or any view name that you have already saved within the Rhino file (note that you do not need to input quotations).  If no text is input here, the default will be an image of the active viewport - the last viewport in which you navigated.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             pManager.AddIntegerParameter("Width", "Width", "Image width in pixels.", GH_ParamAccess.item, 600);
             pManager.AddIntegerParameter("Height", "Height", "Image height in pixels.", GH_ParamAccess.item, 600);

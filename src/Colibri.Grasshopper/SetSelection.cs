@@ -14,8 +14,8 @@ namespace Colibri.Grasshopper
         /// Initializes a new instance of the IteratorSelection class.
         /// </summary>
         public SetSelection()
-          : base("Iteration Selection", "Sel",
-              "Generates iteration selections for Iterator.",
+          : base("Iteration Selection", "Selection",
+              "Generates an iteration selection for the Colibri Iterator.  This allows you to iterate over a subset of the design space instead of taking every step along every slider.\n\nUse 'Divisions' to define granularity - how many steps to take on any given input.\n\nUse 'Domains' to break the design space up into chunks that can be solved in parallel on different machines.",
               "TT Toolbox", "Colibri 2.0")
         {
         }
@@ -27,10 +27,10 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Divisions", "Divisions", "Numbers to take on each Iterator input. This should be a list of integers of the same length as the list of Iterator inputs. By default, iterator will go through each smallest step as possible.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Divisions", "Divisions", "Number of steps to take along the corresponding Iterator input. This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntervalParameter("Domains", "Domains", "Set the ranges of all iteration combinations, can be one or a list of 1d domains (use Construct Domain). \n\nDomain setting comes after Divisions setting.", GH_ParamAccess.list);
+            pManager.AddIntervalParameter("Domains", "Domains", "Set the target range of all iteration combinations, can be one or a list of 1d domains (use Construct Domain). \n\nDomain setting comes after Divisions setting.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }
