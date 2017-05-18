@@ -1,51 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
 using GH = Grasshopper;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
-using System.Windows.Forms;
 using System.Linq;
-using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Parameters;
+using Grasshopper.Kernel.Data;
+using System.Windows.Forms;
+using Grasshopper.Kernel.Types;
+using GH_IO.Serialization;
 
 namespace Colibri.Grasshopper
 {
-    public class Iterator : GH_Component
+    public class Iterator : GH_Component, IGH_VariableParameterComponent
     {
-        GH_Document doc = null;
-        List<GH_NumberSlider> allConnectedSliders = new List<GH_NumberSlider>();
-        List<string> sliderNames = new List<string>();
-        List<int> sliderSteps = new List<int>();
-        Dictionary<int, int> sliderStepsPositions = new Dictionary<int, int>();
-        List<string> computedValues = new List<string>();
+        
+        private GH_Document _doc = null;
+        private bool _run = false;
+        private bool _running = false;
+        private List<ColibriParam> _filteredSources;
+        private IteratorFlyParam _flyParam;
+        private bool _isTestFly = false;
+        
+        
+        private int _totalCount = 0;
+        private int _selectedCount = 0;
+
+        private IteratorSelection _selections = new IteratorSelection();
+
+        private Aggregator _aggObj = null;
+        private OverrideMode _mode = OverrideMode.AskEverytime;
+        private bool _ignoreAllWarningMsg = false;
+        private bool _remoteFly = false;
+        private string _selectionName = "Selection";
+        private string _remoteFlyName = "RemoteFly";
+        private string _remoteCtrlName = "RemoteCtrl";
+        private string _studyFolder = "";
+
 
         /// <summary>
-        /// Each implementation of GH_Component must provide a public 
-        /// constructor without any arguments.
-        /// Category represents the Tab in which the component will appear, 
-        /// Subcategory the panel. If you use non-existing tab or panel names, 
-        /// new tabs/panels will automatically be created.
+        /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public Iterator()
-          : base("Iterator", "Iterator",
-              "Generates design iterations from a collection of sliders.",
-              "TT Toolbox", "Colibri")
+          : base("Colibri Iterator", "Iterator",
+              "Generates design iterations from a collection of sliders, panels, or valueLists.",
+              "TT Toolbox", "Colibri 2.0")
         {
+            Params.ParameterSourcesChanged += ParamSourcesChanged;
+            
         }
-
-        public override GH_Exposure Exposure { get { return GH_Exposure.primary; } }
-
+        
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Sliders", "Sliders",
-                "Sliders to iterate over.  Sliders must be plugged directly into this input.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Steps", "Steps", "Number of steps to take on each slider.  This should be a list of integers (each of which must be greater than one) of the same length as the list of sliders plugged into the Sliders input.\n\nIf no input data is provided, we'll use every tick on every slider as a step.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Input", "Input[N]", "Please connect a Slider, Panel, or ValueList, as a variable input", GH_ParamAccess.list);
+            pManager[0].Optional = true;
+            pManager[0].MutableNickName = false;
+
+            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Optional input if you want to run partial iterations.", GH_ParamAccess.item);
             pManager[1].Optional = true;
-            pManager.AddBooleanParameter("Fly?", "Fly?", "Tell Colibri to fly!  Provide a button here, and click it once you are ready for Colibri to fly around your definition.", GH_ParamAccess.item);
+            pManager[1].MutableNickName = false;
+
         }
 
         /// <summary>
@@ -53,167 +69,334 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Inputs", "Inputs",
-                "Colibri's Inputs object.  Plug this into the Colibri aggregator downstream.", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Value", "Value[N]", "current item of inputs", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Iteration Genome", "Genome", "Contains a collection of genes (variables) which defines a unique ID of each iteration. Connet to Aggregateor", GH_ParamAccess.list);
+            pManager[0].MutableNickName = false;
+            pManager[1].MutableNickName = false;
+            
         }
-
+        
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
-        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
-        /// to store data in output parameters.</param>
+        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //get a reference to the current doc the first time through
-            if (doc == null)
+            var userSelections = new IteratorSelection();
+            bool remoteFly = false;
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
+            DA.GetData(selectionIndex, ref userSelections);
+
+            if (this._remoteFly)
             {
-                doc = GH.Instances.ActiveCanvas.Document; 
+                DA.GetData(selectionIndex + 1, ref remoteFly);
+
+                //set remoteCtrl 
+                DA.SetData(selectionIndex + 1, _running);
+                
             }
 
-
-            //catch grasshopper inputs
-            List<double> sliderValues = new List<double>();
-            List<int> tempSteps = new List<int>();
-            bool _fly = false;
-            DA.GetDataList(0, sliderValues);
-            DA.GetDataList(1, tempSteps);
-            DA.GetData(2, ref _fly);
-
-
-            //manage sliders
-
-            //get a handle on the connected sliders
-            List<GH_NumberSlider> connectedSliders = getConnectedSliders();
-
-            //wipe out any event handlers that might already exist
-            foreach (GH_NumberSlider slider in allConnectedSliders)
+            
+            
+            var FlyID = new List<object>();
+            
+            //flyParam only exists when flying
+            if (!_running && _flyParam == null)
             {
-                slider.ObjectChanged -= Slider_ObjectChanged;
-            }
+                _filteredSources = gatherSources();
+                checkAllInputParamNames(_filteredSources);
 
-            //refresh our global list of sliders
-            allConnectedSliders.Clear();
-            allConnectedSliders.AddRange(connectedSliders);
+                this._selections = new IteratorSelection(userSelections.UserTakes, userSelections.UserDomains);
+                this.Message = updateComponentMsg(_filteredSources, this._selections);
 
-            //slider names
-            sliderNames = new List<string>();
-            foreach (GH_NumberSlider slider in connectedSliders)
-            {
-                if (slider.NickName != "")
+                if (remoteFly)
                 {
-                    sliderNames.Add(slider.NickName);
-                }
-                else
-                {
-                    sliderNames.Add(slider.ImpliedNickName);
-                }
-            }
-
-            //if no steps input was provided, use the slider's ticks as steps
-            if (tempSteps.Count == 0)
-            {
-                foreach (GH_NumberSlider slider in connectedSliders)
-                {
-                    tempSteps.Add(slider.TickCount);
-                }
-            }
-
-
-            //run all defense before Colibri is told to fly
-            if (!_fly)
-            {
-                //make sure globals are clear
-                sliderSteps = new List<int>();
-                sliderStepsPositions = new Dictionary<int, int>();
-
-                //check that the number of steps equals the number of sliders
-                if (tempSteps.Count != sliderValues.Count)
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of connected sliders must be equal to the number of items in the Steps input list.");
-                    return;
-                }
-                //check that the number of steps is greater than 1 and less than the number of ticks in the matching slider
-                for (int i = 0; i < connectedSliders.Count; i++)
-                {
-                    if (tempSteps[i] < 2 || tempSteps[i] > connectedSliders[i].TickCount + 1)
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Steps values must be greater than 1 and less than the number of steps defined in the associated slider.  The first offending slider / step combo is at index: " + i.ToString());
-                        return;
-                    }
-                }
-            }
-
-
-
-
-            //get slider steps and names once - the first time we are told to fly
-            if (sliderSteps.Count == 0 && _fly)
-            {
-                //get the number of steps per slider
-                sliderSteps.AddRange(tempSteps.Select(x => x - 1));
-
-                //populate our dictionary of sliders / current step positions
-                for (int i = 0; i < sliderSteps.Count; i++)
-                {
-                    sliderStepsPositions.Add(i, 1);
+                    this.OnMouseDownEvent(this);
                 }
             }
             
-            //listen for slider changes
-            foreach (GH_NumberSlider slider in allConnectedSliders)
+            //Get current value
+            foreach (var item in _filteredSources)
             {
-                slider.ObjectChanged += Slider_ObjectChanged;
+                DA.SetData(item.AtIteratorPosition, item.CurrentValue());
+                FlyID.Add(item.ToString(true));
             }
-
-
-            //output 'inputs' object
-            Dictionary<string, double> inputs = new Dictionary<string, double>();
-            for (int i = 0; i < sliderValues.Count; i++)
-            {
-                try
-                {
-                    inputs.Add(sliderNames[i], sliderValues[i]);
-                }
-                catch (ArgumentException ex)
-                {
-                    if (ex.ToString().Contains("key"))
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your sliders must have unique nicknames!  Set them all and try again.");
-                        return;
-                    }
-                    else
-                    {
-                        throw ex;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-            }
-            DA.SetDataList(0, inputs);
-
             
-
-            //don't touch this stuff!  this is what makes the magic happen down below.
-            if (!_fly)
-                return;
-
-            if (_running)
-                return;
-
-            _run = true;
-
-            doc.SolutionEnd += OnSolutionEnd;
+            DA.SetDataList(selectionIndex, FlyID);
+            
         }
 
         
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override System.Drawing.Bitmap Icon
+        {
+            get
+            {
+                //You can add image files to your project resources and access them like this:
+                // return Resources.IconForThisComponent;
+                return Properties.Resources.Iterator;
+            }
+        }
+
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
+        public override Guid ComponentGuid
+        {
+            get { return new Guid("{74a79561-b3b2-4e12-beb4-d79ec0ed378a}"); }
+        }
+
+        #region Override
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+            if (_filteredSources.IsNullOrEmpty()) return;
+            foreach (var item in _filteredSources)
+            {
+                item.ObjectNicknameChanged -= OnSourceNicknameChanged;
+            }
+        }
+
+        public override bool Read(GH_IReader reader)
+        {
+
+            if (reader.ItemExists("ignoreAllWarningMsg"))
+            {
+                this._ignoreAllWarningMsg = reader.GetBoolean("ignoreAllWarningMsg");
+            }
+            if (reader.ItemExists(this._remoteFlyName))
+            {
+                this._remoteFly = reader.GetBoolean(this._remoteFlyName);
+            }
+
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetBoolean("ignoreAllWarningMsg", this._ignoreAllWarningMsg);
+            writer.SetBoolean(this._remoteFlyName, this._remoteFly);
+            return base.Write(writer);
+        }
+
+        protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "Fly Test", runFlyTest);
+            //Menu_AppendSeparator(menu);
+
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "Ignore all warning messages", ignoreWarningMsg, true, this._ignoreAllWarningMsg);
+
+            base.AppendAdditionalComponentMenuItems(menu);
+            Menu_AppendItem(menu, "RemoteFly", remoteFly, true, this._remoteFly);
+            Menu_AppendSeparator(menu);
+        }
+
+        // Create Button
+        public override void CreateAttributes()
+        {
+            var newButtonAttribute = new IteratorAttributes(this) { ButtonText = "Fly" };
+            newButtonAttribute.mouseDownEvent += OnMouseDownEvent;
+            m_attributes = newButtonAttribute;
+
+        }
+        #endregion
+        
+        #region Collecting Source Params, and convert to Colibri Params
+        
+        /// <summary>
+        /// convert current selected source to ColibriParam
+        /// </summary>   
+        private ColibriParam ConvertToColibriParam(IGH_Param SelectedSource, int AtIteratorPosition)
+        {
+            //var component = SelectedSource; //list of things connected on this input
+            ColibriParam colibriParam = new ColibriParam(SelectedSource, AtIteratorPosition);
+            
+            //Flatten the Panel's data just in case 
+            if (colibriParam.GHType == InputType.Panel)
+            {
+                SelectedSource.VolatileData.Flatten();
+            }
+            return colibriParam;
+        }
+        
+        /// <summary>
+        /// Change Iterator's input and output NickName
+        /// </summary>   
+        private void checkInputParamNickname(ColibriParam ValidSourceParam)
+        {
+
+            if (ValidSourceParam != null)
+            {
+                var colibriParam = ValidSourceParam;
+                
+                int atPosition = colibriParam.AtIteratorPosition;
+
+                var inputParam = this.Params.Input[atPosition];
+                var outputParam = this.Params.Output[atPosition];
+
+                string newNickname = colibriParam.NickName;
+                inputParam.NickName = newNickname;
+                outputParam.NickName = newNickname;
+                outputParam.Description = "This item is one of values from " + colibriParam.GHType.ToString() + "_" + newNickname;
+                
+                this.Attributes.ExpireLayout();
+            }
+            
+        }
+
+        /// <summary>
+        /// check input source if is slider, panel, or valueList, if not, remove it
+        /// </summary>   
+        private List<ColibriParam> gatherSources()
+        {
+            var filtedSources = new List<ColibriParam>();
+
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
+            // exclude the last input which is "Selection"
+            for (int i = 0; i < selectionIndex; i++)
+            {
+                //Check if it is fly or empty source param
+                //bool isFly = i == this.Params.Input.Count - 1 ? true : false;
+                var source = this.Params.Input[i].Sources;
+                //bool ifAny = source.Any();
+
+                if (source.Any() && source.Count==1)
+                {
+                    //if something's connected,and get the last connected
+                    var colibriParam = ConvertToColibriParam(source.Last(), i);
+
+                    //null  added if input is unsupported type
+                    if (colibriParam.GHType != InputType.Unsupported)
+                    {
+
+                        colibriParam.ObjectNicknameChanged += OnSourceNicknameChanged;
+                        //colibriParam.RawParam.ObjectChanged += OnSource_ObjectChanged;OnSource_ObjectNicknameChanged
+                        filtedSources.Add(colibriParam);
+                        
+                    }
+                    else
+                    {
+                        //throw new ArgumentException("Unsupported component!\nPlease use Slider, ValueList, or Panel!");
+                        this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Unsupported component!\nPlease use Slider, ValueList, or Panel!");
+                        break;
+                        //return null;
+                    }
+                    
+                }
+                else if(source.Count > 1)
+                {
+                    //throw new ArgumentException("Please connect one component per grip!");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please connect one component per grip!");
+                    break;
+                    //return null;
+                }
+            }
+            
+            return filtedSources;
+        }
+
+        /// <summary>
+        /// check and iterator's input and output params' nicknames
+        /// </summary>   
+        private void checkAllInputParamNames(List<ColibriParam> validColibriParams)
+        {
+            //all items in the list are unnull. which is checked in gatherSources();
+            
+            if (validColibriParams.IsNullOrEmpty()) return;
+            
+            foreach (var item in validColibriParams)
+            {
+                //checkSourceParamNickname(item);
+                checkInputParamNickname(item);
+            }
+        }
 
 
-        //methods below copied in from Ladybug's Fly component
-        private bool _run = false;
-        private bool _running = false;
+        #endregion
 
+        #region Button Event on Iterator
+
+        // response to Button event
+        private void OnMouseDownEvent(object sender)
+        {
+            if (this._doc == null)
+            {
+                this._doc = GH.Instances.ActiveCanvas.Document;
+            }
+
+            if (this.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error) return;
+           
+            //Clean first
+            this._flyParam = null;
+
+            //recollect all params 
+            this._filteredSources = gatherSources();
+
+            this._filteredSources.RemoveAll(item => item == null);
+            this._filteredSources.RemoveAll(item => item.GHType == InputType.Unsupported);
+            //string Para
+            
+            //checked if Aggregator is recording and the last
+            if (!isAggregatorReady()) return;
+           
+            //check if any vaild input source connected to Iteratior
+            if (this._filteredSources.Count() > 0)
+            {
+                this._flyParam = new IteratorFlyParam(_filteredSources,this._selections,this._studyFolder, this._mode);
+            }
+            else
+            {
+                MessageBox.Show("No Slider, ValueList, or Panel connected!");
+                return;
+            }
+
+            
+            int testIterationNumber = this._selectedCount;
+            //int totalIterationNumber = _totalCount;
+
+            if (this._isTestFly)
+            {
+                testIterationNumber = 3;
+            }
+            string msgString = _flyParam.InputParams.Count() + " input(s) connected." +
+                  "\n" + testIterationNumber + " (out of " + _totalCount + ") iterations will be done. \n\nContinue?" +
+                  "\n\n-------------------------------------------------------- "+
+                  "\nTo pause during progressing?\n    1.Press ESC.";
+
+            if (!String.IsNullOrWhiteSpace(this._studyFolder))
+            {
+                msgString += "\n    2.Or remove \"running\" file located in foler:\n\t" + this._studyFolder;
+            }
+
+            var userClick = MessageBox.Show(msgString, "Start?", MessageBoxButtons.YesNo);
+
+            if (userClick == DialogResult.Yes)
+            {
+                _run = true;
+                _doc.SolutionEnd += OnSolutionEnd;
+                
+                // only recompute those are expired flagged
+                _doc.NewSolution(false);
+            }
+            else
+            {
+                _run = false;
+                _isTestFly = false;
+                _flyParam = null;
+            }
+
+
+        }
+        
+        private void runFlyTest(object sender, EventArgs e)
+        {
+            _isTestFly = true;
+            this.OnMouseDownEvent(sender);
+        }
 
         private void OnSolutionEnd(object sender, GH_SolutionEventArgs e)
         {
@@ -221,11 +404,7 @@ namespace Colibri.Grasshopper
             e.Document.SolutionEnd -= OnSolutionEnd;
 
             // If we're not supposed to run, abort now.
-            if (!_run)
-                return;
-
-            // If we're already running, abort now.
-            if (_running)
+            if (!_run || _running)
                 return;
 
             // Reset run and running states.
@@ -234,342 +413,541 @@ namespace Colibri.Grasshopper
 
             try
             {
-                // Find the Guid for connected slides
-                List<System.Guid> guids = new List<System.Guid>(); //empty list for guids
-                GH.Kernel.IGH_Param selSlidersInput = this.Params.Input[0]; //ref for input where sliders are connected to this component
-                IList<GH.Kernel.IGH_Param> sources = selSlidersInput.Sources; //list of things connected on this input
-                bool isAnythingConnected = sources.Any(); //is there actually anything connected?
-
-
-                // Find connected
-                GH.Kernel.IGH_Param trigger = this.Params.Input[2].Sources[0]; //ref for input where a boolean or a button is connected
-                GH.Kernel.Special.GH_BooleanToggle boolTrigger = trigger as GH.Kernel.Special.GH_BooleanToggle;
-
-                if (isAnythingConnected)
-                { //if something's connected,
-                    foreach (var source in sources) //for each of these connected things:
-                    {
-                        IGH_DocumentObject component = source.Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
-                        GH.Kernel.Special.GH_NumberSlider mySlider = component as GH.Kernel.Special.GH_NumberSlider; //...then cast (?) it as a slider
-                        if (mySlider == null) //of course, if the thing isn't a slider, the cast doesn't work, so we get null. let's filter out the nulls
-                            continue;
-                        guids.Add(mySlider.InstanceGuid); //things left over are sliders and are connected to our input. save this guid.
-                                                          //we now have a list of guids of sliders connected to our input, saved in list var 'mySlider'
-                    }
-                }
-
-                // Find all sliders.
-                List<GH.Kernel.Special.GH_NumberSlider> sliders = new List<GH.Kernel.Special.GH_NumberSlider>();
-                foreach (IGH_DocumentObject docObject in doc.Objects)
+                if (_isTestFly)
                 {
-                    GH.Kernel.Special.GH_NumberSlider slider = docObject as GH.Kernel.Special.GH_NumberSlider;
-                    if (slider != null)
-                    {
-                        // check if the slider is in the selected list
-                        if (isAnythingConnected)
-                        {
-                            if (guids.Contains(slider.InstanceGuid)) sliders.Add(slider);
-                        }
-                        else sliders.Add(slider);
-                    }
+                    _isTestFly = false;
+                    _flyParam.FlyTest(e, 3);
                 }
-                if (sliders.Count == 0)
+                else
                 {
-                    System.Windows.Forms.MessageBox.Show("No sliders could be found", "<harsh buzzing sound>", MessageBoxButtons.OK);
-                    return;
+                    _flyParam.Fly(e);
                 }
 
-                //we now have all sliders
-                //ask the user to give a sanity check
-                int counter = 0;
-                int totalLoops = 1;
-                string popupMessage = "";
-
-                // create progress bar by dots and |
-                string pb = ".................................................."; //50 of "." - There should be a better way to create this in C# > 50 * "." does it in Python!
-                char[] pbChars = pb.ToCharArray();
-
-                int dummyCounter = 0;
-                foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
+                if (_aggObj != null)
                 {
-                    totalLoops *= (sliderSteps[dummyCounter]+1);
-                    popupMessage += slider.ImpliedNickName;
-                    popupMessage += "\n";
-                    dummyCounter++;
-                }
-                if (System.Windows.Forms.MessageBox.Show(sliders.Count + " slider(s) connected:\n" + popupMessage +
-                  "\n" + totalLoops.ToString() + " iterations will be done. Continue?" + "\n\n (Press ESC to pause during progressing!)", "Start?", MessageBoxButtons.YesNo) == DialogResult.No)
-                {
-                    SetBooleanToFalse(boolTrigger);
-                    this.Message = "Release the Colibri!";
-
-                    //wipe out colibri variables and compute a new solution
-                    sliderNames = new List<string>();
-                    sliderSteps = new List<int>();
-                    sliderStepsPositions = new Dictionary<int, int>();
-                    computedValues = new List<string>();
-                    e.Document.NewSolution(false);
-                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-
-                    return;
+                    _aggObj.setWriteFileToFalse();
                 }
 
-                // Set all sliders back to first tick
-                foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
-                    slider.TickValue = 0;
-
-                //start a stopwatch
-                System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
-
-                // Start a giant loop in which we'll permutate our way across all slider layouts.
-                while (true)
-                {
-
-
-                    int idx = 0;
-
-                    // let the user cancel the process
-                    if (GH_Document.IsEscapeKeyDown())
-                    {
-                        if (System.Windows.Forms.MessageBox.Show("Do you want to stop the process?\nSo far " + counter.ToString() +
-                          " out of " + totalLoops.ToString() + " iterations are done!", "Stop?", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                        {
-                            // cancel the process by user input!
-                            SetBooleanToFalse(boolTrigger);
-                            this.Message += "\nCanceled by user! :|";
-                            return;
-                        }
-                    }
-
-                    //add the current slider values to our list of already computed values
-                    var sliderVals = GetSliderVals(sliders);
-                    if (!computedValues.Contains(sliderVals))
-                    {
-                        computedValues.Add(sliderVals);
-                    }
-
-                    //move to the next set of slider positions
-                    if (!MoveToNextPermutation(ref idx, sliders))
-                    {
-                        // study is over!
-                        SetBooleanToFalse(boolTrigger);
-                        sw.Stop(); //stop start watch
-                        UpdateProgressBar(counter, totalLoops, sw, pbChars);
-                        this.Message += "\nFinished at " + DateTime.Now.ToShortTimeString();
-
-                        //wipe out colibri variables
-                        sliderNames = new List<string>();
-                        sliderSteps = new List<int>();
-                        sliderStepsPositions = new Dictionary<int, int>();
-                        computedValues = new List<string>();
-                        e.Document.NewSolution(false);
-                        Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-                        break;
-                    }
-
-                    // We've just got a new valid permutation. Solve the new solution.
-                    counter++;
-                    e.Document.NewSolution(false);
-                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
-                    UpdateProgressBar(counter, totalLoops, sw, pbChars);
-                }
             }
-            catch
+            catch (Exception ex)
             {
-                // "something went wrong!";
+
+                throw ex;
             }
             finally
             {
                 // Always make sure that _running is switched off.
                 _running = false;
+                this._flyParam = null;
+
             }
+
         }
 
-        private bool MoveToNextPermutation(ref int index, List<GH.Kernel.Special.GH_NumberSlider> sliders)
+        private void ignoreWarningMsg(object sender, EventArgs e)
         {
-            if (index >= sliders.Count)
-                return false;
+            this._ignoreAllWarningMsg = !this._ignoreAllWarningMsg;
+        }
+        
 
-            GH.Kernel.Special.GH_NumberSlider slider = sliders[index];
-            if (slider.TickValue < slider.TickCount)
+        private void remoteFly(object sender, EventArgs e)
+        {
+            this._remoteFly = !this._remoteFly;
+            
+            if (this._remoteFly)
             {
-                //Figure out which step to fly to...
+                var remoteInParam = new Param_Boolean();
+                var remoteOutParam = new Param_Boolean();
 
-                //look up the current slider's current sliderStepsPosition and target number
-                int totalNumberOfSteps = sliderSteps[index];
-                int currentSliderStepsPosition = sliderStepsPositions[index];
-                int sliderMidStep = slider.TickCount / 2;
-                int numTicksToAddAsInt = slider.TickCount / totalNumberOfSteps;
-                double numTicksToAddAsDouble = (double)slider.TickCount/(double)totalNumberOfSteps;
+                int index = this.Params.Input.Count;
+                this.Params.RegisterInputParam(remoteInParam, index);
+                this.Params.RegisterOutputParam(remoteOutParam, index);
 
-                //find the closest tick
-                int closestTick = 0;
-                if (currentSliderStepsPosition + numTicksToAddAsInt >= sliderMidStep)
-                {
-                    closestTick = (int)Math.Ceiling(numTicksToAddAsDouble * currentSliderStepsPosition); 
-                }
-                else
-                {
-                    closestTick = (int)Math.Floor(numTicksToAddAsDouble * currentSliderStepsPosition);
-                }
+            }
+            else
+            {
+                int remoteFlyIndex = this.Params.IndexOfInputParam(this._remoteFlyName);
+                this.Params.UnregisterInputParameter(this.Params.Input[remoteFlyIndex]);
+                this.Params.UnregisterOutputParameter(this.Params.Output[remoteFlyIndex]);
+            }
+            VariableParameterMaintenance();
+            this.Params.OnParametersChanged();
+            this.ExpireSolution(true);
 
-                // Increment the slider.
-                slider.TickValue = closestTick;
+        }
 
-                //Increment the current step position
-                sliderStepsPositions[index]++;
-                
-                //have we already computed this upcoming combination?  If so, move on to the next one without expiring the solution
-                if (computedValues.Contains(GetSliderVals(sliders)))
-                {
-                    return MoveToNextPermutation(ref index, sliders);
-                }
+        #endregion
 
+        #region Methods of IGH_VariableParameterComponent interface
 
+        public bool CanInsertParameter(GH_ParameterSide side, int index)
+        {
+            bool isInputSide = side == GH_ParameterSide.Input;
+            
+            bool isTheOnlyInput = index == 0;
+
+            //isSetting includes Selection and remoteFly,
+            //canInsert at the end when remoteFly is flase.
+            bool isSetting = false;
+            if (this._remoteFly)
+            {
+                //if remoteFly is on, then the last two (Selection and remoteFly) can not insert anymore.
+                isSetting = (index == this.Params.Input.Count) || (index == this.Params.Input.Count-1);
+            }
+            
+            //We only let input parameters to be added 
+            if (isInputSide && !isSetting && !isTheOnlyInput)
+            {
                 return true;
             }
             else
             {
-                // The current slider is already at the maximum value. Reset it back to zero.
-                slider.TickValue = 0;
-
-                //set our slider steps position back to 0
-                sliderStepsPositions[index] = 0;
-
-                // Move on to the next slider.
-                index++;
-
-                // If we've run out of sliders to modify, we're done permutatin'
-                if (index >= sliders.Count)
-                    return false;
-
-                return MoveToNextPermutation(ref index, sliders);
+                return false;
             }
+
         }
 
-        private string GetSliderVals(List<GH_NumberSlider> sliders)
+        public bool CanRemoveParameter(GH_ParameterSide side, int index)
         {
-            string sliderVals = "";
-            foreach (GH_NumberSlider slider in sliders)
+            bool isInputSide = side == GH_ParameterSide.Input;
+            //bool isTheFlyButton = index == this.Params.Input.Count-1;
+            bool isTheOnlyInput = (index == 0)&&(this.Params.Input.Count<=2);
+
+
+            //isSetting includes Selection and remoteFly,
+            //cannot remove Selection Setting.
+            bool isSetting = index == this.Params.Input.Count - 1;
+            if (this._remoteFly)
             {
-                sliderVals += slider.CurrentValue.ToString() + ",";
+                //if remoteFly is on, then Selection is at this.Params.Input.Count-2.
+                isSetting = (index == this.Params.Input.Count-2);
             }
-            return sliderVals;
+
+            //can only remove from the input and non Fly? or the first Slider
+            if (isInputSide && !isSetting && !isTheOnlyInput)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
         }
 
-        private void SetBooleanToFalse(GH.Kernel.Special.GH_BooleanToggle boolTrigger)
+
+        public IGH_Param CreateParameter(GH_ParameterSide side, int index)
         {
-            if (boolTrigger == null) return;
             
-            boolTrigger.Value = false; //set trigger value to false
-            boolTrigger.ExpireSolution(true);
+            // if remoteFly
+            if (index == this.Params.Input.Count)
+            {
+                this._remoteFly = true;
+            }
+
+            if (this._remoteFly && (index == this.Params.Input.Count))
+            {
+                var remoteInParam = new Param_Boolean();
+                var remoteOutParam = new Param_Boolean();
+                Params.RegisterOutputParam(remoteOutParam, index);
+                return remoteInParam;
+            }
+
+            // add normal params
+            var outParam = new Param_GenericObject();
+            outParam.NickName = String.Empty;
+            Params.RegisterOutputParam(outParam, index);
+
+            var inParam = new Param_GenericObject();
+            inParam.NickName = String.Empty;
+            return inParam;
         }
 
-        private void UpdateProgressBar(int counter, int totalLoops, System.Diagnostics.Stopwatch sw, char[] pbChars)
+        public bool DestroyParameter(GH_ParameterSide side, int index)
         {
-            // calculate percentage and update progress bar!
-            double pecentageComplete = Math.Round((double)100 * (counter + 1) / totalLoops, 2);
+            //bool isRemoteFly = index == this.Params.IndexOfInputParam(this._remoteFlyName)
+            if (this._remoteFly && (index == this.Params.Input.Count-1))
+            {
+                this._remoteFly = false;
+            }
 
-            int lnCount = (int)pecentageComplete / (100 / pbChars.Length); //count how many lines to be changed!
+            //unregister ther output when input is destroied.
+            Params.UnregisterOutputParameter(Params.Output[index]);
 
-            for (int i = 0; i < lnCount; i++) pbChars[i] = '|';
+            
+            return true;
+        }
 
-            string pbString = new string(pbChars);
 
-            // format and display the TimeSpan value
-            System.TimeSpan ts = sw.Elapsed;
+        //Todo remove unnecessary code here
+        public void VariableParameterMaintenance()
+        {
+            int inputParamCount = this.Params.Input.Count - 1;
+            if (this._remoteFly)
+            {
+                inputParamCount--; //this.Params.Input.Count - 2;
 
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-              ts.Hours, ts.Minutes, ts.Seconds,
-              ts.Milliseconds / 10);
+                //settings for remoteFly
+                var remoteInParam = this.Params.Input.Last() as Param_Boolean;
+                remoteInParam.Name = this._remoteFlyName;
+                remoteInParam.NickName = this._remoteFlyName;
+                remoteInParam.Access = GH_ParamAccess.item;
+                //remoteInParam.SetPersistentData(new GH_Boolean(false));
+                remoteInParam.Optional = true;
+                remoteInParam.Description = "Remote control for Iterator, set to true to fly.";
+                remoteInParam.MutableNickName = true;
+                
 
-            // calculate average run time
-            double avergeTime = Math.Round(ts.TotalSeconds / (counter + 1), 2); // average time for each iteration
+                var remoteOutParam = this.Params.Output.Last() as Param_Boolean;
+                remoteOutParam.Name = this._remoteCtrlName;
+                remoteOutParam.Access = GH_ParamAccess.item;
+                remoteOutParam.NickName = this._remoteCtrlName;
+                //remoteOutParam.SetPersistentData(new GH_Boolean(false));
+                remoteOutParam.Description = "Control downstream conponents after fly starts.";
+                remoteOutParam.MutableNickName = true;
+            }
 
-            double expectedTime = Math.Round((ts.TotalMinutes / (counter + 1)) * totalLoops, 2); // estimation for total runs
+            for (int i = 0; i < inputParamCount; i++)
+            {
+                // create inputs
+                var inParam = this.Params.Input[i];
+                if (inParam.NickName == String.Empty) {
+                    inParam.NickName= "Input[N]";
+                }
+                inParam.Name = "Input";
+                inParam.Description = "Please connect a Slider, Panel, or ValueList";
+                inParam.Access = GH_ParamAccess.list;
+                inParam.Optional = true;
+                inParam.MutableNickName = false;
+                inParam.WireDisplay = GH_ParamWireDisplay.faint;
 
-            this.Message = elapsedTime + "\n" + pbString + "\n" + pecentageComplete.ToString() + "%\n"
-              + "Average Time: " + avergeTime + " Sec.\n"
-              + "Est. Total Time: " + expectedTime + " Min.\n";
+                var outParam = this.Params.Output[i];
+                if (outParam.NickName == String.Empty)
+                {
+                    outParam.NickName = inParam.NickName.Replace("Input","Value");
+                    outParam.Description = "This item is one of values from " + inParam.NickName;
+                    outParam.Access = GH_ParamAccess.item;
+                    outParam.Name = "Item";
+                    outParam.MutableNickName = false;
+                }
+            }
+            
+        }
+
+
+        #endregion
+
+        #region Events for ParamSourcesChanged
+        
+        //This is for if any source connected, reconnected, removed, replacement 
+        private void ParamSourcesChanged(Object sender, GH_ParamServerEventArgs e)
+        {
+            //int inputParamCount = this.Params.Input.Count - 1;
+            int selectionIndex = this.Params.IndexOfInputParam(this._selectionName);
+
+            bool isInputSide = e.ParameterSide == GH_ParameterSide.Input;
+            bool isSelection = e.ParameterIndex == selectionIndex;
+            bool isRemoteFly = e.Parameter.NickName == this._remoteFlyName;
+
+            
+            //check input side only
+            if (!isInputSide) return;
+
+            //check if is Selection setting only
+            if (isSelection) return;
+
+            //check if is _remoteFly setting
+            if (isRemoteFly) return;
+            //{
+            //    //Selection's index becomes this.Params.Input.Count - 2
+            //    if (e.ParameterIndex == inputParamCount-1) return;
+            //}
+
+            
+            bool isSecondLastSourceFull = Params.Input[selectionIndex - 1].Sources.Any();
+            // add a new input param while the second last input is full
+            if (isSecondLastSourceFull)
+            {
+                IGH_Param newParam = CreateParameter(GH_ParameterSide.Input, selectionIndex);
+                Params.RegisterInputParam(newParam, selectionIndex);
+                VariableParameterMaintenance();
+                this.Params.OnParametersChanged();
+            }
+            
+            ////recollecting the filteredSources and rename while any source changed
+            //_filteredSources = gatherSources();
+            //checkAllNames(filteredSources);
+
         }
         
-        private List<GH_NumberSlider> getConnectedSliders()
+        //This is for if any source name changed, NOTE: cannot deteck the edited
+        private void OnSourceNicknameChanged(ColibriParam sender)
         {
+            //bool isExist = _filteredSources.Exists(_ => _.RawParam.Equals(sender));
+            bool isExist = _filteredSources.Contains(sender);
 
-            // Find the Guid for connected slides
-            List<System.Guid> guids = new List<System.Guid>(); //empty list for guids
-            GH.Kernel.IGH_Param selSlidersInput = this.Params.Input[0]; //ref for input where sliders are connected to this component
-            IList<GH.Kernel.IGH_Param> sources = selSlidersInput.Sources; //list of things connected on this input
-            bool isAnythingConnected = sources.Any(); //is there actually anything connected?
+            if (isExist)
+            {
+                //todo: this can be finished inside ColibriParam
+                checkInputParamNickname(sender);
 
-            // Find connected
-            if (isAnythingConnected)
-            { //if something's connected,
-                foreach (var source in sources) //for each of these connected things:
+                //edit the Fly output without expire this component's solution, 
+                // only expire the downstream components which connected to the last output "FlyID"
+                int flyIDindex = this.Params.Output.Count;
+                if (this._remoteFly)
                 {
-                    IGH_DocumentObject component = source.Attributes.GetTopLevel.DocObject; //for this connected thing, bring it into the code in a way where we can access its properties
-                    GH.Kernel.Special.GH_NumberSlider mySlider = component as GH.Kernel.Special.GH_NumberSlider; //...then cast (?) it as a slider
-                    if (mySlider == null) //of course, if the thing isn't a slider, the cast doesn't work, so we get null. let's filter out the nulls
-                        continue;
-                    guids.Add(mySlider.InstanceGuid); //things left over are sliders and are connected to our input. save this guid.
-                                                      //we now have a list of guids of sliders connected to our input, saved in list var 'mySlider'
+                    flyIDindex = flyIDindex - 2;
+                    
                 }
+                else
+                {
+                    flyIDindex = flyIDindex - 1;
+                }
+
+                this.Params.Output[flyIDindex].ExpireSolution(false);
+                this.Params.Output[flyIDindex].ClearData();
+                this.Params.Output[flyIDindex].AddVolatileDataList(new GH_Path(0, 0), getFlyID());
+
+
+
+                if (_doc == null) _doc = GH.Instances.ActiveCanvas.Document;
+
+                _doc.NewSolution(false);
+                
+
+            }
+            else
+            {
+                sender = null;
+            }
+            
+        }
+
+        private List<string> getFlyID()
+        {
+            if (this._filteredSources.IsNullOrEmpty()) return new List<string>();
+
+            var FlyID = new List<string>();
+            foreach (var item in this._filteredSources)
+            {
+                FlyID.Add(item.ToString(true));
             }
 
-            // Find all sliders.
-            List<GH.Kernel.Special.GH_NumberSlider> sliders = new List<GH.Kernel.Special.GH_NumberSlider>();
-            foreach (IGH_DocumentObject docObject in doc.Objects)
+            return FlyID;
+        }
+       
+        private string updateComponentMsg(List<ColibriParam> ColibriParams, IteratorSelection Selections)
+        {
+            
+            if (ColibriParams.IsNullOrEmpty())
             {
-                GH.Kernel.Special.GH_NumberSlider slider = docObject as GH.Kernel.Special.GH_NumberSlider;
-                if (slider != null)
+                return null;
+            }
+            
+            //this will check and add take_numbers and domains
+            Selections.MatchSelectionFrom(ColibriParams);
+            this._totalCount = Selections.TotalCounts;
+            this._selectedCount = Selections.SelectedCounts;
+            string messages = "";
+
+            //Check selections
+            checkSelections(Selections, ColibriParams, _totalCount);
+
+            messages = "ITERATION NUMBER \nTotal: " + _totalCount;
+
+            if (Selections.IsDefinedInSel)
+            {
+                messages += "\nSelected: " + _selectedCount;
+                messages += "\n";
+                messages += Selections.ToString(true);
+            }
+            
+            
+            return messages;
+            
+        }
+
+        private void checkSelections(IteratorSelection Selections, List<ColibriParam> ColibriParam, int totalCount)
+        {
+            var takeNumbers = new List<int>();
+            var userDomains = new List<GH_Interval>();
+            
+
+            if (Selections.IsDefinedInSel)
+            {
+                takeNumbers = Selections.UserTakes;
+                userDomains = Selections.UserDomains;
+                //check take numbers for each parameters
+                if (takeNumbers.Any() && takeNumbers.Count != ColibriParam.Count)
                 {
-                    // check if the slider is in the selected list
-                    if (isAnythingConnected)
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "The number of connected sliders must be equal to the number of items in the Steps input list.\n But Colibri will run without Division settings.");
+                    
+                }
+
+
+                //Check domains if any of their max is out of range (the min is checked in Selection component)
+                if (userDomains.Any())
+                {
+                    foreach (var item in userDomains)
                     {
-                        if (guids.Contains(slider.InstanceGuid)) sliders.Add(slider);
+
+                        if (item.Value.Max > totalCount-1)
+                        {
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Domains' max number should be smaller than the total number " + totalCount + ".\n Colibri has fixed it for you.");
+                        }
+                        
                     }
-                    else sliders.Add(slider);
+                    
+                }
+
+            }
+            
+
+        }
+
+        #endregion
+
+        #region Check Aggregator before fly
+        
+        
+        //Check if Aggregator exist, and if it is at the last
+        private bool isAggregatorReady()
+        {
+            this._aggObj = null;
+            this._studyFolder = "";
+
+            //var folder = "";
+            bool isReady = true;
+            
+            var checkingMsg = new List<string>();
+
+            checkingMsg = checkIfGetAggregatorObj();
+            
+            //Genome is not connected to Aggregator, then there is warning msg in checkingMsg 
+            if (!checkingMsg.IsNullOrEmpty())
+            {
+                var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n\n\n" + checkingMsg[0], "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.Yes)
+                {
+                    
+                    return true;
+                }
+                else
+                {
+                    // user doesn't want ot continue! return false to stop
+                    return false;
                 }
             }
-
-
-            /*foreach (GH.Kernel.Special.GH_NumberSlider slider in sliders)
+            else //this._aggObj exists
             {
-                names.Add(slider.NickName);
-            }*/
-
-            return sliders;
-        }
-
-
-        private void Slider_ObjectChanged(IGH_DocumentObject sender, GH_ObjectChangedEventArgs e)
-        {
-            ExpireSolution(true);
-        }
-
-
-        /// <summary>
-        /// Provides an Icon for every component that will be visible in the User Interface.
-        /// Icons need to be 24x24 pixels.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
-                return Properties.Resources.Colibri_logobase_1;
+                if (this._aggObj != null && this._aggObj.RuntimeMessageLevel!= GH_RuntimeMessageLevel.Error)
+                {
+                    //check aggregator 
+                    checkingMsg = this._aggObj.CheckAggregatorIfReady();
+                }
+                else
+                {
+                    //clear _aggObj, when it has a warning runtime msg.
+                    this._aggObj = null;
+                    // this._aggObj doesn't exist, return true to start.
+                    return true;
+                }
+                
             }
+            
+            
+            // checking messages from Aggregator
+            if (checkingMsg.IsNullOrEmpty() || _ignoreAllWarningMsg)
+            {
+                isReady = true;
+            }
+            else
+            {
+                string warningMsg = "";
+                foreach (var item in checkingMsg)
+                {
+                    warningMsg += "\n\n"+item;
+                }
+                var userClick = MessageBox.Show("Colibri detected some issues. \nStill continue?\n" + warningMsg, "Attention", MessageBoxButtons.YesNo);
+                if (userClick == DialogResult.No)
+                {
+                    // user doesn't want ot continue! set isReady to false to stop
+                    isReady = false;
+                }
+                else
+                {
+                    // user click yes to ignore all Aggregator's msgs
+                    return true;
+                }
+            }
+                
+            this._mode = this._aggObj.OverrideTypes;
+            this._studyFolder = this._aggObj.Folder;
+            return isReady;
+
+        }
+        
+        //this will check two levels of components after Iteration
+        private List<string> checkIfGetAggregatorObj()
+        {
+            
+            var aggregatorID = new Guid("{c285fdce-3c5b-4701-a2ca-c4850c5aa2b7}");
+
+            var msg = new List<string>();
+            string warningMsg = "  It seems Iterator is not directly connected to Aggregator. If yes, then no pre-check and data protection.\n\t[SOLUTION]: connect Genome to Aggregator' Genome directly!";
+
+            // only check Recipients of FlyID
+            int genomeIndex = this.Params.IndexOfInputParam(this._selectionName);
+            var flyIDRecipients = this.Params.Output[genomeIndex].DirectConnectedComponents();
+
+            if (flyIDRecipients.IsNullOrEmpty()) return msg;
+
+            var twoLevelsRecipients = new List<IGH_DocumentObject>();
+            twoLevelsRecipients.AddRange(flyIDRecipients);
+            foreach (var item in flyIDRecipients)
+            {
+                var secondLevelOutputs = new List<IGH_Param>();
+                if (item is IGH_Component)
+                {
+                    secondLevelOutputs = ((GH_Component)item).Params.Output;
+                }
+                else if (item is IGH_Param)
+                {
+                    secondLevelOutputs.Add(item as IGH_Param);
+                }
+                
+                foreach (var secondLevelOutput in secondLevelOutputs)
+                {
+                    var secondLevelRecipients = secondLevelOutput.DirectConnectedComponents();
+                    twoLevelsRecipients.AddRange(secondLevelRecipients);
+                }
+
+            }
+            
+
+            foreach (var item in twoLevelsRecipients)
+            {
+                if (item.ComponentGuid.Equals(aggregatorID))
+                {
+                    this._aggObj = item as Aggregator;
+                }
+
+            }
+
+            if (this._aggObj == null)
+            {
+                msg.Add(warningMsg);
+            }
+            
+            return msg;
+            
         }
 
-        /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
-        /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("{acef353c-e01e-44de-a8a6-07f93eac6a1d}"); }
-        }
+        
+        #endregion
+        
     }
+
+
+
 }

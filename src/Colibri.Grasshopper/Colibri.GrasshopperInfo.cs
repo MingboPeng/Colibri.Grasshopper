@@ -35,7 +35,7 @@ namespace Colibri.Grasshopper
         get
         {
             //Return a 24x24 pixel bitmap to represent this GHA library.
-            return Properties.Resources.Colibri_logobase_1;
+            return Properties.Resources.Aggregator;
         }
     }
     public override string Description

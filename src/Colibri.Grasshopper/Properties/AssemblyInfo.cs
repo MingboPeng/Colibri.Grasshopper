@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Rhino.PlugIns;
 
 
 // General Information about an assembly is controlled through the following 
@@ -12,7 +10,7 @@ using Rhino.PlugIns;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Colibri.Grasshopper")]
-[assembly: AssemblyCopyright("Copyright © Thornton Tomasetti 2016")]
+[assembly: AssemblyCopyright("Copyright © Thornton Tomasetti 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,5 +31,5 @@ using Rhino.PlugIns;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
- [assembly: AssemblyVersion("0.1.*")]
+[assembly: AssemblyVersion("0.2.*")]
 

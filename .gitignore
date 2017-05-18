@@ -18,7 +18,7 @@
 x64/
 x86/
 bld/
-[Bb]in/
+#[Bb]in/
 [Oo]bj/
 [Ll]og/
 
@@ -251,3 +251,4 @@ paket-files/
 .idea/
 *.sln.iml
 docs/TestWorkflows/Testpath/data.csv
+/docs/TestWorkflows

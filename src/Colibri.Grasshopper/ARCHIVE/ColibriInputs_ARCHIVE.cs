@@ -11,21 +11,23 @@ using Grasshopper.Kernel.Special;
 
 namespace Colibri.Grasshopper
 {
-    public class ColibriInputs : GH_Component
+    public class ColibriInputs_ARCHIVE : GH_Component
     {
         GH_Document doc = null;
 
         /// <summary>
         /// Initializes a new instance of the ColibriInputs class.
         /// </summary>
-        public ColibriInputs()
+        public ColibriInputs_ARCHIVE()
           : base("Colibri Inputs", "Colibri Inputs",
               "Collects design input values to chart in Design Explorer.  These will be the vertical axes to the left on the parallel coordinates plot.  These values should describe the genome of a single design iteration.\n\nThis component lets you easily use Colibri to record a Galapagos or Octopus run, and to review all iterations in Design Explorer.",
               "TT Toolbox", "Colibri")
         {
         }
 
-        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
+        public override GH_Exposure Exposure { get { return GH_Exposure.hidden; } }
+
+        public override bool Obsolete { get { return true; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.

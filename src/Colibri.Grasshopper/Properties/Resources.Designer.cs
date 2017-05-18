@@ -63,6 +63,16 @@ namespace Colibri.Grasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Aggregator {
+            get {
+                object obj = ResourceManager.GetObject("Aggregator", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Colibri_logobase_1 {
             get {
                 object obj = ResourceManager.GetObject("Colibri_logobase_1", resourceCulture);
@@ -106,6 +116,66 @@ namespace Colibri.Grasshopper.Properties {
         internal static System.Drawing.Bitmap Colibri_logobase_5 {
             get {
                 object obj = ResourceManager.GetObject("Colibri_logobase_5", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap imgParam {
+            get {
+                object obj = ResourceManager.GetObject("imgParam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Iterator {
+            get {
+                object obj = ResourceManager.GetObject("Iterator", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Output {
+            get {
+                object obj = ResourceManager.GetObject("Output", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Selection {
+            get {
+                object obj = ResourceManager.GetObject("Selection", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap staticInput {
+            get {
+                object obj = ResourceManager.GetObject("staticInput", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap threeDParam {
+            get {
+                object obj = ResourceManager.GetObject("threeDParam", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
