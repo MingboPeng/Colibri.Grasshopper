@@ -55,7 +55,8 @@ namespace Colibri.Grasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Folder", "Folder", "Path to a directory to write images, spectacles models, and the data.csv file into.\nPlease make sure you have authorized access.By default it is set to c:\\Colibri", GH_ParamAccess.item,"c:\\Colibri");
+            pManager[0].Optional = true;
             pManager.AddTextParameter("Iteration Genome (ID)", "Genome", "Data from the Colibri Iterator compnent, which describes the ID of each iteration.\nCombination of Genome and Colibri Parameters is also acceptable.", GH_ParamAccess.list);
             pManager.AddTextParameter("Iteration Phenome (Results)", "Phenome", "Data from the Colibri Parameters component which collects all output results from each iteration.\nThis is optional if there is no computed data to export.", GH_ParamAccess.list);
             pManager[2].Optional = true;
