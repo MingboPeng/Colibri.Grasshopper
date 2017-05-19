@@ -336,7 +336,6 @@ namespace Colibri.Grasshopper
 
         private void Menu_DoClick_FinishRest(object sender, EventArgs e)
         {
-            this.setWriteFileToFalse();
             this.OverrideTypes = OverrideMode.FinishTheRest;
             updateMsg();
             
@@ -344,21 +343,18 @@ namespace Colibri.Grasshopper
 
         private void Menu_DoClick_AppendAll(object sender, EventArgs e)
         {
-            this.setWriteFileToFalse();
             this.OverrideTypes = OverrideMode.AppendAllToTheEnd;
             updateMsg();
         }
 
         private void Menu_DoClick_Override(object sender, EventArgs e)
         {
-            this.setWriteFileToFalse();
             this.OverrideTypes = OverrideMode.OverrideAll;
             updateMsg();
         }
 
         private void Menu_DoClick_Default(object sender, EventArgs e)
         {
-            this.setWriteFileToFalse();
             this.OverrideTypes = OverrideMode.AskEverytime;
             updateMsg();
         }
