@@ -148,12 +148,21 @@ namespace Colibri.Grasshopper
                 nickName = String.IsNullOrEmpty(slider.NickName) ? slider.ImpliedNickName : slider.NickName;
             }
 
+            
+
             //check if is empty
             var isNicknameEmpty = String.IsNullOrEmpty(nickName) || nickName == "List" || nickName == "Input";
             if (isNicknameEmpty)
             {
                 nickName = "RenamePlz";
             }
+            else
+            {
+                //remove "." and ","
+                nickName.Replace('.', ' ').Replace(',', ' ');
+            }
+
+
 
             return nickName;
         }
