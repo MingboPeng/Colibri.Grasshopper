@@ -12,8 +12,8 @@ namespace Colibri.Grasshopper
     {
         public bool IsDefinedInSel { get; private set; }
         
-        public int SelectedCounts { get; private set; }
-        public int TotalCounts { get; private set; }
+        public long SelectedCounts { get; private set; }
+        public long TotalCounts { get; private set; }
 
         public List<int> ParamsTakeNumbers
         {
@@ -93,13 +93,13 @@ namespace Colibri.Grasshopper
 
             this.SelectedCounts = calSelectedTotalCount(this._domains, selectedPositionCounts);
         }
-        private int calSelectedTotalCount(List<GH_Interval> finalDomains, int finalTotalPositionCounts)
+        private long calSelectedTotalCount(List<GH_Interval> finalDomains, long finalTotalPositionCounts)
         {
 
-            int selectedTotal = 0;
+            long selectedTotal = 0;
 
             //Total count from Domains
-            int totalDomainsLength = 0;
+            long totalDomainsLength = 0;
             foreach (var item in finalDomains)
             {
                 totalDomainsLength += (int)item.Value.Length + 1;
@@ -112,13 +112,13 @@ namespace Colibri.Grasshopper
             return selectedTotal;
         }
 
-        private int calSelectedPositionsCount(List<List<int>> allParamsSelectedPositions)
+        private long calSelectedPositionsCount(List<List<int>> allParamsSelectedPositions)
         {
             
-            int selectedTotal = 0;
-            
+            long selectedTotal = 0;
+
             //Total count from params positions
-            int runIterationNumber = 1;
+            long runIterationNumber = 1;
             
             if (allParamsSelectedPositions.Count == this._paramsPositions.Count)
             {

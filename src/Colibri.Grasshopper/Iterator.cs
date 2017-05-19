@@ -22,8 +22,8 @@ namespace Colibri.Grasshopper
         private bool _isTestFly = false;
         
         
-        private int _totalCount = 0;
-        private int _selectedCount = 0;
+        private long _totalCount = 0;
+        private long _selectedCount = 0;
 
         private IteratorSelection _selections = new IteratorSelection();
 
@@ -58,7 +58,7 @@ namespace Colibri.Grasshopper
             pManager[0].Optional = true;
             pManager[0].MutableNickName = false;
 
-            pManager.AddGenericParameter(this._selectionName, this._selectionName, "Connect the Colibri 'Iteration Selection' component here to define a subset of the design space to iterate over.", GH_ParamAccess.item);
+            pManager.AddGenericParameter(this._selectionName, this._selectionName, "(Optional) Connect the Colibri 'Iteration Selection' component here to define a subset of the design space to iterate over.", GH_ParamAccess.item);
             pManager[1].Optional = true;
             pManager[1].MutableNickName = false;
 
@@ -354,8 +354,8 @@ namespace Colibri.Grasshopper
                 return;
             }
 
-            
-            int testIterationNumber = this._selectedCount;
+
+            long testIterationNumber = this._selectedCount;
             //int totalIterationNumber = _totalCount;
 
             if (this._isTestFly)
@@ -767,7 +767,7 @@ namespace Colibri.Grasshopper
             
         }
 
-        private void checkSelections(IteratorSelection Selections, List<ColibriParam> ColibriParam, int totalCount)
+        private void checkSelections(IteratorSelection Selections, List<ColibriParam> ColibriParam, long totalCount)
         {
             var takeNumbers = new List<int>();
             var userDomains = new List<GH_Interval>();

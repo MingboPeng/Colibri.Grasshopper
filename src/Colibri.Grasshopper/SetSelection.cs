@@ -15,12 +15,12 @@ namespace Colibri.Grasshopper
         /// </summary>
         public SetSelection()
           : base("Iteration Selection", "Selection",
-              "Generates an iteration selection for the Colibri Iterator.  This allows you to iterate over a subset of the design space instead of taking every step along every slider.\n\nUse 'Divisions' to define granularity - how many steps to take on any given input.\n\nUse 'Domains' to break the design space up into chunks that can be solved in parallel on different machines.",
+              "Generates an iteration selection for the Colibri Iterator. This allows you to iterate over a subset of the design space instead of taking every step along every slider.\n\nUse 'Divisions' to define granularity - how many steps to take on any given input.\n\nUse 'Domains' to break the design space up into chunks that can be solved in parallel on different machines.",
               "TT Toolbox", "Colibri 2.0")
         {
         }
 
-        public override GH_Exposure Exposure { get { return GH_Exposure.primary; } }
+        public override GH_Exposure Exposure { get { return GH_Exposure.secondary; } }
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -30,7 +30,7 @@ namespace Colibri.Grasshopper
             pManager.AddIntegerParameter("Divisions", "Divisions", "Number of steps to take along the corresponding Iterator input. This should be a list of integers of the same length as the list of Iterator inputs.\n\n 0: for all values \n 1: for current position \n >1: numbers to be evenly picked.", GH_ParamAccess.list);
             pManager[0].Optional = true;
 
-            pManager.AddIntervalParameter("Domains", "Domains", "Set the target range of all iteration combinations, can be one or a list of 1d domains (use Construct Domain). \n\nDomain setting comes after Divisions setting.", GH_ParamAccess.list);
+            pManager.AddIntervalParameter("Domain", "Domain", "Set the target(fly) range of all iteration combinations, use \"Construct Domain\" for 1d domain. \n\nDomain setting comes after Divisions setting.", GH_ParamAccess.list);
             pManager[1].Optional = true;
             
         }

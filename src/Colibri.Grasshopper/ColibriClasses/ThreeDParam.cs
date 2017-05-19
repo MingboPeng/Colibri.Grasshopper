@@ -245,64 +245,87 @@ namespace Colibri.Grasshopper
 
             var meshColors = mesh.VertexColors.ToList();
 
-
-            foreach (var face in mesh.Faces)
+            //mesh is uncolored
+            if (meshColors.IsNullOrEmpty())
             {
-                //make sure there is an item at this index.  if not, grab the last one
-                if (matCounter == mesh.Faces.Count)
-                {
-                    matCounter = mesh.Faces.Count = 1;
-                }
-                //if (matCounter > colors.Count - 1) matCounter = colors.Count - 1;
-
-                //get a string representation of the color
-                int firstFaceVertexIndex = mesh.Faces.GetFace(matCounter).A;
-                //default color
-                string myColorStr = "0x677A85";
-                //change to mesh face color
-                if (meshColors.Any())
-                {
-                    myColorStr = hexColor(new GH_Colour(meshColors[firstFaceVertexIndex]));
-                }
-
-
-                //check to see if we need to create a new material index
-                if (!faceMaterials.ContainsKey(myColorStr))
-                {
-                    //add the color/index pair to our dictionary and increment the unique color counter
-                    faceMaterials.Add(myColorStr, uniqueColorCounter);
-                    uniqueColorCounter++;
-                }
-
-                //add the color[s] to the array.  one for a tri, two for a quad
-                if (face.IsTriangle)
-                {
-                    myMaterialIndexes.Add(faceMaterials[myColorStr]);
-                }
-                else if (face.IsQuad)
-                {
-                    myMaterialIndexes.Add(faceMaterials[myColorStr]);
-                    myMaterialIndexes.Add(faceMaterials[myColorStr]);
-                }
-                matCounter++;
-            }
-
-            JsonMat.materials = new object[faceMaterials.Count];
-            for (int i = 0; i < faceMaterials.Count; i++)
-            {
+                JsonMat.materials = new object[1];
                 dynamic matthew = new ExpandoObject();
                 matthew.uuid = Guid.NewGuid();
-                matthew.type = "MeshBasicMaterial";
-                matthew.side = 2;
-                matthew.color = faceMaterials.Keys.ToList()[i];
-                JsonMat.materials[i] = matthew;
+                matthew.type = "MeshLambertMaterial";
+                matthew.color = "0xecf0f1";
+                matthew.ambient = "0xecf0f1";
+                matthew.emissive = 0;
+                matthew.opacity = 1;
+                matthew.transparent = false;
+                matthew.wireframe = false;
+                matthew.shading = 1;
+                JsonMat.materials[0] = matthew;
+
+                JSON.Add("materials", JsonMat);
+                JSON.Add("faceMaterialIndex", "default");
+                return JSON;
+
             }
+            else
+            {
+                foreach (var face in mesh.Faces)
+                {
+                    //make sure there is an item at this index.  if not, grab the last one
+                    if (matCounter == mesh.Faces.Count)
+                    {
+                        matCounter = mesh.Faces.Count = 1;
+                    }
+                    //if (matCounter > colors.Count - 1) matCounter = colors.Count - 1;
 
-            JSON.Add("materials", JsonMat);
-            JSON.Add("faceMaterialIndex", string.Join(",", myMaterialIndexes));
+                    //get a string representation of the color
+                    int firstFaceVertexIndex = mesh.Faces.GetFace(matCounter).A;
+                    //default color
+                    string myColorStr = "0xecf0f1";
+                    //change to mesh face color
+                    if (meshColors.Any())
+                    {
+                        myColorStr = hexColor(new GH_Colour(meshColors[firstFaceVertexIndex]));
+                    }
 
-            return JSON;
-            //return JsonConvert.SerializeObject(JsonMat);
+
+                    //check to see if we need to create a new material index
+                    if (!faceMaterials.ContainsKey(myColorStr))
+                    {
+                        //add the color/index pair to our dictionary and increment the unique color counter
+                        faceMaterials.Add(myColorStr, uniqueColorCounter);
+                        uniqueColorCounter++;
+                    }
+
+                    //add the color[s] to the array.  one for a tri, two for a quad
+                    if (face.IsTriangle)
+                    {
+                        myMaterialIndexes.Add(faceMaterials[myColorStr]);
+                    }
+                    else if (face.IsQuad)
+                    {
+                        myMaterialIndexes.Add(faceMaterials[myColorStr]);
+                        myMaterialIndexes.Add(faceMaterials[myColorStr]);
+                    }
+                    matCounter++;
+                }
+
+                JsonMat.materials = new object[faceMaterials.Count];
+                for (int i = 0; i < faceMaterials.Count; i++)
+                {
+                    dynamic matthew = new ExpandoObject();
+                    matthew.uuid = Guid.NewGuid();
+                    matthew.type = "MeshBasicMaterial";
+                    matthew.side = 2;
+                    matthew.color = faceMaterials.Keys.ToList()[i];
+                    JsonMat.materials[i] = matthew;
+                }
+
+                JSON.Add("materials", JsonMat);
+                JSON.Add("faceMaterialIndex", string.Join(",", myMaterialIndexes));
+
+                return JSON;
+            }
+            
         }
 
         private dynamic meshesJSON(List<GH_Mesh> GHMeshes)
@@ -321,9 +344,11 @@ namespace Colibri.Grasshopper
             foreach (var item in GHMeshes)
             {
                 //joinedMesh.Append(item.Value);
+                var meshMaterials = getMeshFaceMaterials(item.Value);
                 JsonGeometries.Add(meshGeometries(item.Value));
-                JsonMaterials.Add(getMeshFaceMaterials(item.Value)["materials"]);
-                JsonFaceColorIndexes.Add(getMeshFaceMaterials(item.Value)["faceMaterialIndex"]);
+                JsonMaterials.Add(meshMaterials["materials"]);
+                JsonFaceColorIndexes.Add(meshMaterials["faceMaterialIndex"]);
+                
             }
 
             //var JsonGeometries = new List<object> { meshGeometries(joinedMesh) };
@@ -349,7 +374,11 @@ namespace Colibri.Grasshopper
 
                 //userData
                 dynamic userData = new ExpandoObject();
-                userData.Spectacles_FaceColorIndexes = JsonFaceColorIndexes[i];
+                if (JsonFaceColorIndexes[i].ToString() != "default")
+                {
+                    userData.Spectacles_FaceColorIndexes = JsonFaceColorIndexes[i];
+                }
+                
                 JsonObjectChildren.userData = userData;
 
                 //add children to JsonFile
@@ -593,7 +622,7 @@ namespace Colibri.Grasshopper
             string hexStr = "0x" + ghColor.Value.R.ToString("X2") +
                 ghColor.Value.G.ToString("X2") +
                 ghColor.Value.B.ToString("X2");
-
+            
             return hexStr;
         }
 
