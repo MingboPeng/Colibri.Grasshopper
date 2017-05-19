@@ -154,6 +154,11 @@ namespace Colibri.Grasshopper
             {
                 nickName = "RenamePlz";
             }
+            else
+            {
+             //remove "." and ","
+                nickName = nickName.Replace('.', ' ').Replace(',', ' ');
+            }
 
             return nickName;
         }
