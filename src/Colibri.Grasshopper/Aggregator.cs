@@ -430,9 +430,10 @@ namespace Colibri.Grasshopper
                 return imgName;
 
             }
-            
+
             //If user set View Names
-            var views = Rhino.RhinoDoc.ActiveDoc.Views.ToDictionary(v => v.ActiveViewport.Name, v => v);
+            var viewGroups = Rhino.RhinoDoc.ActiveDoc.Views.GroupBy(x => x.ActiveViewport.Name);
+            var views = viewGroups.Select(x=>x.First()).ToDictionary(v => v.ActiveViewport.Name, v => v);
             var namedViews = Rhino.RhinoDoc.ActiveDoc.NamedViews.ToDictionary(v => v.Name, v => v);
 
             //string newImgPathWithViewName = ImagePath;
